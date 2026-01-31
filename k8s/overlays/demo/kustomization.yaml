@@ -8,5 +8,6 @@ resources:
 
 patches:
   - path: patches/collector-dash0-export.yaml
+  - path: patches/enable-ad-high-cpu-flag.yaml
 
 images: []
