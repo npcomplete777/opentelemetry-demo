@@ -1,7 +1,8 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// N+1 Fix: Batch RPC support for improved checkout performance
+// N+1 Fix: Batch RPC support for improved checkout performance.
+// Uses GetProducts and ConvertCurrencies batch RPCs to reduce roundtrips.
 package main
 
 import (
