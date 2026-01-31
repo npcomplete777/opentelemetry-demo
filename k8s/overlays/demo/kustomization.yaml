@@ -19,3 +19,7 @@ patches:
 
 # Image overrides - GitHub Actions will update tags here
 images: []
+
+# N+1 fix image patches
+patchesStrategicMerge:
+  - patches/n1-fix-images.yaml
