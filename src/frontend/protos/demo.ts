@@ -79,6 +79,16 @@ export interface GetProductRequest {
   id: string;
 }
 
+/** Request for batch product lookup */
+export interface GetProductsRequest {
+  ids: string[];
+}
+
+/** Response for batch product lookup */
+export interface GetProductsResponse {
+  products: Product[];
+}
+
 export interface SearchProductsRequest {
   query: string;
 }
@@ -175,6 +185,18 @@ export interface CurrencyConversionRequest {
     | undefined;
   /** The 3-letter currency code defined in ISO 4217. */
   toCode: string;
+}
+
+/** Request for batch currency conversion */
+export interface ConvertCurrenciesRequest {
+  amounts: Money[];
+  /** The 3-letter currency code defined in ISO 4217. */
+  toCode: string;
+}
+
+/** Response for batch currency conversion */
+export interface ConvertCurrenciesResponse {
+  converted: Money[];
 }
 
 export interface CreditCardInfo {
@@ -1106,6 +1128,124 @@ export const GetProductRequest: MessageFns<GetProductRequest> = {
   fromPartial<I extends Exact<DeepPartial<GetProductRequest>, I>>(object: I): GetProductRequest {
     const message = createBaseGetProductRequest();
     message.id = object.id ?? "";
+    return message;
+  },
+};
+
+function createBaseGetProductsRequest(): GetProductsRequest {
+  return { ids: [] };
+}
+
+export const GetProductsRequest: MessageFns<GetProductsRequest> = {
+  encode(message: GetProductsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.ids) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetProductsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetProductsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.ids.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetProductsRequest {
+    return { ids: globalThis.Array.isArray(object?.ids) ? object.ids.map((e: any) => globalThis.String(e)) : [] };
+  },
+
+  toJSON(message: GetProductsRequest): unknown {
+    const obj: any = {};
+    if (message.ids?.length) {
+      obj.ids = message.ids;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetProductsRequest>, I>>(base?: I): GetProductsRequest {
+    return GetProductsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetProductsRequest>, I>>(object: I): GetProductsRequest {
+    const message = createBaseGetProductsRequest();
+    message.ids = object.ids?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseGetProductsResponse(): GetProductsResponse {
+  return { products: [] };
+}
+
+export const GetProductsResponse: MessageFns<GetProductsResponse> = {
+  encode(message: GetProductsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.products) {
+      Product.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetProductsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetProductsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.products.push(Product.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetProductsResponse {
+    return {
+      products: globalThis.Array.isArray(object?.products) ? object.products.map((e: any) => Product.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: GetProductsResponse): unknown {
+    const obj: any = {};
+    if (message.products?.length) {
+      obj.products = message.products.map((e) => Product.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetProductsResponse>, I>>(base?: I): GetProductsResponse {
+    return GetProductsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetProductsResponse>, I>>(object: I): GetProductsResponse {
+    const message = createBaseGetProductsResponse();
+    message.products = object.products?.map((e) => Product.fromPartial(e)) || [];
     return message;
   },
 };
@@ -2380,6 +2520,146 @@ export const CurrencyConversionRequest: MessageFns<CurrencyConversionRequest> = 
     const message = createBaseCurrencyConversionRequest();
     message.from = (object.from !== undefined && object.from !== null) ? Money.fromPartial(object.from) : undefined;
     message.toCode = object.toCode ?? "";
+    return message;
+  },
+};
+
+function createBaseConvertCurrenciesRequest(): ConvertCurrenciesRequest {
+  return { amounts: [], toCode: "" };
+}
+
+export const ConvertCurrenciesRequest: MessageFns<ConvertCurrenciesRequest> = {
+  encode(message: ConvertCurrenciesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.amounts) {
+      Money.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.toCode !== "") {
+      writer.uint32(18).string(message.toCode);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ConvertCurrenciesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseConvertCurrenciesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.amounts.push(Money.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.toCode = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ConvertCurrenciesRequest {
+    return {
+      amounts: globalThis.Array.isArray(object?.amounts) ? object.amounts.map((e: any) => Money.fromJSON(e)) : [],
+      toCode: isSet(object.toCode)
+        ? globalThis.String(object.toCode)
+        : isSet(object.to_code)
+        ? globalThis.String(object.to_code)
+        : "",
+    };
+  },
+
+  toJSON(message: ConvertCurrenciesRequest): unknown {
+    const obj: any = {};
+    if (message.amounts?.length) {
+      obj.amounts = message.amounts.map((e) => Money.toJSON(e));
+    }
+    if (message.toCode !== "") {
+      obj.toCode = message.toCode;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ConvertCurrenciesRequest>, I>>(base?: I): ConvertCurrenciesRequest {
+    return ConvertCurrenciesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ConvertCurrenciesRequest>, I>>(object: I): ConvertCurrenciesRequest {
+    const message = createBaseConvertCurrenciesRequest();
+    message.amounts = object.amounts?.map((e) => Money.fromPartial(e)) || [];
+    message.toCode = object.toCode ?? "";
+    return message;
+  },
+};
+
+function createBaseConvertCurrenciesResponse(): ConvertCurrenciesResponse {
+  return { converted: [] };
+}
+
+export const ConvertCurrenciesResponse: MessageFns<ConvertCurrenciesResponse> = {
+  encode(message: ConvertCurrenciesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.converted) {
+      Money.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ConvertCurrenciesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseConvertCurrenciesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.converted.push(Money.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ConvertCurrenciesResponse {
+    return {
+      converted: globalThis.Array.isArray(object?.converted) ? object.converted.map((e: any) => Money.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: ConvertCurrenciesResponse): unknown {
+    const obj: any = {};
+    if (message.converted?.length) {
+      obj.converted = message.converted.map((e) => Money.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ConvertCurrenciesResponse>, I>>(base?: I): ConvertCurrenciesResponse {
+    return ConvertCurrenciesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ConvertCurrenciesResponse>, I>>(object: I): ConvertCurrenciesResponse {
+    const message = createBaseConvertCurrenciesResponse();
+    message.converted = object.converted?.map((e) => Money.fromPartial(e)) || [];
     return message;
   },
 };
@@ -4203,12 +4483,24 @@ export const ProductCatalogServiceService = {
       Buffer.from(SearchProductsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): SearchProductsResponse => SearchProductsResponse.decode(value),
   },
+  /** Batch method to fetch multiple products in a single call (fixes N+1 pattern) */
+  getProducts: {
+    path: "/oteldemo.ProductCatalogService/GetProducts",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: GetProductsRequest): Buffer => Buffer.from(GetProductsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetProductsRequest => GetProductsRequest.decode(value),
+    responseSerialize: (value: GetProductsResponse): Buffer => Buffer.from(GetProductsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): GetProductsResponse => GetProductsResponse.decode(value),
+  },
 } as const;
 
 export interface ProductCatalogServiceServer extends UntypedServiceImplementation {
   listProducts: handleUnaryCall<Empty, ListProductsResponse>;
   getProduct: handleUnaryCall<GetProductRequest, Product>;
   searchProducts: handleUnaryCall<SearchProductsRequest, SearchProductsResponse>;
+  /** Batch method to fetch multiple products in a single call (fixes N+1 pattern) */
+  getProducts: handleUnaryCall<GetProductsRequest, GetProductsResponse>;
 }
 
 export interface ProductCatalogServiceClient extends Client {
@@ -4256,6 +4548,22 @@ export interface ProductCatalogServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: SearchProductsResponse) => void,
+  ): ClientUnaryCall;
+  /** Batch method to fetch multiple products in a single call (fixes N+1 pattern) */
+  getProducts(
+    request: GetProductsRequest,
+    callback: (error: ServiceError | null, response: GetProductsResponse) => void,
+  ): ClientUnaryCall;
+  getProducts(
+    request: GetProductsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: GetProductsResponse) => void,
+  ): ClientUnaryCall;
+  getProducts(
+    request: GetProductsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: GetProductsResponse) => void,
   ): ClientUnaryCall;
 }
 
@@ -4465,11 +4773,25 @@ export const CurrencyServiceService = {
     responseSerialize: (value: Money): Buffer => Buffer.from(Money.encode(value).finish()),
     responseDeserialize: (value: Buffer): Money => Money.decode(value),
   },
+  /** Batch method to convert multiple amounts in a single call (fixes N+1 pattern) */
+  convertCurrencies: {
+    path: "/oteldemo.CurrencyService/ConvertCurrencies",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ConvertCurrenciesRequest): Buffer =>
+      Buffer.from(ConvertCurrenciesRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): ConvertCurrenciesRequest => ConvertCurrenciesRequest.decode(value),
+    responseSerialize: (value: ConvertCurrenciesResponse): Buffer =>
+      Buffer.from(ConvertCurrenciesResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ConvertCurrenciesResponse => ConvertCurrenciesResponse.decode(value),
+  },
 } as const;
 
 export interface CurrencyServiceServer extends UntypedServiceImplementation {
   getSupportedCurrencies: handleUnaryCall<Empty, GetSupportedCurrenciesResponse>;
   convert: handleUnaryCall<CurrencyConversionRequest, Money>;
+  /** Batch method to convert multiple amounts in a single call (fixes N+1 pattern) */
+  convertCurrencies: handleUnaryCall<ConvertCurrenciesRequest, ConvertCurrenciesResponse>;
 }
 
 export interface CurrencyServiceClient extends Client {
@@ -4502,6 +4824,22 @@ export interface CurrencyServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: Money) => void,
+  ): ClientUnaryCall;
+  /** Batch method to convert multiple amounts in a single call (fixes N+1 pattern) */
+  convertCurrencies(
+    request: ConvertCurrenciesRequest,
+    callback: (error: ServiceError | null, response: ConvertCurrenciesResponse) => void,
+  ): ClientUnaryCall;
+  convertCurrencies(
+    request: ConvertCurrenciesRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: ConvertCurrenciesResponse) => void,
+  ): ClientUnaryCall;
+  convertCurrencies(
+    request: ConvertCurrenciesRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: ConvertCurrenciesResponse) => void,
   ): ClientUnaryCall;
 }
 

@@ -231,6 +231,11 @@ class ProductCatalogServiceStub(object):
                 request_serializer=demo__pb2.SearchProductsRequest.SerializeToString,
                 response_deserializer=demo__pb2.SearchProductsResponse.FromString,
                 )
+        self.GetProducts = channel.unary_unary(
+                '/oteldemo.ProductCatalogService/GetProducts',
+                request_serializer=demo__pb2.GetProductsRequest.SerializeToString,
+                response_deserializer=demo__pb2.GetProductsResponse.FromString,
+                )
 
 
 class ProductCatalogServiceServicer(object):
@@ -256,6 +261,13 @@ class ProductCatalogServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetProducts(self, request, context):
+        """Batch method to fetch multiple products in a single call (fixes N+1 pattern)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_ProductCatalogServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -273,6 +285,11 @@ def add_ProductCatalogServiceServicer_to_server(servicer, server):
                     servicer.SearchProducts,
                     request_deserializer=demo__pb2.SearchProductsRequest.FromString,
                     response_serializer=demo__pb2.SearchProductsResponse.SerializeToString,
+            ),
+            'GetProducts': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetProducts,
+                    request_deserializer=demo__pb2.GetProductsRequest.FromString,
+                    response_serializer=demo__pb2.GetProductsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -334,6 +351,23 @@ class ProductCatalogService(object):
         return grpc.experimental.unary_unary(request, target, '/oteldemo.ProductCatalogService/SearchProducts',
             demo__pb2.SearchProductsRequest.SerializeToString,
             demo__pb2.SearchProductsResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetProducts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/oteldemo.ProductCatalogService/GetProducts',
+            demo__pb2.GetProductsRequest.SerializeToString,
+            demo__pb2.GetProductsResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -592,6 +626,11 @@ class CurrencyServiceStub(object):
                 request_serializer=demo__pb2.CurrencyConversionRequest.SerializeToString,
                 response_deserializer=demo__pb2.Money.FromString,
                 )
+        self.ConvertCurrencies = channel.unary_unary(
+                '/oteldemo.CurrencyService/ConvertCurrencies',
+                request_serializer=demo__pb2.ConvertCurrenciesRequest.SerializeToString,
+                response_deserializer=demo__pb2.ConvertCurrenciesResponse.FromString,
+                )
 
 
 class CurrencyServiceServicer(object):
@@ -611,6 +650,13 @@ class CurrencyServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ConvertCurrencies(self, request, context):
+        """Batch method to convert multiple amounts in a single call (fixes N+1 pattern)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CurrencyServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -623,6 +669,11 @@ def add_CurrencyServiceServicer_to_server(servicer, server):
                     servicer.Convert,
                     request_deserializer=demo__pb2.CurrencyConversionRequest.FromString,
                     response_serializer=demo__pb2.Money.SerializeToString,
+            ),
+            'ConvertCurrencies': grpc.unary_unary_rpc_method_handler(
+                    servicer.ConvertCurrencies,
+                    request_deserializer=demo__pb2.ConvertCurrenciesRequest.FromString,
+                    response_serializer=demo__pb2.ConvertCurrenciesResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -667,6 +718,23 @@ class CurrencyService(object):
         return grpc.experimental.unary_unary(request, target, '/oteldemo.CurrencyService/Convert',
             demo__pb2.CurrencyConversionRequest.SerializeToString,
             demo__pb2.Money.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ConvertCurrencies(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/oteldemo.CurrencyService/ConvertCurrencies',
+            demo__pb2.ConvertCurrenciesRequest.SerializeToString,
+            demo__pb2.ConvertCurrenciesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
