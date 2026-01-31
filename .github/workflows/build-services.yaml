@@ -2,7 +2,7 @@ name: Build Services
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'fix/*']
     paths:
       - 'src/**'
       - 'pb/**'
@@ -149,6 +149,7 @@ jobs:
 
   update-kustomize:
     needs: [detect-changes, build]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
