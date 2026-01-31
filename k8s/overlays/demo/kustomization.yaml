@@ -11,13 +11,11 @@ patches:
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
+  # Scale down redundant backends - using Dash0 instead
+  - path: patches/scale-down-prometheus.yaml
+  - path: patches/scale-down-jaeger.yaml
+  - path: patches/scale-down-grafana.yaml
+  - path: patches/scale-down-opensearch.yaml
 
 # Image overrides - GitHub Actions will update tags here
-# Format: original image -> your GHCR image
 images: []
-  # - name: ghcr.io/open-telemetry/demo/adservice
-  #   newName: ghcr.io/npcomplete777/opentelemetry-demo/adservice
-  #   newTag: abc123 # adservice
-  # - name: ghcr.io/open-telemetry/demo/checkoutservice
-  #   newName: ghcr.io/npcomplete777/opentelemetry-demo/checkoutservice
-  #   newTag: abc123 # checkoutservice
