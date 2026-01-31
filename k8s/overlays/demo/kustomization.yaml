@@ -12,4 +12,12 @@ patches:
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
 
+# Image overrides - GitHub Actions will update tags here
+# Format: original image -> your GHCR image
 images: []
+  # - name: ghcr.io/open-telemetry/demo/adservice
+  #   newName: ghcr.io/npcomplete777/opentelemetry-demo/adservice
+  #   newTag: abc123 # adservice
+  # - name: ghcr.io/open-telemetry/demo/checkoutservice
+  #   newName: ghcr.io/npcomplete777/opentelemetry-demo/checkoutservice
+  #   newTag: abc123 # checkoutservice

@@ -1,0 +1,79 @@
+name: Build All Services
+
+on:
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to build (comma-separated, or "all")'
+        required: true
+        default: 'all'
+
+jobs:
+  determine-services:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [ "${{ inputs.services }}" == "all" ]; then
+            echo 'matrix={"service":["adservice","cartservice","checkoutservice","currencyservice","frontend","productcatalogservice"]}' >> $GITHUB_OUTPUT
+          else
+            # Convert comma-separated to JSON array
+            services=$(echo "${{ inputs.services }}" | jq -R -s -c 'split(",") | map(gsub("\\s"; ""))')
+            echo "matrix={\"service\":$services}" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    needs: determine-services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.determine-services.outputs.matrix) }}
+      fail-fast: false
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Find Dockerfile
+        id: dockerfile
+        run: |
+          service="${{ matrix.service }}"
+          if [ -f "src/$service/Dockerfile" ]; then
+            echo "path=src/$service/Dockerfile" >> $GITHUB_OUTPUT
+          elif [ -f "src/$service/src/Dockerfile" ]; then
+            echo "path=src/$service/src/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "No Dockerfile found for $service"
+            exit 1
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/opentelemetry-demo/${{ matrix.service }}:${{ steps.sha.outputs.short }}
+            ghcr.io/${{ github.repository_owner }}/opentelemetry-demo/${{ matrix.service }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,49 @@
+name: Build Product Catalog Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/productcatalogservice/**'
+      - 'pb/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-go-service.yaml
+    with:
+      service_name: productcatalogservice
+      service_path: src/productcatalogservice
+    permissions:
+      contents: write
+      packages: write
+
+  update-kustomize:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Kustomize overlay
+        run: |
+          cd k8s/overlays/demo
+          if ! grep -q "newName:.*productcatalogservice" kustomization.yaml; then
+            echo "  - name: ghcr.io/open-telemetry/demo/productcatalogservice" >> kustomization.yaml
+            echo "    newName: ghcr.io/${{ github.repository_owner }}/opentelemetry-demo/productcatalogservice" >> kustomization.yaml
+            echo "    newTag: ${{ needs.build.outputs.image_tag }}" >> kustomization.yaml
+          else
+            sed -i "s|newTag:.*# productcatalogservice|newTag: ${{ needs.build.outputs.image_tag }} # productcatalogservice|" kustomization.yaml
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/overlays/demo/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore: update productcatalogservice image to ${{ needs.build.outputs.image_tag }}"
+          git push
