@@ -29,6 +29,8 @@ using namespace opentelemetry::trace;
 using oteldemo::Empty;
 using oteldemo::GetSupportedCurrenciesResponse;
 using oteldemo::CurrencyConversionRequest;
+using oteldemo::ConvertCurrenciesRequest;
+using oteldemo::ConvertCurrenciesResponse;
 using oteldemo::Money;
 
 using grpc::Status;
@@ -233,6 +235,92 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       std::map<std::string, std::string> labels = { {"currency_code", currency_code} };
       auto labelkv = common::KeyValueIterableView<decltype(labels)>{ labels };
       currency_counter->Add(1, labelkv);
+  }
+
+  // ConvertCurrencies implements batch currency conversion RPC.
+  // Converts multiple amounts in a single call to avoid N+1 query pattern.
+  Status ConvertCurrencies(ServerContext* context,
+    const ConvertCurrenciesRequest* request,
+    ConvertCurrenciesResponse* response) override
+  {
+    StartSpanOptions options;
+    options.kind = SpanKind::kServer;
+    GrpcServerCarrier carrier(context);
+
+    auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
+    auto current_ctx = context::RuntimeContext::GetCurrent();
+    auto new_context = prop->Extract(carrier, current_ctx);
+    options.parent   = GetSpan(new_context)->GetContext();
+
+    std::string span_name = "Currency/ConvertCurrencies";
+    auto span =
+        get_tracer("currency")->StartSpan(span_name,
+                                      {{semconv::rpc::kRpcSystem, "grpc"},
+                                       {semconv::rpc::kRpcService, "oteldemo.CurrencyService"},
+                                       {semconv::rpc::kRpcMethod, "ConvertCurrencies"},
+                                       {semconv::rpc::kRpcGrpcStatusCode, semconv::rpc::RpcGrpcStatusCodeValues::kOk}},
+                                      options);
+    auto scope = get_tracer("currency")->WithActiveSpan(span);
+
+    int amounts_count = request->amounts_size();
+    string to_code = request->to_code();
+
+    span->SetAttribute("app.currency.batch.count", amounts_count);
+    span->SetAttribute("app.currency.conversion.to", to_code);
+    span->AddEvent("Processing batch currency conversion request");
+
+    logger->Info("ConvertCurrencies: received batch request for " +
+                 std::to_string(amounts_count) + " amounts to " + to_code);
+
+    // Handle empty request
+    if (amounts_count == 0) {
+      logger->Info("ConvertCurrencies: empty amounts array");
+      span->AddEvent("Empty amounts array, returning empty response");
+      span->SetStatus(StatusCode::kOk);
+      span->End();
+      return Status::OK;
+    }
+
+    try {
+      double to_rate = currency_conversion[to_code];
+
+      // Batch convert all amounts
+      for (int i = 0; i < amounts_count; i++) {
+        Money from = request->amounts(i);
+        string from_code = from.currency_code();
+        double from_rate = currency_conversion[from_code];
+
+        // Convert via EUR as base currency
+        double one_euro = getDouble(from) / from_rate;
+        double final_value = one_euro * to_rate;
+
+        // Add converted amount to response
+        Money* converted = response->add_converted();
+        getUnitsAndNanos(*converted, final_value);
+        converted->set_currency_code(to_code);
+
+        CurrencyCounter(to_code);
+      }
+
+      span->SetAttribute("app.currency.batch.converted_count", amounts_count);
+      span->AddEvent("Batch conversion successful, response sent back");
+      span->SetStatus(StatusCode::kOk);
+
+      logger->Info("ConvertCurrencies: successfully converted " +
+                   std::to_string(amounts_count) + " amounts");
+
+      span->End();
+      return Status::OK;
+
+    } catch(...) {
+      span->AddEvent("Batch conversion failed");
+      span->SetStatus(StatusCode::kError);
+
+      logger->Error("ConvertCurrencies: batch conversion failure");
+
+      span->End();
+      return Status::CANCELLED;
+    }
   }
 };
 

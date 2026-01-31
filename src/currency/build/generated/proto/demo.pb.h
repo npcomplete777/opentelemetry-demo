@@ -88,6 +88,12 @@ extern ChargeRequestDefaultTypeInternal _ChargeRequest_default_instance_;
 class ChargeResponse;
 struct ChargeResponseDefaultTypeInternal;
 extern ChargeResponseDefaultTypeInternal _ChargeResponse_default_instance_;
+class ConvertCurrenciesRequest;
+struct ConvertCurrenciesRequestDefaultTypeInternal;
+extern ConvertCurrenciesRequestDefaultTypeInternal _ConvertCurrenciesRequest_default_instance_;
+class ConvertCurrenciesResponse;
+struct ConvertCurrenciesResponseDefaultTypeInternal;
+extern ConvertCurrenciesResponseDefaultTypeInternal _ConvertCurrenciesResponse_default_instance_;
 class CreateFlagRequest;
 struct CreateFlagRequestDefaultTypeInternal;
 extern CreateFlagRequestDefaultTypeInternal _CreateFlagRequest_default_instance_;
@@ -139,6 +145,12 @@ extern GetProductReviewsRequestDefaultTypeInternal _GetProductReviewsRequest_def
 class GetProductReviewsResponse;
 struct GetProductReviewsResponseDefaultTypeInternal;
 extern GetProductReviewsResponseDefaultTypeInternal _GetProductReviewsResponse_default_instance_;
+class GetProductsRequest;
+struct GetProductsRequestDefaultTypeInternal;
+extern GetProductsRequestDefaultTypeInternal _GetProductsRequest_default_instance_;
+class GetProductsResponse;
+struct GetProductsResponseDefaultTypeInternal;
+extern GetProductsResponseDefaultTypeInternal _GetProductsResponse_default_instance_;
 class GetQuoteRequest;
 struct GetQuoteRequestDefaultTypeInternal;
 extern GetQuoteRequestDefaultTypeInternal _GetQuoteRequest_default_instance_;
@@ -2179,6 +2191,348 @@ class GetProductRequest final :
   friend struct ::TableStruct_demo_2eproto;
 };// -------------------------------------------------------------------
 
+class GetProductsRequest final :
+    public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:oteldemo.GetProductsRequest) */ {
+ public:
+  inline GetProductsRequest() : GetProductsRequest(nullptr) {}
+  ~GetProductsRequest() override;
+  template<typename = void>
+  explicit PROTOBUF_CONSTEXPR GetProductsRequest(::google::protobuf::internal::ConstantInitialized);
+
+  GetProductsRequest(const GetProductsRequest& from);
+  GetProductsRequest(GetProductsRequest&& from) noexcept
+    : GetProductsRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline GetProductsRequest& operator=(const GetProductsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetProductsRequest& operator=(GetProductsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetProductsRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GetProductsRequest* internal_default_instance() {
+    return reinterpret_cast<const GetProductsRequest*>(
+               &_GetProductsRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    11;
+
+  friend void swap(GetProductsRequest& a, GetProductsRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(GetProductsRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetProductsRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetProductsRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<GetProductsRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetProductsRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom( const GetProductsRequest& from) {
+    GetProductsRequest::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target, ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(GetProductsRequest* other);
+
+  private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() {
+    return "oteldemo.GetProductsRequest";
+  }
+  protected:
+  explicit GetProductsRequest(::google::protobuf::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::google::protobuf::Message::ClassData*GetClassData() const final;
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kIdsFieldNumber = 1,
+  };
+  // repeated string ids = 1;
+  int ids_size() const;
+  private:
+  int _internal_ids_size() const;
+
+  public:
+  void clear_ids() ;
+  const std::string& ids(int index) const;
+  std::string* mutable_ids(int index);
+  void set_ids(int index, const std::string& value);
+  void set_ids(int index, std::string&& value);
+  void set_ids(int index, const char* value);
+  void set_ids(int index, const char* value, std::size_t size);
+  void set_ids(int index, absl::string_view value);
+  std::string* add_ids();
+  void add_ids(const std::string& value);
+  void add_ids(std::string&& value);
+  void add_ids(const char* value);
+  void add_ids(const char* value, std::size_t size);
+  void add_ids(absl::string_view value);
+  const ::google::protobuf::RepeatedPtrField<std::string>& ids() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* mutable_ids();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<std::string>& _internal_ids() const;
+  ::google::protobuf::RepeatedPtrField<std::string>* _internal_mutable_ids();
+
+  public:
+  // @@protoc_insertion_point(class_scope:oteldemo.GetProductsRequest)
+ private:
+  class _Internal;
+
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1, 0, 39, 2> _table_;
+  template <typename T> friend class ::google::protobuf::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::google::protobuf::RepeatedPtrField<std::string> ids_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_demo_2eproto;
+};// -------------------------------------------------------------------
+
+class GetProductsResponse final :
+    public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:oteldemo.GetProductsResponse) */ {
+ public:
+  inline GetProductsResponse() : GetProductsResponse(nullptr) {}
+  ~GetProductsResponse() override;
+  template<typename = void>
+  explicit PROTOBUF_CONSTEXPR GetProductsResponse(::google::protobuf::internal::ConstantInitialized);
+
+  GetProductsResponse(const GetProductsResponse& from);
+  GetProductsResponse(GetProductsResponse&& from) noexcept
+    : GetProductsResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline GetProductsResponse& operator=(const GetProductsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetProductsResponse& operator=(GetProductsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetProductsResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const GetProductsResponse* internal_default_instance() {
+    return reinterpret_cast<const GetProductsResponse*>(
+               &_GetProductsResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    12;
+
+  friend void swap(GetProductsResponse& a, GetProductsResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(GetProductsResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetProductsResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetProductsResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<GetProductsResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetProductsResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom( const GetProductsResponse& from) {
+    GetProductsResponse::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target, ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(GetProductsResponse* other);
+
+  private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() {
+    return "oteldemo.GetProductsResponse";
+  }
+  protected:
+  explicit GetProductsResponse(::google::protobuf::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::google::protobuf::Message::ClassData*GetClassData() const final;
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kProductsFieldNumber = 1,
+  };
+  // repeated .oteldemo.Product products = 1;
+  int products_size() const;
+  private:
+  int _internal_products_size() const;
+
+  public:
+  void clear_products() ;
+  ::oteldemo::Product* mutable_products(int index);
+  ::google::protobuf::RepeatedPtrField< ::oteldemo::Product >*
+      mutable_products();
+  private:
+  const ::google::protobuf::RepeatedPtrField<::oteldemo::Product>& _internal_products() const;
+  ::google::protobuf::RepeatedPtrField<::oteldemo::Product>* _internal_mutable_products();
+  public:
+  const ::oteldemo::Product& products(int index) const;
+  ::oteldemo::Product* add_products();
+  const ::google::protobuf::RepeatedPtrField< ::oteldemo::Product >&
+      products() const;
+  // @@protoc_insertion_point(class_scope:oteldemo.GetProductsResponse)
+ private:
+  class _Internal;
+
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1, 1, 0, 2> _table_;
+  template <typename T> friend class ::google::protobuf::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::google::protobuf::RepeatedPtrField< ::oteldemo::Product > products_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_demo_2eproto;
+};// -------------------------------------------------------------------
+
 class SearchProductsRequest final :
     public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:oteldemo.SearchProductsRequest) */ {
  public:
@@ -2235,7 +2589,7 @@ class SearchProductsRequest final :
                &_SearchProductsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    13;
 
   friend void swap(SearchProductsRequest& a, SearchProductsRequest& b) {
     a.Swap(&b);
@@ -2399,7 +2753,7 @@ class SearchProductsResponse final :
                &_SearchProductsResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    14;
 
   friend void swap(SearchProductsResponse& a, SearchProductsResponse& b) {
     a.Swap(&b);
@@ -2565,7 +2919,7 @@ class ProductReview final :
                &_ProductReview_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    15;
 
   friend void swap(ProductReview& a, ProductReview& b) {
     a.Swap(&b);
@@ -2765,7 +3119,7 @@ class GetProductReviewsRequest final :
                &_GetProductReviewsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    16;
 
   friend void swap(GetProductReviewsRequest& a, GetProductReviewsRequest& b) {
     a.Swap(&b);
@@ -2929,7 +3283,7 @@ class GetProductReviewsResponse final :
                &_GetProductReviewsResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    17;
 
   friend void swap(GetProductReviewsResponse& a, GetProductReviewsResponse& b) {
     a.Swap(&b);
@@ -3095,7 +3449,7 @@ class GetAverageProductReviewScoreRequest final :
                &_GetAverageProductReviewScoreRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    16;
+    18;
 
   friend void swap(GetAverageProductReviewScoreRequest& a, GetAverageProductReviewScoreRequest& b) {
     a.Swap(&b);
@@ -3259,7 +3613,7 @@ class GetAverageProductReviewScoreResponse final :
                &_GetAverageProductReviewScoreResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    17;
+    19;
 
   friend void swap(GetAverageProductReviewScoreResponse& a, GetAverageProductReviewScoreResponse& b) {
     a.Swap(&b);
@@ -3423,7 +3777,7 @@ class AskProductAIAssistantRequest final :
                &_AskProductAIAssistantRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    18;
+    20;
 
   friend void swap(AskProductAIAssistantRequest& a, AskProductAIAssistantRequest& b) {
     a.Swap(&b);
@@ -3605,7 +3959,7 @@ class AskProductAIAssistantResponse final :
                &_AskProductAIAssistantResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    19;
+    21;
 
   friend void swap(AskProductAIAssistantResponse& a, AskProductAIAssistantResponse& b) {
     a.Swap(&b);
@@ -3769,7 +4123,7 @@ class GetQuoteRequest final :
                &_GetQuoteRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    20;
+    22;
 
   friend void swap(GetQuoteRequest& a, GetQuoteRequest& b) {
     a.Swap(&b);
@@ -3953,7 +4307,7 @@ class GetQuoteResponse final :
                &_GetQuoteResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    21;
+    23;
 
   friend void swap(GetQuoteResponse& a, GetQuoteResponse& b) {
     a.Swap(&b);
@@ -4117,7 +4471,7 @@ class ShipOrderRequest final :
                &_ShipOrderRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    22;
+    24;
 
   friend void swap(ShipOrderRequest& a, ShipOrderRequest& b) {
     a.Swap(&b);
@@ -4301,7 +4655,7 @@ class ShipOrderResponse final :
                &_ShipOrderResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    23;
+    25;
 
   friend void swap(ShipOrderResponse& a, ShipOrderResponse& b) {
     a.Swap(&b);
@@ -4465,7 +4819,7 @@ class Address final :
                &_Address_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    24;
+    26;
 
   friend void swap(Address& a, Address& b) {
     a.Swap(&b);
@@ -4701,7 +5055,7 @@ class Money final :
                &_Money_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    25;
+    27;
 
   friend void swap(Money& a, Money& b) {
     a.Swap(&b);
@@ -4889,7 +5243,7 @@ class GetSupportedCurrenciesResponse final :
                &_GetSupportedCurrenciesResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    26;
+    28;
 
   friend void swap(GetSupportedCurrenciesResponse& a, GetSupportedCurrenciesResponse& b) {
     a.Swap(&b);
@@ -5065,7 +5419,7 @@ class CurrencyConversionRequest final :
                &_CurrencyConversionRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    27;
+    29;
 
   friend void swap(CurrencyConversionRequest& a, CurrencyConversionRequest& b) {
     a.Swap(&b);
@@ -5191,6 +5545,356 @@ class CurrencyConversionRequest final :
   friend struct ::TableStruct_demo_2eproto;
 };// -------------------------------------------------------------------
 
+class ConvertCurrenciesRequest final :
+    public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:oteldemo.ConvertCurrenciesRequest) */ {
+ public:
+  inline ConvertCurrenciesRequest() : ConvertCurrenciesRequest(nullptr) {}
+  ~ConvertCurrenciesRequest() override;
+  template<typename = void>
+  explicit PROTOBUF_CONSTEXPR ConvertCurrenciesRequest(::google::protobuf::internal::ConstantInitialized);
+
+  ConvertCurrenciesRequest(const ConvertCurrenciesRequest& from);
+  ConvertCurrenciesRequest(ConvertCurrenciesRequest&& from) noexcept
+    : ConvertCurrenciesRequest() {
+    *this = ::std::move(from);
+  }
+
+  inline ConvertCurrenciesRequest& operator=(const ConvertCurrenciesRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ConvertCurrenciesRequest& operator=(ConvertCurrenciesRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ConvertCurrenciesRequest& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ConvertCurrenciesRequest* internal_default_instance() {
+    return reinterpret_cast<const ConvertCurrenciesRequest*>(
+               &_ConvertCurrenciesRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    30;
+
+  friend void swap(ConvertCurrenciesRequest& a, ConvertCurrenciesRequest& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ConvertCurrenciesRequest* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ConvertCurrenciesRequest* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ConvertCurrenciesRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ConvertCurrenciesRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ConvertCurrenciesRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom( const ConvertCurrenciesRequest& from) {
+    ConvertCurrenciesRequest::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target, ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ConvertCurrenciesRequest* other);
+
+  private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() {
+    return "oteldemo.ConvertCurrenciesRequest";
+  }
+  protected:
+  explicit ConvertCurrenciesRequest(::google::protobuf::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::google::protobuf::Message::ClassData*GetClassData() const final;
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kAmountsFieldNumber = 1,
+    kToCodeFieldNumber = 2,
+  };
+  // repeated .oteldemo.Money amounts = 1;
+  int amounts_size() const;
+  private:
+  int _internal_amounts_size() const;
+
+  public:
+  void clear_amounts() ;
+  ::oteldemo::Money* mutable_amounts(int index);
+  ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >*
+      mutable_amounts();
+  private:
+  const ::google::protobuf::RepeatedPtrField<::oteldemo::Money>& _internal_amounts() const;
+  ::google::protobuf::RepeatedPtrField<::oteldemo::Money>* _internal_mutable_amounts();
+  public:
+  const ::oteldemo::Money& amounts(int index) const;
+  ::oteldemo::Money* add_amounts();
+  const ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >&
+      amounts() const;
+  // string to_code = 2;
+  void clear_to_code() ;
+  const std::string& to_code() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_to_code(Arg_&& arg, Args_... args);
+  std::string* mutable_to_code();
+  PROTOBUF_NODISCARD std::string* release_to_code();
+  void set_allocated_to_code(std::string* ptr);
+
+  private:
+  const std::string& _internal_to_code() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_to_code(
+      const std::string& value);
+  std::string* _internal_mutable_to_code();
+
+  public:
+  // @@protoc_insertion_point(class_scope:oteldemo.ConvertCurrenciesRequest)
+ private:
+  class _Internal;
+
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2, 1, 49, 2> _table_;
+  template <typename T> friend class ::google::protobuf::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::google::protobuf::RepeatedPtrField< ::oteldemo::Money > amounts_;
+    ::google::protobuf::internal::ArenaStringPtr to_code_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_demo_2eproto;
+};// -------------------------------------------------------------------
+
+class ConvertCurrenciesResponse final :
+    public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:oteldemo.ConvertCurrenciesResponse) */ {
+ public:
+  inline ConvertCurrenciesResponse() : ConvertCurrenciesResponse(nullptr) {}
+  ~ConvertCurrenciesResponse() override;
+  template<typename = void>
+  explicit PROTOBUF_CONSTEXPR ConvertCurrenciesResponse(::google::protobuf::internal::ConstantInitialized);
+
+  ConvertCurrenciesResponse(const ConvertCurrenciesResponse& from);
+  ConvertCurrenciesResponse(ConvertCurrenciesResponse&& from) noexcept
+    : ConvertCurrenciesResponse() {
+    *this = ::std::move(from);
+  }
+
+  inline ConvertCurrenciesResponse& operator=(const ConvertCurrenciesResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ConvertCurrenciesResponse& operator=(ConvertCurrenciesResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ConvertCurrenciesResponse& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const ConvertCurrenciesResponse* internal_default_instance() {
+    return reinterpret_cast<const ConvertCurrenciesResponse*>(
+               &_ConvertCurrenciesResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    31;
+
+  friend void swap(ConvertCurrenciesResponse& a, ConvertCurrenciesResponse& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ConvertCurrenciesResponse* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ConvertCurrenciesResponse* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ConvertCurrenciesResponse* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<ConvertCurrenciesResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ConvertCurrenciesResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom( const ConvertCurrenciesResponse& from) {
+    ConvertCurrenciesResponse::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  ::size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::google::protobuf::internal::ParseContext* ctx) final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target, ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ConvertCurrenciesResponse* other);
+
+  private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() {
+    return "oteldemo.ConvertCurrenciesResponse";
+  }
+  protected:
+  explicit ConvertCurrenciesResponse(::google::protobuf::Arena* arena);
+  public:
+
+  static const ClassData _class_data_;
+  const ::google::protobuf::Message::ClassData*GetClassData() const final;
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kConvertedFieldNumber = 1,
+  };
+  // repeated .oteldemo.Money converted = 1;
+  int converted_size() const;
+  private:
+  int _internal_converted_size() const;
+
+  public:
+  void clear_converted() ;
+  ::oteldemo::Money* mutable_converted(int index);
+  ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >*
+      mutable_converted();
+  private:
+  const ::google::protobuf::RepeatedPtrField<::oteldemo::Money>& _internal_converted() const;
+  ::google::protobuf::RepeatedPtrField<::oteldemo::Money>* _internal_mutable_converted();
+  public:
+  const ::oteldemo::Money& converted(int index) const;
+  ::oteldemo::Money* add_converted();
+  const ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >&
+      converted() const;
+  // @@protoc_insertion_point(class_scope:oteldemo.ConvertCurrenciesResponse)
+ private:
+  class _Internal;
+
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1, 1, 0, 2> _table_;
+  template <typename T> friend class ::google::protobuf::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::google::protobuf::RepeatedPtrField< ::oteldemo::Money > converted_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_demo_2eproto;
+};// -------------------------------------------------------------------
+
 class CreditCardInfo final :
     public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:oteldemo.CreditCardInfo) */ {
  public:
@@ -5247,7 +5951,7 @@ class CreditCardInfo final :
                &_CreditCardInfo_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    32;
 
   friend void swap(CreditCardInfo& a, CreditCardInfo& b) {
     a.Swap(&b);
@@ -5447,7 +6151,7 @@ class ChargeRequest final :
                &_ChargeRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    33;
 
   friend void swap(ChargeRequest& a, ChargeRequest& b) {
     a.Swap(&b);
@@ -5628,7 +6332,7 @@ class ChargeResponse final :
                &_ChargeResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    34;
 
   friend void swap(ChargeResponse& a, ChargeResponse& b) {
     a.Swap(&b);
@@ -5792,7 +6496,7 @@ class OrderItem final :
                &_OrderItem_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    35;
 
   friend void swap(OrderItem& a, OrderItem& b) {
     a.Swap(&b);
@@ -5973,7 +6677,7 @@ class OrderResult final :
                &_OrderResult_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    36;
 
   friend void swap(OrderResult& a, OrderResult& b) {
     a.Swap(&b);
@@ -6210,7 +6914,7 @@ class SendOrderConfirmationRequest final :
                &_SendOrderConfirmationRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    37;
 
   friend void swap(SendOrderConfirmationRequest& a, SendOrderConfirmationRequest& b) {
     a.Swap(&b);
@@ -6392,7 +7096,7 @@ class PlaceOrderRequest final :
                &_PlaceOrderRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    38;
 
   friend void swap(PlaceOrderRequest& a, PlaceOrderRequest& b) {
     a.Swap(&b);
@@ -6627,7 +7331,7 @@ class PlaceOrderResponse final :
                &_PlaceOrderResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    39;
 
   friend void swap(PlaceOrderResponse& a, PlaceOrderResponse& b) {
     a.Swap(&b);
@@ -6791,7 +7495,7 @@ class AdRequest final :
                &_AdRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    40;
 
   friend void swap(AdRequest& a, AdRequest& b) {
     a.Swap(&b);
@@ -6967,7 +7671,7 @@ class AdResponse final :
                &_AdResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    41;
 
   friend void swap(AdResponse& a, AdResponse& b) {
     a.Swap(&b);
@@ -7133,7 +7837,7 @@ class Ad final :
                &_Ad_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    42;
 
   friend void swap(Ad& a, Ad& b) {
     a.Swap(&b);
@@ -7315,7 +8019,7 @@ class Flag final :
                &_Flag_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    43;
 
   friend void swap(Flag& a, Flag& b) {
     a.Swap(&b);
@@ -7509,7 +8213,7 @@ class GetFlagRequest final :
                &_GetFlagRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    44;
 
   friend void swap(GetFlagRequest& a, GetFlagRequest& b) {
     a.Swap(&b);
@@ -7673,7 +8377,7 @@ class GetFlagResponse final :
                &_GetFlagResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    45;
 
   friend void swap(GetFlagResponse& a, GetFlagResponse& b) {
     a.Swap(&b);
@@ -7837,7 +8541,7 @@ class CreateFlagRequest final :
                &_CreateFlagRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    46;
 
   friend void swap(CreateFlagRequest& a, CreateFlagRequest& b) {
     a.Swap(&b);
@@ -8031,7 +8735,7 @@ class CreateFlagResponse final :
                &_CreateFlagResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    47;
 
   friend void swap(CreateFlagResponse& a, CreateFlagResponse& b) {
     a.Swap(&b);
@@ -8195,7 +8899,7 @@ class UpdateFlagRequest final :
                &_UpdateFlagRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    48;
 
   friend void swap(UpdateFlagRequest& a, UpdateFlagRequest& b) {
     a.Swap(&b);
@@ -8370,7 +9074,7 @@ class UpdateFlagResponse final :
                &_UpdateFlagResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    49;
 
   friend void swap(UpdateFlagResponse& a, UpdateFlagResponse& b) {
     a.Swap(&b);
@@ -8495,7 +9199,7 @@ class ListFlagsRequest final :
                &_ListFlagsRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    50;
 
   friend void swap(ListFlagsRequest& a, ListFlagsRequest& b) {
     a.Swap(&b);
@@ -8621,7 +9325,7 @@ class ListFlagsResponse final :
                &_ListFlagsResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    51;
 
   friend void swap(ListFlagsResponse& a, ListFlagsResponse& b) {
     a.Swap(&b);
@@ -8787,7 +9491,7 @@ class DeleteFlagRequest final :
                &_DeleteFlagRequest_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    52;
 
   friend void swap(DeleteFlagRequest& a, DeleteFlagRequest& b) {
     a.Swap(&b);
@@ -8950,7 +9654,7 @@ class DeleteFlagResponse final :
                &_DeleteFlagResponse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    53;
 
   friend void swap(DeleteFlagResponse& a, DeleteFlagResponse& b) {
     a.Swap(&b);
@@ -10229,6 +10933,156 @@ inline void GetProductRequest::set_allocated_id(std::string* value) {
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:oteldemo.GetProductRequest.id)
+}
+
+// -------------------------------------------------------------------
+
+// GetProductsRequest
+
+// repeated string ids = 1;
+inline int GetProductsRequest::_internal_ids_size() const {
+  return _internal_ids().size();
+}
+inline int GetProductsRequest::ids_size() const {
+  return _internal_ids_size();
+}
+inline void GetProductsRequest::clear_ids() {
+  _internal_mutable_ids()->Clear();
+}
+inline std::string* GetProductsRequest::add_ids() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  std::string* _s = _internal_mutable_ids()->Add();
+  // @@protoc_insertion_point(field_add_mutable:oteldemo.GetProductsRequest.ids)
+  return _s;
+}
+inline const std::string& GetProductsRequest::ids(int index) const {
+  // @@protoc_insertion_point(field_get:oteldemo.GetProductsRequest.ids)
+  return _internal_ids().Get(index);
+}
+inline std::string* GetProductsRequest::mutable_ids(int index) {
+  // @@protoc_insertion_point(field_mutable:oteldemo.GetProductsRequest.ids)
+  return _internal_mutable_ids()->Mutable(index);
+}
+inline void GetProductsRequest::set_ids(int index, const std::string& value) {
+  _internal_mutable_ids()->Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::set_ids(int index, std::string&& value) {
+  _internal_mutable_ids()->Mutable(index)->assign(std::move(value));
+  // @@protoc_insertion_point(field_set:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::set_ids(int index, const char* value) {
+  ABSL_DCHECK(value != nullptr);
+  _internal_mutable_ids()->Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::set_ids(int index, const char* value,
+                              std::size_t size) {
+  _internal_mutable_ids()->Mutable(index)->assign(
+      reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::set_ids(int index, absl::string_view value) {
+  _internal_mutable_ids()->Mutable(index)->assign(value.data(),
+                                                     value.size());
+  // @@protoc_insertion_point(field_set_string_piece:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::add_ids(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_ids()->Add()->assign(value);
+  // @@protoc_insertion_point(field_add:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::add_ids(std::string&& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_ids()->Add(std::move(value));
+  // @@protoc_insertion_point(field_add:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::add_ids(const char* value) {
+  ABSL_DCHECK(value != nullptr);
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_ids()->Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::add_ids(const char* value, std::size_t size) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_ids()->Add()->assign(
+      reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:oteldemo.GetProductsRequest.ids)
+}
+inline void GetProductsRequest::add_ids(absl::string_view value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _internal_mutable_ids()->Add()->assign(value.data(), value.size());
+  // @@protoc_insertion_point(field_add_string_piece:oteldemo.GetProductsRequest.ids)
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+GetProductsRequest::ids() const {
+  // @@protoc_insertion_point(field_list:oteldemo.GetProductsRequest.ids)
+  return _internal_ids();
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>* GetProductsRequest::mutable_ids() {
+  // @@protoc_insertion_point(field_mutable_list:oteldemo.GetProductsRequest.ids)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_ids();
+}
+inline const ::google::protobuf::RepeatedPtrField<std::string>&
+GetProductsRequest::_internal_ids() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.ids_;
+}
+inline ::google::protobuf::RepeatedPtrField<std::string>*
+GetProductsRequest::_internal_mutable_ids() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.ids_;
+}
+
+// -------------------------------------------------------------------
+
+// GetProductsResponse
+
+// repeated .oteldemo.Product products = 1;
+inline int GetProductsResponse::_internal_products_size() const {
+  return _internal_products().size();
+}
+inline int GetProductsResponse::products_size() const {
+  return _internal_products_size();
+}
+inline void GetProductsResponse::clear_products() {
+  _internal_mutable_products()->Clear();
+}
+inline ::oteldemo::Product* GetProductsResponse::mutable_products(int index) {
+  // @@protoc_insertion_point(field_mutable:oteldemo.GetProductsResponse.products)
+  return _internal_mutable_products()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField< ::oteldemo::Product >*
+GetProductsResponse::mutable_products() {
+  // @@protoc_insertion_point(field_mutable_list:oteldemo.GetProductsResponse.products)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_products();
+}
+inline const ::oteldemo::Product& GetProductsResponse::products(int index) const {
+  // @@protoc_insertion_point(field_get:oteldemo.GetProductsResponse.products)
+    return _internal_products().Get(index);
+}
+inline ::oteldemo::Product* GetProductsResponse::add_products() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::oteldemo::Product* _add = _internal_mutable_products()->Add();
+  // @@protoc_insertion_point(field_add:oteldemo.GetProductsResponse.products)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::oteldemo::Product >&
+GetProductsResponse::products() const {
+  // @@protoc_insertion_point(field_list:oteldemo.GetProductsResponse.products)
+  return _internal_products();
+}
+inline const ::google::protobuf::RepeatedPtrField<::oteldemo::Product>&
+GetProductsResponse::_internal_products() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.products_;
+}
+inline ::google::protobuf::RepeatedPtrField<::oteldemo::Product>*
+GetProductsResponse::_internal_mutable_products() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.products_;
 }
 
 // -------------------------------------------------------------------
@@ -11923,6 +12777,157 @@ inline void CurrencyConversionRequest::set_allocated_to_code(std::string* value)
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:oteldemo.CurrencyConversionRequest.to_code)
+}
+
+// -------------------------------------------------------------------
+
+// ConvertCurrenciesRequest
+
+// repeated .oteldemo.Money amounts = 1;
+inline int ConvertCurrenciesRequest::_internal_amounts_size() const {
+  return _internal_amounts().size();
+}
+inline int ConvertCurrenciesRequest::amounts_size() const {
+  return _internal_amounts_size();
+}
+inline void ConvertCurrenciesRequest::clear_amounts() {
+  _internal_mutable_amounts()->Clear();
+}
+inline ::oteldemo::Money* ConvertCurrenciesRequest::mutable_amounts(int index) {
+  // @@protoc_insertion_point(field_mutable:oteldemo.ConvertCurrenciesRequest.amounts)
+  return _internal_mutable_amounts()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >*
+ConvertCurrenciesRequest::mutable_amounts() {
+  // @@protoc_insertion_point(field_mutable_list:oteldemo.ConvertCurrenciesRequest.amounts)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_amounts();
+}
+inline const ::oteldemo::Money& ConvertCurrenciesRequest::amounts(int index) const {
+  // @@protoc_insertion_point(field_get:oteldemo.ConvertCurrenciesRequest.amounts)
+    return _internal_amounts().Get(index);
+}
+inline ::oteldemo::Money* ConvertCurrenciesRequest::add_amounts() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::oteldemo::Money* _add = _internal_mutable_amounts()->Add();
+  // @@protoc_insertion_point(field_add:oteldemo.ConvertCurrenciesRequest.amounts)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >&
+ConvertCurrenciesRequest::amounts() const {
+  // @@protoc_insertion_point(field_list:oteldemo.ConvertCurrenciesRequest.amounts)
+  return _internal_amounts();
+}
+inline const ::google::protobuf::RepeatedPtrField<::oteldemo::Money>&
+ConvertCurrenciesRequest::_internal_amounts() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.amounts_;
+}
+inline ::google::protobuf::RepeatedPtrField<::oteldemo::Money>*
+ConvertCurrenciesRequest::_internal_mutable_amounts() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.amounts_;
+}
+
+// string to_code = 2;
+inline void ConvertCurrenciesRequest::clear_to_code() {
+  _impl_.to_code_.ClearToEmpty();
+}
+inline const std::string& ConvertCurrenciesRequest::to_code() const {
+  // @@protoc_insertion_point(field_get:oteldemo.ConvertCurrenciesRequest.to_code)
+  return _internal_to_code();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void ConvertCurrenciesRequest::set_to_code(Arg_&& arg,
+                                                     Args_... args) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ;
+  _impl_.to_code_.Set(static_cast<Arg_&&>(arg), args..., GetArenaForAllocation());
+  // @@protoc_insertion_point(field_set:oteldemo.ConvertCurrenciesRequest.to_code)
+}
+inline std::string* ConvertCurrenciesRequest::mutable_to_code() {
+  std::string* _s = _internal_mutable_to_code();
+  // @@protoc_insertion_point(field_mutable:oteldemo.ConvertCurrenciesRequest.to_code)
+  return _s;
+}
+inline const std::string& ConvertCurrenciesRequest::_internal_to_code() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.to_code_.Get();
+}
+inline void ConvertCurrenciesRequest::_internal_set_to_code(const std::string& value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ;
+  _impl_.to_code_.Set(value, GetArenaForAllocation());
+}
+inline std::string* ConvertCurrenciesRequest::_internal_mutable_to_code() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ;
+  return _impl_.to_code_.Mutable( GetArenaForAllocation());
+}
+inline std::string* ConvertCurrenciesRequest::release_to_code() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  // @@protoc_insertion_point(field_release:oteldemo.ConvertCurrenciesRequest.to_code)
+  return _impl_.to_code_.Release();
+}
+inline void ConvertCurrenciesRequest::set_allocated_to_code(std::string* value) {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  _impl_.to_code_.SetAllocated(value, GetArenaForAllocation());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.to_code_.IsDefault()) {
+          _impl_.to_code_.Set("", GetArenaForAllocation());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:oteldemo.ConvertCurrenciesRequest.to_code)
+}
+
+// -------------------------------------------------------------------
+
+// ConvertCurrenciesResponse
+
+// repeated .oteldemo.Money converted = 1;
+inline int ConvertCurrenciesResponse::_internal_converted_size() const {
+  return _internal_converted().size();
+}
+inline int ConvertCurrenciesResponse::converted_size() const {
+  return _internal_converted_size();
+}
+inline void ConvertCurrenciesResponse::clear_converted() {
+  _internal_mutable_converted()->Clear();
+}
+inline ::oteldemo::Money* ConvertCurrenciesResponse::mutable_converted(int index) {
+  // @@protoc_insertion_point(field_mutable:oteldemo.ConvertCurrenciesResponse.converted)
+  return _internal_mutable_converted()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >*
+ConvertCurrenciesResponse::mutable_converted() {
+  // @@protoc_insertion_point(field_mutable_list:oteldemo.ConvertCurrenciesResponse.converted)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  return _internal_mutable_converted();
+}
+inline const ::oteldemo::Money& ConvertCurrenciesResponse::converted(int index) const {
+  // @@protoc_insertion_point(field_get:oteldemo.ConvertCurrenciesResponse.converted)
+    return _internal_converted().Get(index);
+}
+inline ::oteldemo::Money* ConvertCurrenciesResponse::add_converted() {
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
+  ::oteldemo::Money* _add = _internal_mutable_converted()->Add();
+  // @@protoc_insertion_point(field_add:oteldemo.ConvertCurrenciesResponse.converted)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::oteldemo::Money >&
+ConvertCurrenciesResponse::converted() const {
+  // @@protoc_insertion_point(field_list:oteldemo.ConvertCurrenciesResponse.converted)
+  return _internal_converted();
+}
+inline const ::google::protobuf::RepeatedPtrField<::oteldemo::Money>&
+ConvertCurrenciesResponse::_internal_converted() const {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return _impl_.converted_;
+}
+inline ::google::protobuf::RepeatedPtrField<::oteldemo::Money>*
+ConvertCurrenciesResponse::_internal_mutable_converted() {
+  PROTOBUF_TSAN_READ(&_impl_._tsan_detect_race);
+  return &_impl_.converted_;
 }
 
 // -------------------------------------------------------------------

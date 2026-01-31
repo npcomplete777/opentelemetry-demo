@@ -238,6 +238,38 @@ struct GetProductRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetProductRequestDefaultTypeInternal _GetProductRequest_default_instance_;
         template <typename>
+PROTOBUF_CONSTEXPR GetProductsRequest::GetProductsRequest(::_pbi::ConstantInitialized)
+    : _impl_{
+      /*decltype(_impl_.ids_)*/ {},
+      /*decltype(_impl_._cached_size_)*/ {},
+    } {}
+struct GetProductsRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetProductsRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetProductsRequestDefaultTypeInternal() {}
+  union {
+    GetProductsRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetProductsRequestDefaultTypeInternal _GetProductsRequest_default_instance_;
+        template <typename>
+PROTOBUF_CONSTEXPR GetProductsResponse::GetProductsResponse(::_pbi::ConstantInitialized)
+    : _impl_{
+      /*decltype(_impl_.products_)*/ {},
+      /*decltype(_impl_._cached_size_)*/ {},
+    } {}
+struct GetProductsResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetProductsResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetProductsResponseDefaultTypeInternal() {}
+  union {
+    GetProductsResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetProductsResponseDefaultTypeInternal _GetProductsResponse_default_instance_;
+        template <typename>
 PROTOBUF_CONSTEXPR SearchProductsRequest::SearchProductsRequest(::_pbi::ConstantInitialized)
     : _impl_{
       /*decltype(_impl_.query_)*/ {
@@ -579,6 +611,42 @@ struct CurrencyConversionRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CurrencyConversionRequestDefaultTypeInternal _CurrencyConversionRequest_default_instance_;
+        template <typename>
+PROTOBUF_CONSTEXPR ConvertCurrenciesRequest::ConvertCurrenciesRequest(::_pbi::ConstantInitialized)
+    : _impl_{
+      /*decltype(_impl_.amounts_)*/ {},
+      /*decltype(_impl_.to_code_)*/ {
+          &::_pbi::fixed_address_empty_string,
+          ::_pbi::ConstantInitialized{},
+      },
+      /*decltype(_impl_._cached_size_)*/ {},
+    } {}
+struct ConvertCurrenciesRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ConvertCurrenciesRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ConvertCurrenciesRequestDefaultTypeInternal() {}
+  union {
+    ConvertCurrenciesRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConvertCurrenciesRequestDefaultTypeInternal _ConvertCurrenciesRequest_default_instance_;
+        template <typename>
+PROTOBUF_CONSTEXPR ConvertCurrenciesResponse::ConvertCurrenciesResponse(::_pbi::ConstantInitialized)
+    : _impl_{
+      /*decltype(_impl_.converted_)*/ {},
+      /*decltype(_impl_._cached_size_)*/ {},
+    } {}
+struct ConvertCurrenciesResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ConvertCurrenciesResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ConvertCurrenciesResponseDefaultTypeInternal() {}
+  union {
+    ConvertCurrenciesResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ConvertCurrenciesResponseDefaultTypeInternal _ConvertCurrenciesResponse_default_instance_;
         template <typename>
 PROTOBUF_CONSTEXPR CreditCardInfo::CreditCardInfo(::_pbi::ConstantInitialized)
     : _impl_{
@@ -999,7 +1067,7 @@ struct DeleteFlagResponseDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DeleteFlagResponseDefaultTypeInternal _DeleteFlagResponse_default_instance_;
 }  // namespace oteldemo
-static ::_pb::Metadata file_level_metadata_demo_2eproto[50];
+static ::_pb::Metadata file_level_metadata_demo_2eproto[54];
 static constexpr const ::_pb::EnumDescriptor**
     file_level_enum_descriptors_demo_2eproto = nullptr;
 static constexpr const ::_pb::ServiceDescriptor**
@@ -1121,6 +1189,24 @@ const ::uint32_t TableStruct_demo_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(
     ~0u,  // no _split_
     ~0u,  // no sizeof(Split)
     PROTOBUF_FIELD_OFFSET(::oteldemo::GetProductRequest, _impl_.id_),
+    ~0u,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(::oteldemo::GetProductsRequest, _internal_metadata_),
+    ~0u,  // no _extensions_
+    ~0u,  // no _oneof_case_
+    ~0u,  // no _weak_field_map_
+    ~0u,  // no _inlined_string_donated_
+    ~0u,  // no _split_
+    ~0u,  // no sizeof(Split)
+    PROTOBUF_FIELD_OFFSET(::oteldemo::GetProductsRequest, _impl_.ids_),
+    ~0u,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(::oteldemo::GetProductsResponse, _internal_metadata_),
+    ~0u,  // no _extensions_
+    ~0u,  // no _oneof_case_
+    ~0u,  // no _weak_field_map_
+    ~0u,  // no _inlined_string_donated_
+    ~0u,  // no _split_
+    ~0u,  // no sizeof(Split)
+    PROTOBUF_FIELD_OFFSET(::oteldemo::GetProductsResponse, _impl_.products_),
     ~0u,  // no _has_bits_
     PROTOBUF_FIELD_OFFSET(::oteldemo::SearchProductsRequest, _internal_metadata_),
     ~0u,  // no _extensions_
@@ -1293,6 +1379,25 @@ const ::uint32_t TableStruct_demo_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(
     PROTOBUF_FIELD_OFFSET(::oteldemo::CurrencyConversionRequest, _impl_.to_code_),
     0,
     ~0u,
+    ~0u,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(::oteldemo::ConvertCurrenciesRequest, _internal_metadata_),
+    ~0u,  // no _extensions_
+    ~0u,  // no _oneof_case_
+    ~0u,  // no _weak_field_map_
+    ~0u,  // no _inlined_string_donated_
+    ~0u,  // no _split_
+    ~0u,  // no sizeof(Split)
+    PROTOBUF_FIELD_OFFSET(::oteldemo::ConvertCurrenciesRequest, _impl_.amounts_),
+    PROTOBUF_FIELD_OFFSET(::oteldemo::ConvertCurrenciesRequest, _impl_.to_code_),
+    ~0u,  // no _has_bits_
+    PROTOBUF_FIELD_OFFSET(::oteldemo::ConvertCurrenciesResponse, _internal_metadata_),
+    ~0u,  // no _extensions_
+    ~0u,  // no _oneof_case_
+    ~0u,  // no _weak_field_map_
+    ~0u,  // no _inlined_string_donated_
+    ~0u,  // no _split_
+    ~0u,  // no sizeof(Split)
+    PROTOBUF_FIELD_OFFSET(::oteldemo::ConvertCurrenciesResponse, _impl_.converted_),
     ~0u,  // no _has_bits_
     PROTOBUF_FIELD_OFFSET(::oteldemo::CreditCardInfo, _internal_metadata_),
     ~0u,  // no _extensions_
@@ -1542,45 +1647,49 @@ static const ::_pbi::MigrationSchema
         {77, 91, -1, sizeof(::oteldemo::Product)},
         {97, -1, -1, sizeof(::oteldemo::ListProductsResponse)},
         {106, -1, -1, sizeof(::oteldemo::GetProductRequest)},
-        {115, -1, -1, sizeof(::oteldemo::SearchProductsRequest)},
-        {124, -1, -1, sizeof(::oteldemo::SearchProductsResponse)},
-        {133, -1, -1, sizeof(::oteldemo::ProductReview)},
-        {144, -1, -1, sizeof(::oteldemo::GetProductReviewsRequest)},
-        {153, -1, -1, sizeof(::oteldemo::GetProductReviewsResponse)},
-        {162, -1, -1, sizeof(::oteldemo::GetAverageProductReviewScoreRequest)},
-        {171, -1, -1, sizeof(::oteldemo::GetAverageProductReviewScoreResponse)},
-        {180, -1, -1, sizeof(::oteldemo::AskProductAIAssistantRequest)},
-        {190, -1, -1, sizeof(::oteldemo::AskProductAIAssistantResponse)},
-        {199, 209, -1, sizeof(::oteldemo::GetQuoteRequest)},
-        {211, 220, -1, sizeof(::oteldemo::GetQuoteResponse)},
-        {221, 231, -1, sizeof(::oteldemo::ShipOrderRequest)},
-        {233, -1, -1, sizeof(::oteldemo::ShipOrderResponse)},
-        {242, -1, -1, sizeof(::oteldemo::Address)},
-        {255, -1, -1, sizeof(::oteldemo::Money)},
-        {266, -1, -1, sizeof(::oteldemo::GetSupportedCurrenciesResponse)},
-        {275, 285, -1, sizeof(::oteldemo::CurrencyConversionRequest)},
-        {287, -1, -1, sizeof(::oteldemo::CreditCardInfo)},
-        {299, 309, -1, sizeof(::oteldemo::ChargeRequest)},
-        {311, -1, -1, sizeof(::oteldemo::ChargeResponse)},
-        {320, 330, -1, sizeof(::oteldemo::OrderItem)},
-        {332, 345, -1, sizeof(::oteldemo::OrderResult)},
-        {350, 360, -1, sizeof(::oteldemo::SendOrderConfirmationRequest)},
-        {362, 375, -1, sizeof(::oteldemo::PlaceOrderRequest)},
-        {380, 389, -1, sizeof(::oteldemo::PlaceOrderResponse)},
-        {390, -1, -1, sizeof(::oteldemo::AdRequest)},
-        {399, -1, -1, sizeof(::oteldemo::AdResponse)},
-        {408, -1, -1, sizeof(::oteldemo::Ad)},
-        {418, -1, -1, sizeof(::oteldemo::Flag)},
-        {429, -1, -1, sizeof(::oteldemo::GetFlagRequest)},
-        {438, 447, -1, sizeof(::oteldemo::GetFlagResponse)},
-        {448, -1, -1, sizeof(::oteldemo::CreateFlagRequest)},
-        {459, 468, -1, sizeof(::oteldemo::CreateFlagResponse)},
-        {469, -1, -1, sizeof(::oteldemo::UpdateFlagRequest)},
-        {479, -1, -1, sizeof(::oteldemo::UpdateFlagResponse)},
-        {487, -1, -1, sizeof(::oteldemo::ListFlagsRequest)},
-        {495, -1, -1, sizeof(::oteldemo::ListFlagsResponse)},
-        {504, -1, -1, sizeof(::oteldemo::DeleteFlagRequest)},
-        {513, -1, -1, sizeof(::oteldemo::DeleteFlagResponse)},
+        {115, -1, -1, sizeof(::oteldemo::GetProductsRequest)},
+        {124, -1, -1, sizeof(::oteldemo::GetProductsResponse)},
+        {133, -1, -1, sizeof(::oteldemo::SearchProductsRequest)},
+        {142, -1, -1, sizeof(::oteldemo::SearchProductsResponse)},
+        {151, -1, -1, sizeof(::oteldemo::ProductReview)},
+        {162, -1, -1, sizeof(::oteldemo::GetProductReviewsRequest)},
+        {171, -1, -1, sizeof(::oteldemo::GetProductReviewsResponse)},
+        {180, -1, -1, sizeof(::oteldemo::GetAverageProductReviewScoreRequest)},
+        {189, -1, -1, sizeof(::oteldemo::GetAverageProductReviewScoreResponse)},
+        {198, -1, -1, sizeof(::oteldemo::AskProductAIAssistantRequest)},
+        {208, -1, -1, sizeof(::oteldemo::AskProductAIAssistantResponse)},
+        {217, 227, -1, sizeof(::oteldemo::GetQuoteRequest)},
+        {229, 238, -1, sizeof(::oteldemo::GetQuoteResponse)},
+        {239, 249, -1, sizeof(::oteldemo::ShipOrderRequest)},
+        {251, -1, -1, sizeof(::oteldemo::ShipOrderResponse)},
+        {260, -1, -1, sizeof(::oteldemo::Address)},
+        {273, -1, -1, sizeof(::oteldemo::Money)},
+        {284, -1, -1, sizeof(::oteldemo::GetSupportedCurrenciesResponse)},
+        {293, 303, -1, sizeof(::oteldemo::CurrencyConversionRequest)},
+        {305, -1, -1, sizeof(::oteldemo::ConvertCurrenciesRequest)},
+        {315, -1, -1, sizeof(::oteldemo::ConvertCurrenciesResponse)},
+        {324, -1, -1, sizeof(::oteldemo::CreditCardInfo)},
+        {336, 346, -1, sizeof(::oteldemo::ChargeRequest)},
+        {348, -1, -1, sizeof(::oteldemo::ChargeResponse)},
+        {357, 367, -1, sizeof(::oteldemo::OrderItem)},
+        {369, 382, -1, sizeof(::oteldemo::OrderResult)},
+        {387, 397, -1, sizeof(::oteldemo::SendOrderConfirmationRequest)},
+        {399, 412, -1, sizeof(::oteldemo::PlaceOrderRequest)},
+        {417, 426, -1, sizeof(::oteldemo::PlaceOrderResponse)},
+        {427, -1, -1, sizeof(::oteldemo::AdRequest)},
+        {436, -1, -1, sizeof(::oteldemo::AdResponse)},
+        {445, -1, -1, sizeof(::oteldemo::Ad)},
+        {455, -1, -1, sizeof(::oteldemo::Flag)},
+        {466, -1, -1, sizeof(::oteldemo::GetFlagRequest)},
+        {475, 484, -1, sizeof(::oteldemo::GetFlagResponse)},
+        {485, -1, -1, sizeof(::oteldemo::CreateFlagRequest)},
+        {496, 505, -1, sizeof(::oteldemo::CreateFlagResponse)},
+        {506, -1, -1, sizeof(::oteldemo::UpdateFlagRequest)},
+        {516, -1, -1, sizeof(::oteldemo::UpdateFlagResponse)},
+        {524, -1, -1, sizeof(::oteldemo::ListFlagsRequest)},
+        {532, -1, -1, sizeof(::oteldemo::ListFlagsResponse)},
+        {541, -1, -1, sizeof(::oteldemo::DeleteFlagRequest)},
+        {550, -1, -1, sizeof(::oteldemo::DeleteFlagResponse)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -1595,6 +1704,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::oteldemo::_Product_default_instance_._instance,
     &::oteldemo::_ListProductsResponse_default_instance_._instance,
     &::oteldemo::_GetProductRequest_default_instance_._instance,
+    &::oteldemo::_GetProductsRequest_default_instance_._instance,
+    &::oteldemo::_GetProductsResponse_default_instance_._instance,
     &::oteldemo::_SearchProductsRequest_default_instance_._instance,
     &::oteldemo::_SearchProductsResponse_default_instance_._instance,
     &::oteldemo::_ProductReview_default_instance_._instance,
@@ -1612,6 +1723,8 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::oteldemo::_Money_default_instance_._instance,
     &::oteldemo::_GetSupportedCurrenciesResponse_default_instance_._instance,
     &::oteldemo::_CurrencyConversionRequest_default_instance_._instance,
+    &::oteldemo::_ConvertCurrenciesRequest_default_instance_._instance,
+    &::oteldemo::_ConvertCurrenciesResponse_default_instance_._instance,
     &::oteldemo::_CreditCardInfo_default_instance_._instance,
     &::oteldemo::_ChargeRequest_default_instance_._instance,
     &::oteldemo::_ChargeResponse_default_instance_._instance,
@@ -1651,133 +1764,144 @@ const char descriptor_table_protodef_demo_2eproto[] PROTOBUF_SECTION_VARIABLE(pr
     "\n\tprice_usd\030\005 \001(\0132\017.oteldemo.Money\022\022\n\nca"
     "tegories\030\006 \003(\t\";\n\024ListProductsResponse\022#"
     "\n\010products\030\001 \003(\0132\021.oteldemo.Product\"\037\n\021G"
-    "etProductRequest\022\n\n\002id\030\001 \001(\t\"&\n\025SearchPr"
-    "oductsRequest\022\r\n\005query\030\001 \001(\t\"<\n\026SearchPr"
-    "oductsResponse\022\"\n\007results\030\001 \003(\0132\021.otelde"
-    "mo.Product\"E\n\rProductReview\022\020\n\010username\030"
-    "\001 \001(\t\022\023\n\013description\030\002 \001(\t\022\r\n\005score\030\003 \001("
-    "\t\".\n\030GetProductReviewsRequest\022\022\n\nproduct"
-    "_id\030\001 \001(\t\"M\n\031GetProductReviewsResponse\0220"
-    "\n\017product_reviews\030\001 \003(\0132\027.oteldemo.Produ"
-    "ctReview\"9\n#GetAverageProductReviewScore"
-    "Request\022\022\n\nproduct_id\030\001 \001(\t\"=\n$GetAverag"
-    "eProductReviewScoreResponse\022\025\n\raverage_s"
-    "core\030\001 \001(\t\"D\n\034AskProductAIAssistantReque"
-    "st\022\022\n\nproduct_id\030\001 \001(\t\022\020\n\010question\030\002 \001(\t"
-    "\"1\n\035AskProductAIAssistantResponse\022\020\n\010res"
-    "ponse\030\001 \001(\t\"X\n\017GetQuoteRequest\022\"\n\007addres"
-    "s\030\001 \001(\0132\021.oteldemo.Address\022!\n\005items\030\002 \003("
-    "\0132\022.oteldemo.CartItem\"5\n\020GetQuoteRespons"
-    "e\022!\n\010cost_usd\030\001 \001(\0132\017.oteldemo.Money\"Y\n\020"
-    "ShipOrderRequest\022\"\n\007address\030\001 \001(\0132\021.otel"
-    "demo.Address\022!\n\005items\030\002 \003(\0132\022.oteldemo.C"
-    "artItem\"(\n\021ShipOrderResponse\022\023\n\013tracking"
-    "_id\030\001 \001(\t\"a\n\007Address\022\026\n\016street_address\030\001"
-    " \001(\t\022\014\n\004city\030\002 \001(\t\022\r\n\005state\030\003 \001(\t\022\017\n\007cou"
-    "ntry\030\004 \001(\t\022\020\n\010zip_code\030\005 \001(\t\"<\n\005Money\022\025\n"
-    "\rcurrency_code\030\001 \001(\t\022\r\n\005units\030\002 \001(\003\022\r\n\005n"
-    "anos\030\003 \001(\005\"8\n\036GetSupportedCurrenciesResp"
-    "onse\022\026\n\016currency_codes\030\001 \003(\t\"K\n\031Currency"
-    "ConversionRequest\022\035\n\004from\030\001 \001(\0132\017.otelde"
-    "mo.Money\022\017\n\007to_code\030\002 \001(\t\"\220\001\n\016CreditCard"
-    "Info\022\032\n\022credit_card_number\030\001 \001(\t\022\027\n\017cred"
-    "it_card_cvv\030\002 \001(\005\022#\n\033credit_card_expirat"
-    "ion_year\030\003 \001(\005\022$\n\034credit_card_expiration"
-    "_month\030\004 \001(\005\"_\n\rChargeRequest\022\037\n\006amount\030"
-    "\001 \001(\0132\017.oteldemo.Money\022-\n\013credit_card\030\002 "
-    "\001(\0132\030.oteldemo.CreditCardInfo\"(\n\016ChargeR"
-    "esponse\022\026\n\016transaction_id\030\001 \001(\t\"L\n\tOrder"
-    "Item\022 \n\004item\030\001 \001(\0132\022.oteldemo.CartItem\022\035"
-    "\n\004cost\030\002 \001(\0132\017.oteldemo.Money\"\266\001\n\013OrderR"
-    "esult\022\020\n\010order_id\030\001 \001(\t\022\034\n\024shipping_trac"
-    "king_id\030\002 \001(\t\022&\n\rshipping_cost\030\003 \001(\0132\017.o"
-    "teldemo.Money\022+\n\020shipping_address\030\004 \001(\0132"
-    "\021.oteldemo.Address\022\"\n\005items\030\005 \003(\0132\023.otel"
-    "demo.OrderItem\"S\n\034SendOrderConfirmationR"
-    "equest\022\r\n\005email\030\001 \001(\t\022$\n\005order\030\002 \001(\0132\025.o"
-    "teldemo.OrderResult\"\235\001\n\021PlaceOrderReques"
-    "t\022\017\n\007user_id\030\001 \001(\t\022\025\n\ruser_currency\030\002 \001("
-    "\t\022\"\n\007address\030\003 \001(\0132\021.oteldemo.Address\022\r\n"
-    "\005email\030\005 \001(\t\022-\n\013credit_card\030\006 \001(\0132\030.otel"
-    "demo.CreditCardInfo\":\n\022PlaceOrderRespons"
-    "e\022$\n\005order\030\001 \001(\0132\025.oteldemo.OrderResult\""
-    "!\n\tAdRequest\022\024\n\014context_keys\030\001 \003(\t\"\'\n\nAd"
-    "Response\022\031\n\003ads\030\001 \003(\0132\014.oteldemo.Ad\"(\n\002A"
-    "d\022\024\n\014redirect_url\030\001 \001(\t\022\014\n\004text\030\002 \001(\t\":\n"
-    "\004Flag\022\014\n\004name\030\001 \001(\t\022\023\n\013description\030\002 \001(\t"
-    "\022\017\n\007enabled\030\003 \001(\010\"\036\n\016GetFlagRequest\022\014\n\004n"
-    "ame\030\001 \001(\t\"/\n\017GetFlagResponse\022\034\n\004flag\030\001 \001"
-    "(\0132\016.oteldemo.Flag\"G\n\021CreateFlagRequest\022"
-    "\014\n\004name\030\001 \001(\t\022\023\n\013description\030\002 \001(\t\022\017\n\007en"
-    "abled\030\003 \001(\010\"2\n\022CreateFlagResponse\022\034\n\004fla"
-    "g\030\001 \001(\0132\016.oteldemo.Flag\"2\n\021UpdateFlagReq"
-    "uest\022\014\n\004name\030\001 \001(\t\022\017\n\007enabled\030\002 \001(\010\"\024\n\022U"
-    "pdateFlagResponse\"\022\n\020ListFlagsRequest\"1\n"
-    "\021ListFlagsResponse\022\034\n\004flag\030\001 \003(\0132\016.oteld"
-    "emo.Flag\"!\n\021DeleteFlagRequest\022\014\n\004name\030\001 "
-    "\001(\t\"\024\n\022DeleteFlagResponse2\270\001\n\013CartServic"
-    "e\0226\n\007AddItem\022\030.oteldemo.AddItemRequest\032\017"
-    ".oteldemo.Empty\"\000\0225\n\007GetCart\022\030.oteldemo."
-    "GetCartRequest\032\016.oteldemo.Cart\"\000\022:\n\tEmpt"
-    "yCart\022\032.oteldemo.EmptyCartRequest\032\017.otel"
-    "demo.Empty\"\0002}\n\025RecommendationService\022d\n"
-    "\023ListRecommendations\022$.oteldemo.ListReco"
-    "mmendationsRequest\032%.oteldemo.ListRecomm"
-    "endationsResponse\"\0002\361\001\n\025ProductCatalogSe"
-    "rvice\022A\n\014ListProducts\022\017.oteldemo.Empty\032\036"
-    ".oteldemo.ListProductsResponse\"\000\022>\n\nGetP"
-    "roduct\022\033.oteldemo.GetProductRequest\032\021.ot"
-    "eldemo.Product\"\000\022U\n\016SearchProducts\022\037.ote"
-    "ldemo.SearchProductsRequest\032 .oteldemo.S"
-    "earchProductsResponse\"\0002\343\002\n\024ProductRevie"
-    "wService\022^\n\021GetProductReviews\022\".oteldemo"
-    ".GetProductReviewsRequest\032#.oteldemo.Get"
-    "ProductReviewsResponse\"\000\022\177\n\034GetAveragePr"
-    "oductReviewScore\022-.oteldemo.GetAveragePr"
-    "oductReviewScoreRequest\032..oteldemo.GetAv"
-    "erageProductReviewScoreResponse\"\000\022j\n\025Ask"
-    "ProductAIAssistant\022&.oteldemo.AskProduct"
-    "AIAssistantRequest\032\'.oteldemo.AskProduct"
-    "AIAssistantResponse\"\0002\236\001\n\017ShippingServic"
-    "e\022C\n\010GetQuote\022\031.oteldemo.GetQuoteRequest"
-    "\032\032.oteldemo.GetQuoteResponse\"\000\022F\n\tShipOr"
-    "der\022\032.oteldemo.ShipOrderRequest\032\033.otelde"
-    "mo.ShipOrderResponse\"\0002\253\001\n\017CurrencyServi"
-    "ce\022U\n\026GetSupportedCurrencies\022\017.oteldemo."
-    "Empty\032(.oteldemo.GetSupportedCurrenciesR"
-    "esponse\"\000\022A\n\007Convert\022#.oteldemo.Currency"
-    "ConversionRequest\032\017.oteldemo.Money\"\0002O\n\016"
-    "PaymentService\022=\n\006Charge\022\027.oteldemo.Char"
-    "geRequest\032\030.oteldemo.ChargeResponse\"\0002b\n"
-    "\014EmailService\022R\n\025SendOrderConfirmation\022&"
-    ".oteldemo.SendOrderConfirmationRequest\032\017"
-    ".oteldemo.Empty\"\0002\\\n\017CheckoutService\022I\n\n"
-    "PlaceOrder\022\033.oteldemo.PlaceOrderRequest\032"
-    "\034.oteldemo.PlaceOrderResponse\"\0002B\n\tAdSer"
-    "vice\0225\n\006GetAds\022\023.oteldemo.AdRequest\032\024.ot"
-    "eldemo.AdResponse\"\0002\377\002\n\022FeatureFlagServi"
-    "ce\022@\n\007GetFlag\022\030.oteldemo.GetFlagRequest\032"
-    "\031.oteldemo.GetFlagResponse\"\000\022I\n\nCreateFl"
-    "ag\022\033.oteldemo.CreateFlagRequest\032\034.otelde"
-    "mo.CreateFlagResponse\"\000\022I\n\nUpdateFlag\022\033."
-    "oteldemo.UpdateFlagRequest\032\034.oteldemo.Up"
-    "dateFlagResponse\"\000\022F\n\tListFlags\022\032.otelde"
-    "mo.ListFlagsRequest\032\033.oteldemo.ListFlags"
-    "Response\"\000\022I\n\nDeleteFlag\022\033.oteldemo.Dele"
-    "teFlagRequest\032\034.oteldemo.DeleteFlagRespo"
-    "nse\"\000B\023Z\021genproto/oteldemob\006proto3"
+    "etProductRequest\022\n\n\002id\030\001 \001(\t\"!\n\022GetProdu"
+    "ctsRequest\022\013\n\003ids\030\001 \003(\t\":\n\023GetProductsRe"
+    "sponse\022#\n\010products\030\001 \003(\0132\021.oteldemo.Prod"
+    "uct\"&\n\025SearchProductsRequest\022\r\n\005query\030\001 "
+    "\001(\t\"<\n\026SearchProductsResponse\022\"\n\007results"
+    "\030\001 \003(\0132\021.oteldemo.Product\"E\n\rProductRevi"
+    "ew\022\020\n\010username\030\001 \001(\t\022\023\n\013description\030\002 \001("
+    "\t\022\r\n\005score\030\003 \001(\t\".\n\030GetProductReviewsReq"
+    "uest\022\022\n\nproduct_id\030\001 \001(\t\"M\n\031GetProductRe"
+    "viewsResponse\0220\n\017product_reviews\030\001 \003(\0132\027"
+    ".oteldemo.ProductReview\"9\n#GetAveragePro"
+    "ductReviewScoreRequest\022\022\n\nproduct_id\030\001 \001"
+    "(\t\"=\n$GetAverageProductReviewScoreRespon"
+    "se\022\025\n\raverage_score\030\001 \001(\t\"D\n\034AskProductA"
+    "IAssistantRequest\022\022\n\nproduct_id\030\001 \001(\t\022\020\n"
+    "\010question\030\002 \001(\t\"1\n\035AskProductAIAssistant"
+    "Response\022\020\n\010response\030\001 \001(\t\"X\n\017GetQuoteRe"
+    "quest\022\"\n\007address\030\001 \001(\0132\021.oteldemo.Addres"
+    "s\022!\n\005items\030\002 \003(\0132\022.oteldemo.CartItem\"5\n\020"
+    "GetQuoteResponse\022!\n\010cost_usd\030\001 \001(\0132\017.ote"
+    "ldemo.Money\"Y\n\020ShipOrderRequest\022\"\n\007addre"
+    "ss\030\001 \001(\0132\021.oteldemo.Address\022!\n\005items\030\002 \003"
+    "(\0132\022.oteldemo.CartItem\"(\n\021ShipOrderRespo"
+    "nse\022\023\n\013tracking_id\030\001 \001(\t\"a\n\007Address\022\026\n\016s"
+    "treet_address\030\001 \001(\t\022\014\n\004city\030\002 \001(\t\022\r\n\005sta"
+    "te\030\003 \001(\t\022\017\n\007country\030\004 \001(\t\022\020\n\010zip_code\030\005 "
+    "\001(\t\"<\n\005Money\022\025\n\rcurrency_code\030\001 \001(\t\022\r\n\005u"
+    "nits\030\002 \001(\003\022\r\n\005nanos\030\003 \001(\005\"8\n\036GetSupporte"
+    "dCurrenciesResponse\022\026\n\016currency_codes\030\001 "
+    "\003(\t\"K\n\031CurrencyConversionRequest\022\035\n\004from"
+    "\030\001 \001(\0132\017.oteldemo.Money\022\017\n\007to_code\030\002 \001(\t"
+    "\"M\n\030ConvertCurrenciesRequest\022 \n\007amounts\030"
+    "\001 \003(\0132\017.oteldemo.Money\022\017\n\007to_code\030\002 \001(\t\""
+    "\?\n\031ConvertCurrenciesResponse\022\"\n\tconverte"
+    "d\030\001 \003(\0132\017.oteldemo.Money\"\220\001\n\016CreditCardI"
+    "nfo\022\032\n\022credit_card_number\030\001 \001(\t\022\027\n\017credi"
+    "t_card_cvv\030\002 \001(\005\022#\n\033credit_card_expirati"
+    "on_year\030\003 \001(\005\022$\n\034credit_card_expiration_"
+    "month\030\004 \001(\005\"_\n\rChargeRequest\022\037\n\006amount\030\001"
+    " \001(\0132\017.oteldemo.Money\022-\n\013credit_card\030\002 \001"
+    "(\0132\030.oteldemo.CreditCardInfo\"(\n\016ChargeRe"
+    "sponse\022\026\n\016transaction_id\030\001 \001(\t\"L\n\tOrderI"
+    "tem\022 \n\004item\030\001 \001(\0132\022.oteldemo.CartItem\022\035\n"
+    "\004cost\030\002 \001(\0132\017.oteldemo.Money\"\266\001\n\013OrderRe"
+    "sult\022\020\n\010order_id\030\001 \001(\t\022\034\n\024shipping_track"
+    "ing_id\030\002 \001(\t\022&\n\rshipping_cost\030\003 \001(\0132\017.ot"
+    "eldemo.Money\022+\n\020shipping_address\030\004 \001(\0132\021"
+    ".oteldemo.Address\022\"\n\005items\030\005 \003(\0132\023.oteld"
+    "emo.OrderItem\"S\n\034SendOrderConfirmationRe"
+    "quest\022\r\n\005email\030\001 \001(\t\022$\n\005order\030\002 \001(\0132\025.ot"
+    "eldemo.OrderResult\"\235\001\n\021PlaceOrderRequest"
+    "\022\017\n\007user_id\030\001 \001(\t\022\025\n\ruser_currency\030\002 \001(\t"
+    "\022\"\n\007address\030\003 \001(\0132\021.oteldemo.Address\022\r\n\005"
+    "email\030\005 \001(\t\022-\n\013credit_card\030\006 \001(\0132\030.oteld"
+    "emo.CreditCardInfo\":\n\022PlaceOrderResponse"
+    "\022$\n\005order\030\001 \001(\0132\025.oteldemo.OrderResult\"!"
+    "\n\tAdRequest\022\024\n\014context_keys\030\001 \003(\t\"\'\n\nAdR"
+    "esponse\022\031\n\003ads\030\001 \003(\0132\014.oteldemo.Ad\"(\n\002Ad"
+    "\022\024\n\014redirect_url\030\001 \001(\t\022\014\n\004text\030\002 \001(\t\":\n\004"
+    "Flag\022\014\n\004name\030\001 \001(\t\022\023\n\013description\030\002 \001(\t\022"
+    "\017\n\007enabled\030\003 \001(\010\"\036\n\016GetFlagRequest\022\014\n\004na"
+    "me\030\001 \001(\t\"/\n\017GetFlagResponse\022\034\n\004flag\030\001 \001("
+    "\0132\016.oteldemo.Flag\"G\n\021CreateFlagRequest\022\014"
+    "\n\004name\030\001 \001(\t\022\023\n\013description\030\002 \001(\t\022\017\n\007ena"
+    "bled\030\003 \001(\010\"2\n\022CreateFlagResponse\022\034\n\004flag"
+    "\030\001 \001(\0132\016.oteldemo.Flag\"2\n\021UpdateFlagRequ"
+    "est\022\014\n\004name\030\001 \001(\t\022\017\n\007enabled\030\002 \001(\010\"\024\n\022Up"
+    "dateFlagResponse\"\022\n\020ListFlagsRequest\"1\n\021"
+    "ListFlagsResponse\022\034\n\004flag\030\001 \003(\0132\016.otelde"
+    "mo.Flag\"!\n\021DeleteFlagRequest\022\014\n\004name\030\001 \001"
+    "(\t\"\024\n\022DeleteFlagResponse2\270\001\n\013CartService"
+    "\0226\n\007AddItem\022\030.oteldemo.AddItemRequest\032\017."
+    "oteldemo.Empty\"\000\0225\n\007GetCart\022\030.oteldemo.G"
+    "etCartRequest\032\016.oteldemo.Cart\"\000\022:\n\tEmpty"
+    "Cart\022\032.oteldemo.EmptyCartRequest\032\017.oteld"
+    "emo.Empty\"\0002}\n\025RecommendationService\022d\n\023"
+    "ListRecommendations\022$.oteldemo.ListRecom"
+    "mendationsRequest\032%.oteldemo.ListRecomme"
+    "ndationsResponse\"\0002\277\002\n\025ProductCatalogSer"
+    "vice\022A\n\014ListProducts\022\017.oteldemo.Empty\032\036."
+    "oteldemo.ListProductsResponse\"\000\022>\n\nGetPr"
+    "oduct\022\033.oteldemo.GetProductRequest\032\021.ote"
+    "ldemo.Product\"\000\022U\n\016SearchProducts\022\037.otel"
+    "demo.SearchProductsRequest\032 .oteldemo.Se"
+    "archProductsResponse\"\000\022L\n\013GetProducts\022\034."
+    "oteldemo.GetProductsRequest\032\035.oteldemo.G"
+    "etProductsResponse\"\0002\343\002\n\024ProductReviewSe"
+    "rvice\022^\n\021GetProductReviews\022\".oteldemo.Ge"
+    "tProductReviewsRequest\032#.oteldemo.GetPro"
+    "ductReviewsResponse\"\000\022\177\n\034GetAverageProdu"
+    "ctReviewScore\022-.oteldemo.GetAverageProdu"
+    "ctReviewScoreRequest\032..oteldemo.GetAvera"
+    "geProductReviewScoreResponse\"\000\022j\n\025AskPro"
+    "ductAIAssistant\022&.oteldemo.AskProductAIA"
+    "ssistantRequest\032\'.oteldemo.AskProductAIA"
+    "ssistantResponse\"\0002\236\001\n\017ShippingService\022C"
+    "\n\010GetQuote\022\031.oteldemo.GetQuoteRequest\032\032."
+    "oteldemo.GetQuoteResponse\"\000\022F\n\tShipOrder"
+    "\022\032.oteldemo.ShipOrderRequest\032\033.oteldemo."
+    "ShipOrderResponse\"\0002\213\002\n\017CurrencyService\022"
+    "U\n\026GetSupportedCurrencies\022\017.oteldemo.Emp"
+    "ty\032(.oteldemo.GetSupportedCurrenciesResp"
+    "onse\"\000\022A\n\007Convert\022#.oteldemo.CurrencyCon"
+    "versionRequest\032\017.oteldemo.Money\"\000\022^\n\021Con"
+    "vertCurrencies\022\".oteldemo.ConvertCurrenc"
+    "iesRequest\032#.oteldemo.ConvertCurrenciesR"
+    "esponse\"\0002O\n\016PaymentService\022=\n\006Charge\022\027."
+    "oteldemo.ChargeRequest\032\030.oteldemo.Charge"
+    "Response\"\0002b\n\014EmailService\022R\n\025SendOrderC"
+    "onfirmation\022&.oteldemo.SendOrderConfirma"
+    "tionRequest\032\017.oteldemo.Empty\"\0002\\\n\017Checko"
+    "utService\022I\n\nPlaceOrder\022\033.oteldemo.Place"
+    "OrderRequest\032\034.oteldemo.PlaceOrderRespon"
+    "se\"\0002B\n\tAdService\0225\n\006GetAds\022\023.oteldemo.A"
+    "dRequest\032\024.oteldemo.AdResponse\"\0002\377\002\n\022Fea"
+    "tureFlagService\022@\n\007GetFlag\022\030.oteldemo.Ge"
+    "tFlagRequest\032\031.oteldemo.GetFlagResponse\""
+    "\000\022I\n\nCreateFlag\022\033.oteldemo.CreateFlagReq"
+    "uest\032\034.oteldemo.CreateFlagResponse\"\000\022I\n\n"
+    "UpdateFlag\022\033.oteldemo.UpdateFlagRequest\032"
+    "\034.oteldemo.UpdateFlagResponse\"\000\022F\n\tListF"
+    "lags\022\032.oteldemo.ListFlagsRequest\032\033.oteld"
+    "emo.ListFlagsResponse\"\000\022I\n\nDeleteFlag\022\033."
+    "oteldemo.DeleteFlagRequest\032\034.oteldemo.De"
+    "leteFlagResponse\"\000B\023Z\021genproto/oteldemob"
+    "\006proto3"
 };
 static ::absl::once_flag descriptor_table_demo_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_demo_2eproto = {
     false,
     false,
-    5194,
+    5607,
     descriptor_table_protodef_demo_2eproto,
     "demo.proto",
     &descriptor_table_demo_2eproto_once,
     nullptr,
     0,
-    50,
+    54,
     schemas,
     file_default_instances,
     TableStruct_demo_2eproto::offsets,
@@ -4056,6 +4180,353 @@ void GetProductRequest::InternalSwap(GetProductRequest* other) {
 }
 // ===================================================================
 
+class GetProductsRequest::_Internal {
+ public:
+};
+
+GetProductsRequest::GetProductsRequest(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:oteldemo.GetProductsRequest)
+}
+GetProductsRequest::GetProductsRequest(const GetProductsRequest& from) : ::google::protobuf::Message() {
+  GetProductsRequest* const _this = this;
+  (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.ids_){from._impl_.ids_},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:oteldemo.GetProductsRequest)
+}
+inline void GetProductsRequest::SharedCtor(::_pb::Arena* arena) {
+  (void)arena;
+  new (&_impl_) Impl_{
+      decltype(_impl_.ids_){arena},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+}
+GetProductsRequest::~GetProductsRequest() {
+  // @@protoc_insertion_point(destructor:oteldemo.GetProductsRequest)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void GetProductsRequest::SharedDtor() {
+  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  _internal_mutable_ids()->~RepeatedPtrField();
+}
+void GetProductsRequest::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+PROTOBUF_NOINLINE void GetProductsRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:oteldemo.GetProductsRequest)
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _internal_mutable_ids()->Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* GetProductsRequest::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 39, 2> GetProductsRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_GetProductsRequest_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    // repeated string ids = 1;
+    {::_pbi::TcParser::FastUR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetProductsRequest, _impl_.ids_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated string ids = 1;
+    {PROTOBUF_FIELD_OFFSET(GetProductsRequest, _impl_.ids_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+  }},
+  // no aux_entries
+  {{
+    "\33\3\0\0\0\0\0\0"
+    "oteldemo.GetProductsRequest"
+    "ids"
+  }},
+};
+
+::uint8_t* GetProductsRequest::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:oteldemo.GetProductsRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated string ids = 1;
+  for (int i = 0, n = this->_internal_ids_size(); i < n; ++i) {
+    const auto& s = this->_internal_ids().Get(i);
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "oteldemo.GetProductsRequest.ids");
+    target = stream->WriteString(1, s, target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:oteldemo.GetProductsRequest)
+  return target;
+}
+
+::size_t GetProductsRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:oteldemo.GetProductsRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated string ids = 1;
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_ids().size());
+  for (int i = 0, n = _internal_ids().size(); i < n; ++i) {
+    total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+        _internal_ids().Get(i));
+  }
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::google::protobuf::Message::ClassData GetProductsRequest::_class_data_ = {
+    ::google::protobuf::Message::CopyWithSourceCheck,
+    GetProductsRequest::MergeImpl
+};
+const ::google::protobuf::Message::ClassData*GetProductsRequest::GetClassData() const { return &_class_data_; }
+
+
+void GetProductsRequest::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+  auto* const _this = static_cast<GetProductsRequest*>(&to_msg);
+  auto& from = static_cast<const GetProductsRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:oteldemo.GetProductsRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_ids()->MergeFrom(from._internal_ids());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void GetProductsRequest::CopyFrom(const GetProductsRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:oteldemo.GetProductsRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool GetProductsRequest::IsInitialized() const {
+  return true;
+}
+
+void GetProductsRequest::InternalSwap(GetProductsRequest* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.ids_.InternalSwap(&other->_impl_.ids_);
+}
+
+::google::protobuf::Metadata GetProductsRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
+      file_level_metadata_demo_2eproto[11]);
+}
+// ===================================================================
+
+class GetProductsResponse::_Internal {
+ public:
+};
+
+GetProductsResponse::GetProductsResponse(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:oteldemo.GetProductsResponse)
+}
+GetProductsResponse::GetProductsResponse(const GetProductsResponse& from) : ::google::protobuf::Message() {
+  GetProductsResponse* const _this = this;
+  (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.products_){from._impl_.products_},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:oteldemo.GetProductsResponse)
+}
+inline void GetProductsResponse::SharedCtor(::_pb::Arena* arena) {
+  (void)arena;
+  new (&_impl_) Impl_{
+      decltype(_impl_.products_){arena},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+}
+GetProductsResponse::~GetProductsResponse() {
+  // @@protoc_insertion_point(destructor:oteldemo.GetProductsResponse)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void GetProductsResponse::SharedDtor() {
+  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.products_.~RepeatedPtrField();
+}
+void GetProductsResponse::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+PROTOBUF_NOINLINE void GetProductsResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:oteldemo.GetProductsResponse)
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _internal_mutable_products()->Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* GetProductsResponse::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> GetProductsResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_GetProductsResponse_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    // repeated .oteldemo.Product products = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetProductsResponse, _impl_.products_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .oteldemo.Product products = 1;
+    {PROTOBUF_FIELD_OFFSET(GetProductsResponse, _impl_.products_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::oteldemo::Product>()},
+  }}, {{
+  }},
+};
+
+::uint8_t* GetProductsResponse::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:oteldemo.GetProductsResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated .oteldemo.Product products = 1;
+  for (unsigned i = 0,
+      n = static_cast<unsigned>(this->_internal_products_size()); i < n; i++) {
+    const auto& repfield = this->_internal_products().Get(i);
+    target = ::google::protobuf::internal::WireFormatLite::
+        InternalWriteMessage(1, repfield, repfield.GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:oteldemo.GetProductsResponse)
+  return target;
+}
+
+::size_t GetProductsResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:oteldemo.GetProductsResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated .oteldemo.Product products = 1;
+  total_size += 1UL * this->_internal_products_size();
+  for (const auto& msg : this->_internal_products()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+  }
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::google::protobuf::Message::ClassData GetProductsResponse::_class_data_ = {
+    ::google::protobuf::Message::CopyWithSourceCheck,
+    GetProductsResponse::MergeImpl
+};
+const ::google::protobuf::Message::ClassData*GetProductsResponse::GetClassData() const { return &_class_data_; }
+
+
+void GetProductsResponse::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+  auto* const _this = static_cast<GetProductsResponse*>(&to_msg);
+  auto& from = static_cast<const GetProductsResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:oteldemo.GetProductsResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_products()->MergeFrom(from._internal_products());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void GetProductsResponse::CopyFrom(const GetProductsResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:oteldemo.GetProductsResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool GetProductsResponse::IsInitialized() const {
+  return true;
+}
+
+void GetProductsResponse::InternalSwap(GetProductsResponse* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.products_.InternalSwap(&other->_impl_.products_);
+}
+
+::google::protobuf::Metadata GetProductsResponse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
+      file_level_metadata_demo_2eproto[12]);
+}
+// ===================================================================
+
 class SearchProductsRequest::_Internal {
  public:
 };
@@ -4243,7 +4714,7 @@ void SearchProductsRequest::InternalSwap(SearchProductsRequest* other) {
 ::google::protobuf::Metadata SearchProductsRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[11]);
+      file_level_metadata_demo_2eproto[13]);
 }
 // ===================================================================
 
@@ -4415,7 +4886,7 @@ void SearchProductsResponse::InternalSwap(SearchProductsResponse* other) {
 ::google::protobuf::Metadata SearchProductsResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[12]);
+      file_level_metadata_demo_2eproto[14]);
 }
 // ===================================================================
 
@@ -4689,7 +5160,7 @@ void ProductReview::InternalSwap(ProductReview* other) {
 ::google::protobuf::Metadata ProductReview::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[13]);
+      file_level_metadata_demo_2eproto[15]);
 }
 // ===================================================================
 
@@ -4880,7 +5351,7 @@ void GetProductReviewsRequest::InternalSwap(GetProductReviewsRequest* other) {
 ::google::protobuf::Metadata GetProductReviewsRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[14]);
+      file_level_metadata_demo_2eproto[16]);
 }
 // ===================================================================
 
@@ -5052,7 +5523,7 @@ void GetProductReviewsResponse::InternalSwap(GetProductReviewsResponse* other) {
 ::google::protobuf::Metadata GetProductReviewsResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[15]);
+      file_level_metadata_demo_2eproto[17]);
 }
 // ===================================================================
 
@@ -5243,7 +5714,7 @@ void GetAverageProductReviewScoreRequest::InternalSwap(GetAverageProductReviewSc
 ::google::protobuf::Metadata GetAverageProductReviewScoreRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[16]);
+      file_level_metadata_demo_2eproto[18]);
 }
 // ===================================================================
 
@@ -5434,7 +5905,7 @@ void GetAverageProductReviewScoreResponse::InternalSwap(GetAverageProductReviewS
 ::google::protobuf::Metadata GetAverageProductReviewScoreResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[17]);
+      file_level_metadata_demo_2eproto[19]);
 }
 // ===================================================================
 
@@ -5666,7 +6137,7 @@ void AskProductAIAssistantRequest::InternalSwap(AskProductAIAssistantRequest* ot
 ::google::protobuf::Metadata AskProductAIAssistantRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[18]);
+      file_level_metadata_demo_2eproto[20]);
 }
 // ===================================================================
 
@@ -5857,7 +6328,7 @@ void AskProductAIAssistantResponse::InternalSwap(AskProductAIAssistantResponse* 
 ::google::protobuf::Metadata AskProductAIAssistantResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[19]);
+      file_level_metadata_demo_2eproto[21]);
 }
 // ===================================================================
 
@@ -6082,7 +6553,7 @@ void GetQuoteRequest::InternalSwap(GetQuoteRequest* other) {
 ::google::protobuf::Metadata GetQuoteRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[20]);
+      file_level_metadata_demo_2eproto[22]);
 }
 // ===================================================================
 
@@ -6280,7 +6751,7 @@ void GetQuoteResponse::InternalSwap(GetQuoteResponse* other) {
 ::google::protobuf::Metadata GetQuoteResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[21]);
+      file_level_metadata_demo_2eproto[23]);
 }
 // ===================================================================
 
@@ -6505,7 +6976,7 @@ void ShipOrderRequest::InternalSwap(ShipOrderRequest* other) {
 ::google::protobuf::Metadata ShipOrderRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[22]);
+      file_level_metadata_demo_2eproto[24]);
 }
 // ===================================================================
 
@@ -6696,7 +7167,7 @@ void ShipOrderResponse::InternalSwap(ShipOrderResponse* other) {
 ::google::protobuf::Metadata ShipOrderResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[23]);
+      file_level_metadata_demo_2eproto[25]);
 }
 // ===================================================================
 
@@ -7054,7 +7525,7 @@ void Address::InternalSwap(Address* other) {
 ::google::protobuf::Metadata Address::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[24]);
+      file_level_metadata_demo_2eproto[26]);
 }
 // ===================================================================
 
@@ -7306,7 +7777,7 @@ void Money::InternalSwap(Money* other) {
 ::google::protobuf::Metadata Money::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[25]);
+      file_level_metadata_demo_2eproto[27]);
 }
 // ===================================================================
 
@@ -7481,7 +7952,7 @@ void GetSupportedCurrenciesResponse::InternalSwap(GetSupportedCurrenciesResponse
 ::google::protobuf::Metadata GetSupportedCurrenciesResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[26]);
+      file_level_metadata_demo_2eproto[28]);
 }
 // ===================================================================
 
@@ -7724,7 +8195,396 @@ void CurrencyConversionRequest::InternalSwap(CurrencyConversionRequest* other) {
 ::google::protobuf::Metadata CurrencyConversionRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[27]);
+      file_level_metadata_demo_2eproto[29]);
+}
+// ===================================================================
+
+class ConvertCurrenciesRequest::_Internal {
+ public:
+};
+
+ConvertCurrenciesRequest::ConvertCurrenciesRequest(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:oteldemo.ConvertCurrenciesRequest)
+}
+ConvertCurrenciesRequest::ConvertCurrenciesRequest(const ConvertCurrenciesRequest& from) : ::google::protobuf::Message() {
+  ConvertCurrenciesRequest* const _this = this;
+  (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.amounts_){from._impl_.amounts_},
+      decltype(_impl_.to_code_){},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  _impl_.to_code_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        _impl_.to_code_.Set("", GetArenaForAllocation());
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  if (!from._internal_to_code().empty()) {
+    _this->_impl_.to_code_.Set(from._internal_to_code(), _this->GetArenaForAllocation());
+  }
+
+  // @@protoc_insertion_point(copy_constructor:oteldemo.ConvertCurrenciesRequest)
+}
+inline void ConvertCurrenciesRequest::SharedCtor(::_pb::Arena* arena) {
+  (void)arena;
+  new (&_impl_) Impl_{
+      decltype(_impl_.amounts_){arena},
+      decltype(_impl_.to_code_){},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+  _impl_.to_code_.InitDefault();
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        _impl_.to_code_.Set("", GetArenaForAllocation());
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+}
+ConvertCurrenciesRequest::~ConvertCurrenciesRequest() {
+  // @@protoc_insertion_point(destructor:oteldemo.ConvertCurrenciesRequest)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void ConvertCurrenciesRequest::SharedDtor() {
+  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.amounts_.~RepeatedPtrField();
+  _impl_.to_code_.Destroy();
+}
+void ConvertCurrenciesRequest::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+PROTOBUF_NOINLINE void ConvertCurrenciesRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:oteldemo.ConvertCurrenciesRequest)
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _internal_mutable_amounts()->Clear();
+  _impl_.to_code_.ClearToEmpty();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* ConvertCurrenciesRequest::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 1, 49, 2> ConvertCurrenciesRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_ConvertCurrenciesRequest_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    // string to_code = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(ConvertCurrenciesRequest, _impl_.to_code_)}},
+    // repeated .oteldemo.Money amounts = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ConvertCurrenciesRequest, _impl_.amounts_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .oteldemo.Money amounts = 1;
+    {PROTOBUF_FIELD_OFFSET(ConvertCurrenciesRequest, _impl_.amounts_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // string to_code = 2;
+    {PROTOBUF_FIELD_OFFSET(ConvertCurrenciesRequest, _impl_.to_code_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::oteldemo::Money>()},
+  }}, {{
+    "\41\0\7\0\0\0\0\0"
+    "oteldemo.ConvertCurrenciesRequest"
+    "to_code"
+  }},
+};
+
+::uint8_t* ConvertCurrenciesRequest::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:oteldemo.ConvertCurrenciesRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated .oteldemo.Money amounts = 1;
+  for (unsigned i = 0,
+      n = static_cast<unsigned>(this->_internal_amounts_size()); i < n; i++) {
+    const auto& repfield = this->_internal_amounts().Get(i);
+    target = ::google::protobuf::internal::WireFormatLite::
+        InternalWriteMessage(1, repfield, repfield.GetCachedSize(), target, stream);
+  }
+
+  // string to_code = 2;
+  if (!this->_internal_to_code().empty()) {
+    const std::string& _s = this->_internal_to_code();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "oteldemo.ConvertCurrenciesRequest.to_code");
+    target = stream->WriteStringMaybeAliased(2, _s, target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:oteldemo.ConvertCurrenciesRequest)
+  return target;
+}
+
+::size_t ConvertCurrenciesRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:oteldemo.ConvertCurrenciesRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated .oteldemo.Money amounts = 1;
+  total_size += 1UL * this->_internal_amounts_size();
+  for (const auto& msg : this->_internal_amounts()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+  }
+  // string to_code = 2;
+  if (!this->_internal_to_code().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_to_code());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::google::protobuf::Message::ClassData ConvertCurrenciesRequest::_class_data_ = {
+    ::google::protobuf::Message::CopyWithSourceCheck,
+    ConvertCurrenciesRequest::MergeImpl
+};
+const ::google::protobuf::Message::ClassData*ConvertCurrenciesRequest::GetClassData() const { return &_class_data_; }
+
+
+void ConvertCurrenciesRequest::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+  auto* const _this = static_cast<ConvertCurrenciesRequest*>(&to_msg);
+  auto& from = static_cast<const ConvertCurrenciesRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:oteldemo.ConvertCurrenciesRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_amounts()->MergeFrom(from._internal_amounts());
+  if (!from._internal_to_code().empty()) {
+    _this->_internal_set_to_code(from._internal_to_code());
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ConvertCurrenciesRequest::CopyFrom(const ConvertCurrenciesRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:oteldemo.ConvertCurrenciesRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool ConvertCurrenciesRequest::IsInitialized() const {
+  return true;
+}
+
+void ConvertCurrenciesRequest::InternalSwap(ConvertCurrenciesRequest* other) {
+  using std::swap;
+  auto* lhs_arena = GetArenaForAllocation();
+  auto* rhs_arena = other->GetArenaForAllocation();
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.amounts_.InternalSwap(&other->_impl_.amounts_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.to_code_, lhs_arena,
+                                       &other->_impl_.to_code_, rhs_arena);
+}
+
+::google::protobuf::Metadata ConvertCurrenciesRequest::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
+      file_level_metadata_demo_2eproto[30]);
+}
+// ===================================================================
+
+class ConvertCurrenciesResponse::_Internal {
+ public:
+};
+
+ConvertCurrenciesResponse::ConvertCurrenciesResponse(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:oteldemo.ConvertCurrenciesResponse)
+}
+ConvertCurrenciesResponse::ConvertCurrenciesResponse(const ConvertCurrenciesResponse& from) : ::google::protobuf::Message() {
+  ConvertCurrenciesResponse* const _this = this;
+  (void)_this;
+  new (&_impl_) Impl_{
+      decltype(_impl_.converted_){from._impl_.converted_},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:oteldemo.ConvertCurrenciesResponse)
+}
+inline void ConvertCurrenciesResponse::SharedCtor(::_pb::Arena* arena) {
+  (void)arena;
+  new (&_impl_) Impl_{
+      decltype(_impl_.converted_){arena},
+      /*decltype(_impl_._cached_size_)*/ {},
+  };
+}
+ConvertCurrenciesResponse::~ConvertCurrenciesResponse() {
+  // @@protoc_insertion_point(destructor:oteldemo.ConvertCurrenciesResponse)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void ConvertCurrenciesResponse::SharedDtor() {
+  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  _impl_.converted_.~RepeatedPtrField();
+}
+void ConvertCurrenciesResponse::SetCachedSize(int size) const {
+  _impl_._cached_size_.Set(size);
+}
+
+PROTOBUF_NOINLINE void ConvertCurrenciesResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:oteldemo.ConvertCurrenciesResponse)
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _internal_mutable_converted()->Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+const char* ConvertCurrenciesResponse::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+  return ptr;
+}
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2> ConvertCurrenciesResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_ConvertCurrenciesResponse_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    // repeated .oteldemo.Money converted = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ConvertCurrenciesResponse, _impl_.converted_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .oteldemo.Money converted = 1;
+    {PROTOBUF_FIELD_OFFSET(ConvertCurrenciesResponse, _impl_.converted_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::oteldemo::Money>()},
+  }}, {{
+  }},
+};
+
+::uint8_t* ConvertCurrenciesResponse::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:oteldemo.ConvertCurrenciesResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // repeated .oteldemo.Money converted = 1;
+  for (unsigned i = 0,
+      n = static_cast<unsigned>(this->_internal_converted_size()); i < n; i++) {
+    const auto& repfield = this->_internal_converted().Get(i);
+    target = ::google::protobuf::internal::WireFormatLite::
+        InternalWriteMessage(1, repfield, repfield.GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:oteldemo.ConvertCurrenciesResponse)
+  return target;
+}
+
+::size_t ConvertCurrenciesResponse::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:oteldemo.ConvertCurrenciesResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  // repeated .oteldemo.Money converted = 1;
+  total_size += 1UL * this->_internal_converted_size();
+  for (const auto& msg : this->_internal_converted()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+  }
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+const ::google::protobuf::Message::ClassData ConvertCurrenciesResponse::_class_data_ = {
+    ::google::protobuf::Message::CopyWithSourceCheck,
+    ConvertCurrenciesResponse::MergeImpl
+};
+const ::google::protobuf::Message::ClassData*ConvertCurrenciesResponse::GetClassData() const { return &_class_data_; }
+
+
+void ConvertCurrenciesResponse::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+  auto* const _this = static_cast<ConvertCurrenciesResponse*>(&to_msg);
+  auto& from = static_cast<const ConvertCurrenciesResponse&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:oteldemo.ConvertCurrenciesResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  _this->_internal_mutable_converted()->MergeFrom(from._internal_converted());
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void ConvertCurrenciesResponse::CopyFrom(const ConvertCurrenciesResponse& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:oteldemo.ConvertCurrenciesResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+PROTOBUF_NOINLINE bool ConvertCurrenciesResponse::IsInitialized() const {
+  return true;
+}
+
+void ConvertCurrenciesResponse::InternalSwap(ConvertCurrenciesResponse* other) {
+  using std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.converted_.InternalSwap(&other->_impl_.converted_);
+}
+
+::google::protobuf::Metadata ConvertCurrenciesResponse::GetMetadata() const {
+  return ::_pbi::AssignDescriptors(
+      &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
+      file_level_metadata_demo_2eproto[31]);
 }
 // ===================================================================
 
@@ -7999,7 +8859,7 @@ void CreditCardInfo::InternalSwap(CreditCardInfo* other) {
 ::google::protobuf::Metadata CreditCardInfo::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[28]);
+      file_level_metadata_demo_2eproto[32]);
 }
 // ===================================================================
 
@@ -8251,7 +9111,7 @@ void ChargeRequest::InternalSwap(ChargeRequest* other) {
 ::google::protobuf::Metadata ChargeRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[29]);
+      file_level_metadata_demo_2eproto[33]);
 }
 // ===================================================================
 
@@ -8442,7 +9302,7 @@ void ChargeResponse::InternalSwap(ChargeResponse* other) {
 ::google::protobuf::Metadata ChargeResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[30]);
+      file_level_metadata_demo_2eproto[34]);
 }
 // ===================================================================
 
@@ -8694,7 +9554,7 @@ void OrderItem::InternalSwap(OrderItem* other) {
 ::google::protobuf::Metadata OrderItem::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[31]);
+      file_level_metadata_demo_2eproto[35]);
 }
 // ===================================================================
 
@@ -9062,7 +9922,7 @@ void OrderResult::InternalSwap(OrderResult* other) {
 ::google::protobuf::Metadata OrderResult::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[32]);
+      file_level_metadata_demo_2eproto[36]);
 }
 // ===================================================================
 
@@ -9305,7 +10165,7 @@ void SendOrderConfirmationRequest::InternalSwap(SendOrderConfirmationRequest* ot
 ::google::protobuf::Metadata SendOrderConfirmationRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[33]);
+      file_level_metadata_demo_2eproto[37]);
 }
 // ===================================================================
 
@@ -9687,7 +10547,7 @@ void PlaceOrderRequest::InternalSwap(PlaceOrderRequest* other) {
 ::google::protobuf::Metadata PlaceOrderRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[34]);
+      file_level_metadata_demo_2eproto[38]);
 }
 // ===================================================================
 
@@ -9885,7 +10745,7 @@ void PlaceOrderResponse::InternalSwap(PlaceOrderResponse* other) {
 ::google::protobuf::Metadata PlaceOrderResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[35]);
+      file_level_metadata_demo_2eproto[39]);
 }
 // ===================================================================
 
@@ -10060,7 +10920,7 @@ void AdRequest::InternalSwap(AdRequest* other) {
 ::google::protobuf::Metadata AdRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[36]);
+      file_level_metadata_demo_2eproto[40]);
 }
 // ===================================================================
 
@@ -10232,7 +11092,7 @@ void AdResponse::InternalSwap(AdResponse* other) {
 ::google::protobuf::Metadata AdResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[37]);
+      file_level_metadata_demo_2eproto[41]);
 }
 // ===================================================================
 
@@ -10464,7 +11324,7 @@ void Ad::InternalSwap(Ad* other) {
 ::google::protobuf::Metadata Ad::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[38]);
+      file_level_metadata_demo_2eproto[42]);
 }
 // ===================================================================
 
@@ -10723,7 +11583,7 @@ void Flag::InternalSwap(Flag* other) {
 ::google::protobuf::Metadata Flag::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[39]);
+      file_level_metadata_demo_2eproto[43]);
 }
 // ===================================================================
 
@@ -10914,7 +11774,7 @@ void GetFlagRequest::InternalSwap(GetFlagRequest* other) {
 ::google::protobuf::Metadata GetFlagRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[40]);
+      file_level_metadata_demo_2eproto[44]);
 }
 // ===================================================================
 
@@ -11112,7 +11972,7 @@ void GetFlagResponse::InternalSwap(GetFlagResponse* other) {
 ::google::protobuf::Metadata GetFlagResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[41]);
+      file_level_metadata_demo_2eproto[45]);
 }
 // ===================================================================
 
@@ -11371,7 +12231,7 @@ void CreateFlagRequest::InternalSwap(CreateFlagRequest* other) {
 ::google::protobuf::Metadata CreateFlagRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[42]);
+      file_level_metadata_demo_2eproto[46]);
 }
 // ===================================================================
 
@@ -11569,7 +12429,7 @@ void CreateFlagResponse::InternalSwap(CreateFlagResponse* other) {
 ::google::protobuf::Metadata CreateFlagResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[43]);
+      file_level_metadata_demo_2eproto[47]);
 }
 // ===================================================================
 
@@ -11786,7 +12646,7 @@ void UpdateFlagRequest::InternalSwap(UpdateFlagRequest* other) {
 ::google::protobuf::Metadata UpdateFlagRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[44]);
+      file_level_metadata_demo_2eproto[48]);
 }
 // ===================================================================
 
@@ -11825,7 +12685,7 @@ const ::google::protobuf::Message::ClassData*UpdateFlagResponse::GetClassData() 
 ::google::protobuf::Metadata UpdateFlagResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[45]);
+      file_level_metadata_demo_2eproto[49]);
 }
 // ===================================================================
 
@@ -11864,7 +12724,7 @@ const ::google::protobuf::Message::ClassData*ListFlagsRequest::GetClassData() co
 ::google::protobuf::Metadata ListFlagsRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[46]);
+      file_level_metadata_demo_2eproto[50]);
 }
 // ===================================================================
 
@@ -12036,7 +12896,7 @@ void ListFlagsResponse::InternalSwap(ListFlagsResponse* other) {
 ::google::protobuf::Metadata ListFlagsResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[47]);
+      file_level_metadata_demo_2eproto[51]);
 }
 // ===================================================================
 
@@ -12227,7 +13087,7 @@ void DeleteFlagRequest::InternalSwap(DeleteFlagRequest* other) {
 ::google::protobuf::Metadata DeleteFlagRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[48]);
+      file_level_metadata_demo_2eproto[52]);
 }
 // ===================================================================
 
@@ -12266,7 +13126,7 @@ const ::google::protobuf::Message::ClassData*DeleteFlagResponse::GetClassData() 
 ::google::protobuf::Metadata DeleteFlagResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_demo_2eproto_getter, &descriptor_table_demo_2eproto_once,
-      file_level_metadata_demo_2eproto[49]);
+      file_level_metadata_demo_2eproto[53]);
 }
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace oteldemo

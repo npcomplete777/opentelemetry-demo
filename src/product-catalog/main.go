@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
@@ -492,4 +492,99 @@ func (p *productCatalog) checkProductFailure(ctx context.Context, id string) boo
 		ctx, "productCatalogFailure", false, openfeature.EvaluationContext{},
 	)
 	return failureEnabled
+}
+
+// GetProducts implements the batch product lookup RPC.
+// Fetches multiple products in a single call to avoid N+1 query pattern.
+func (p *productCatalog) GetProducts(ctx context.Context, req *pb.GetProductsRequest) (*pb.GetProductsResponse, error) {
+	span := trace.SpanFromContext(ctx)
+
+	span.SetAttributes(
+		attribute.Int("app.products.requested.count", len(req.Ids)),
+		attribute.StringSlice("app.products.requested.ids", req.Ids),
+	)
+
+	// Handle empty request
+	if len(req.Ids) == 0 {
+		logger.Info("GetProducts: empty request, returning empty response")
+		return &pb.GetProductsResponse{Products: []*pb.Product{}}, nil
+	}
+
+	// Batch lookup all products from database
+	products, notFound, err := getProductsFromDB(ctx, req.Ids)
+	if err != nil {
+		span.SetStatus(otelcodes.Error, err.Error())
+		return nil, status.Errorf(codes.Internal, "failed to get products: %v", err)
+	}
+
+	// Log warning if any products not found, but don't fail the request
+	if len(notFound) > 0 {
+		logger.Warn(fmt.Sprintf("GetProducts: products not found: %v", notFound))
+		span.SetAttributes(
+			attribute.StringSlice("app.products.not_found", notFound),
+			attribute.Int("app.products.not_found.count", len(notFound)),
+		)
+	}
+
+	span.SetAttributes(
+		attribute.Int("app.products.found.count", len(products)),
+	)
+
+	logger.Info(fmt.Sprintf("GetProducts: found %d/%d products", len(products), len(req.Ids)))
+
+	return &pb.GetProductsResponse{
+		Products: products,
+	}, nil
+}
+
+// getProductsFromDB fetches multiple products by IDs in a single database query.
+func getProductsFromDB(ctx context.Context, productIDs []string) ([]*pb.Product, []string, error) {
+	if db == nil {
+		return nil, nil, fmt.Errorf("database connection not initialized")
+	}
+
+	// Build query with IN clause for batch lookup
+	// Using ANY with array is more efficient for PostgreSQL
+	rows, err := db.QueryContext(ctx, `
+		SELECT p.id, p.name, p.description, p.picture,
+		       p.price_currency_code, p.price_units, p.price_nanos, p.categories
+		FROM catalog.products p
+		WHERE p.id = ANY($1)
+	`, pq.Array(productIDs))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to query products: %w", err)
+	}
+	defer rows.Close()
+
+	// Build map of found products
+	productMap := make(map[string]*pb.Product)
+	for rows.Next() {
+		var id, name, description, picture, currencyCode, categoriesStr string
+		var units int64
+		var nanos int32
+
+		if err := rows.Scan(&id, &name, &description, &picture, &currencyCode, &units, &nanos, &categoriesStr); err != nil {
+			return nil, nil, fmt.Errorf("failed to scan product row: %w", err)
+		}
+
+		productMap[id] = parseProductRow(id, name, description, picture, currencyCode, categoriesStr, units, nanos)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("error iterating product rows: %w", err)
+	}
+
+	// Build ordered result list and track not found IDs
+	products := make([]*pb.Product, 0, len(productIDs))
+	notFound := make([]string, 0)
+
+	for _, id := range productIDs {
+		if product, ok := productMap[id]; ok {
+			products = append(products, product)
+		} else {
+			notFound = append(notFound, id)
+		}
+	}
+
+	return products, notFound, nil
 }

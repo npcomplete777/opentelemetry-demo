@@ -231,6 +231,7 @@ static const char* ProductCatalogService_method_names[] = {
   "/oteldemo.ProductCatalogService/ListProducts",
   "/oteldemo.ProductCatalogService/GetProduct",
   "/oteldemo.ProductCatalogService/SearchProducts",
+  "/oteldemo.ProductCatalogService/GetProducts",
 };
 
 std::unique_ptr< ProductCatalogService::Stub> ProductCatalogService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -243,6 +244,7 @@ ProductCatalogService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterfac
   : channel_(channel), rpcmethod_ListProducts_(ProductCatalogService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_GetProduct_(ProductCatalogService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_SearchProducts_(ProductCatalogService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetProducts_(ProductCatalogService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status ProductCatalogService::Stub::ListProducts(::grpc::ClientContext* context, const ::oteldemo::Empty& request, ::oteldemo::ListProductsResponse* response) {
@@ -314,6 +316,29 @@ void ProductCatalogService::Stub::async::SearchProducts(::grpc::ClientContext* c
   return result;
 }
 
+::grpc::Status ProductCatalogService::Stub::GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::oteldemo::GetProductsResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetProducts_, context, request, response);
+}
+
+void ProductCatalogService::Stub::async::GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetProducts_, context, request, response, std::move(f));
+}
+
+void ProductCatalogService::Stub::async::GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetProducts_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>* ProductCatalogService::Stub::PrepareAsyncGetProductsRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::oteldemo::GetProductsResponse, ::oteldemo::GetProductsRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetProducts_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>* ProductCatalogService::Stub::AsyncGetProductsRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetProductsRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 ProductCatalogService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ProductCatalogService_method_names[0],
@@ -345,6 +370,16 @@ ProductCatalogService::Service::Service() {
              ::oteldemo::SearchProductsResponse* resp) {
                return service->SearchProducts(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      ProductCatalogService_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< ProductCatalogService::Service, ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](ProductCatalogService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::oteldemo::GetProductsRequest* req,
+             ::oteldemo::GetProductsResponse* resp) {
+               return service->GetProducts(ctx, req, resp);
+             }, this)));
 }
 
 ProductCatalogService::Service::~Service() {
@@ -365,6 +400,13 @@ ProductCatalogService::Service::~Service() {
 }
 
 ::grpc::Status ProductCatalogService::Service::SearchProducts(::grpc::ServerContext* context, const ::oteldemo::SearchProductsRequest* request, ::oteldemo::SearchProductsResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status ProductCatalogService::Service::GetProducts(::grpc::ServerContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response) {
   (void) context;
   (void) request;
   (void) response;
@@ -623,6 +665,7 @@ ShippingService::Service::~Service() {
 static const char* CurrencyService_method_names[] = {
   "/oteldemo.CurrencyService/GetSupportedCurrencies",
   "/oteldemo.CurrencyService/Convert",
+  "/oteldemo.CurrencyService/ConvertCurrencies",
 };
 
 std::unique_ptr< CurrencyService::Stub> CurrencyService::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -634,6 +677,7 @@ std::unique_ptr< CurrencyService::Stub> CurrencyService::NewStub(const std::shar
 CurrencyService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
   : channel_(channel), rpcmethod_GetSupportedCurrencies_(CurrencyService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_Convert_(CurrencyService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ConvertCurrencies_(CurrencyService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status CurrencyService::Stub::GetSupportedCurrencies(::grpc::ClientContext* context, const ::oteldemo::Empty& request, ::oteldemo::GetSupportedCurrenciesResponse* response) {
@@ -682,6 +726,29 @@ void CurrencyService::Stub::async::Convert(::grpc::ClientContext* context, const
   return result;
 }
 
+::grpc::Status CurrencyService::Stub::ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::oteldemo::ConvertCurrenciesResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_ConvertCurrencies_, context, request, response);
+}
+
+void CurrencyService::Stub::async::ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ConvertCurrencies_, context, request, response, std::move(f));
+}
+
+void CurrencyService::Stub::async::ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_ConvertCurrencies_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>* CurrencyService::Stub::PrepareAsyncConvertCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::oteldemo::ConvertCurrenciesResponse, ::oteldemo::ConvertCurrenciesRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_ConvertCurrencies_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>* CurrencyService::Stub::AsyncConvertCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncConvertCurrenciesRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 CurrencyService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       CurrencyService_method_names[0],
@@ -703,6 +770,16 @@ CurrencyService::Service::Service() {
              ::oteldemo::Money* resp) {
                return service->Convert(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      CurrencyService_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< CurrencyService::Service, ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](CurrencyService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::oteldemo::ConvertCurrenciesRequest* req,
+             ::oteldemo::ConvertCurrenciesResponse* resp) {
+               return service->ConvertCurrencies(ctx, req, resp);
+             }, this)));
 }
 
 CurrencyService::Service::~Service() {
@@ -716,6 +793,13 @@ CurrencyService::Service::~Service() {
 }
 
 ::grpc::Status CurrencyService::Service::Convert(::grpc::ServerContext* context, const ::oteldemo::CurrencyConversionRequest* request, ::oteldemo::Money* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status CurrencyService::Service::ConvertCurrencies(::grpc::ServerContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response) {
   (void) context;
   (void) request;
   (void) response;

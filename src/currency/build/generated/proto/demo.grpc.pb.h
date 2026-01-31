@@ -805,6 +805,14 @@ class ProductCatalogService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::SearchProductsResponse>> PrepareAsyncSearchProducts(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::SearchProductsResponse>>(PrepareAsyncSearchProductsRaw(context, request, cq));
     }
+    // Batch method to fetch multiple products in a single call (fixes N+1 pattern)
+    virtual ::grpc::Status GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::oteldemo::GetProductsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>> AsyncGetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>>(AsyncGetProductsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>> PrepareAsyncGetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>>(PrepareAsyncGetProductsRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -814,6 +822,9 @@ class ProductCatalogService final {
       virtual void GetProduct(::grpc::ClientContext* context, const ::oteldemo::GetProductRequest* request, ::oteldemo::Product* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void SearchProducts(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest* request, ::oteldemo::SearchProductsResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void SearchProducts(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest* request, ::oteldemo::SearchProductsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // Batch method to fetch multiple products in a single call (fixes N+1 pattern)
+      virtual void GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -825,6 +836,8 @@ class ProductCatalogService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Product>* PrepareAsyncGetProductRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::SearchProductsResponse>* AsyncSearchProductsRaw(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::SearchProductsResponse>* PrepareAsyncSearchProductsRaw(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>* AsyncGetProductsRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>* PrepareAsyncGetProductsRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -850,6 +863,13 @@ class ProductCatalogService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::SearchProductsResponse>> PrepareAsyncSearchProducts(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::SearchProductsResponse>>(PrepareAsyncSearchProductsRaw(context, request, cq));
     }
+    ::grpc::Status GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::oteldemo::GetProductsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>> AsyncGetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>>(AsyncGetProductsRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>> PrepareAsyncGetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>>(PrepareAsyncGetProductsRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -859,6 +879,8 @@ class ProductCatalogService final {
       void GetProduct(::grpc::ClientContext* context, const ::oteldemo::GetProductRequest* request, ::oteldemo::Product* response, ::grpc::ClientUnaryReactor* reactor) override;
       void SearchProducts(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest* request, ::oteldemo::SearchProductsResponse* response, std::function<void(::grpc::Status)>) override;
       void SearchProducts(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest* request, ::oteldemo::SearchProductsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetProducts(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -876,9 +898,12 @@ class ProductCatalogService final {
     ::grpc::ClientAsyncResponseReader< ::oteldemo::Product>* PrepareAsyncGetProductRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::oteldemo::SearchProductsResponse>* AsyncSearchProductsRaw(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::oteldemo::SearchProductsResponse>* PrepareAsyncSearchProductsRaw(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>* AsyncGetProductsRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::oteldemo::GetProductsResponse>* PrepareAsyncGetProductsRaw(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_ListProducts_;
     const ::grpc::internal::RpcMethod rpcmethod_GetProduct_;
     const ::grpc::internal::RpcMethod rpcmethod_SearchProducts_;
+    const ::grpc::internal::RpcMethod rpcmethod_GetProducts_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -889,6 +914,8 @@ class ProductCatalogService final {
     virtual ::grpc::Status ListProducts(::grpc::ServerContext* context, const ::oteldemo::Empty* request, ::oteldemo::ListProductsResponse* response);
     virtual ::grpc::Status GetProduct(::grpc::ServerContext* context, const ::oteldemo::GetProductRequest* request, ::oteldemo::Product* response);
     virtual ::grpc::Status SearchProducts(::grpc::ServerContext* context, const ::oteldemo::SearchProductsRequest* request, ::oteldemo::SearchProductsResponse* response);
+    // Batch method to fetch multiple products in a single call (fixes N+1 pattern)
+    virtual ::grpc::Status GetProducts(::grpc::ServerContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_ListProducts : public BaseClass {
@@ -950,7 +977,27 @@ class ProductCatalogService final {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_ListProducts<WithAsyncMethod_GetProduct<WithAsyncMethod_SearchProducts<Service > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_GetProducts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_GetProducts() {
+      ::grpc::Service::MarkMethodAsync(3);
+    }
+    ~WithAsyncMethod_GetProducts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetProducts(::grpc::ServerContext* context, ::oteldemo::GetProductsRequest* request, ::grpc::ServerAsyncResponseWriter< ::oteldemo::GetProductsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_ListProducts<WithAsyncMethod_GetProduct<WithAsyncMethod_SearchProducts<WithAsyncMethod_GetProducts<Service > > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_ListProducts : public BaseClass {
    private:
@@ -1032,7 +1079,34 @@ class ProductCatalogService final {
     virtual ::grpc::ServerUnaryReactor* SearchProducts(
       ::grpc::CallbackServerContext* /*context*/, const ::oteldemo::SearchProductsRequest* /*request*/, ::oteldemo::SearchProductsResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_ListProducts<WithCallbackMethod_GetProduct<WithCallbackMethod_SearchProducts<Service > > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_GetProducts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_GetProducts() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::oteldemo::GetProductsRequest* request, ::oteldemo::GetProductsResponse* response) { return this->GetProducts(context, request, response); }));}
+    void SetMessageAllocatorFor_GetProducts(
+        ::grpc::MessageAllocator< ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_GetProducts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetProducts(
+      ::grpc::CallbackServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_ListProducts<WithCallbackMethod_GetProduct<WithCallbackMethod_SearchProducts<WithCallbackMethod_GetProducts<Service > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_ListProducts : public BaseClass {
@@ -1081,6 +1155,23 @@ class ProductCatalogService final {
     }
     // disable synchronous version of this method
     ::grpc::Status SearchProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::SearchProductsRequest* /*request*/, ::oteldemo::SearchProductsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_GetProducts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_GetProducts() {
+      ::grpc::Service::MarkMethodGeneric(3);
+    }
+    ~WithGenericMethod_GetProducts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1143,6 +1234,26 @@ class ProductCatalogService final {
     }
     void RequestSearchProducts(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_GetProducts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_GetProducts() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_GetProducts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestGetProducts(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -1209,6 +1320,28 @@ class ProductCatalogService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* SearchProducts(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_GetProducts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_GetProducts() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetProducts(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_GetProducts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status GetProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* GetProducts(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -1292,9 +1425,36 @@ class ProductCatalogService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedSearchProducts(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::oteldemo::SearchProductsRequest,::oteldemo::SearchProductsResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_ListProducts<WithStreamedUnaryMethod_GetProduct<WithStreamedUnaryMethod_SearchProducts<Service > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_GetProducts : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_GetProducts() {
+      ::grpc::Service::MarkMethodStreamed(3,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::oteldemo::GetProductsRequest, ::oteldemo::GetProductsResponse>* streamer) {
+                       return this->StreamedGetProducts(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_GetProducts() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status GetProducts(::grpc::ServerContext* /*context*/, const ::oteldemo::GetProductsRequest* /*request*/, ::oteldemo::GetProductsResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedGetProducts(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::oteldemo::GetProductsRequest,::oteldemo::GetProductsResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_ListProducts<WithStreamedUnaryMethod_GetProduct<WithStreamedUnaryMethod_SearchProducts<WithStreamedUnaryMethod_GetProducts<Service > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_ListProducts<WithStreamedUnaryMethod_GetProduct<WithStreamedUnaryMethod_SearchProducts<Service > > > StreamedService;
+  typedef WithStreamedUnaryMethod_ListProducts<WithStreamedUnaryMethod_GetProduct<WithStreamedUnaryMethod_SearchProducts<WithStreamedUnaryMethod_GetProducts<Service > > > > StreamedService;
 };
 
 // ---------------Product Review service----------
@@ -2210,6 +2370,14 @@ class CurrencyService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Money>> PrepareAsyncConvert(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Money>>(PrepareAsyncConvertRaw(context, request, cq));
     }
+    // Batch method to convert multiple amounts in a single call (fixes N+1 pattern)
+    virtual ::grpc::Status ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::oteldemo::ConvertCurrenciesResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>> AsyncConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>>(AsyncConvertCurrenciesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>> PrepareAsyncConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>>(PrepareAsyncConvertCurrenciesRaw(context, request, cq));
+    }
     class async_interface {
      public:
       virtual ~async_interface() {}
@@ -2217,6 +2385,9 @@ class CurrencyService final {
       virtual void GetSupportedCurrencies(::grpc::ClientContext* context, const ::oteldemo::Empty* request, ::oteldemo::GetSupportedCurrenciesResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void Convert(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest* request, ::oteldemo::Money* response, std::function<void(::grpc::Status)>) = 0;
       virtual void Convert(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest* request, ::oteldemo::Money* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // Batch method to convert multiple amounts in a single call (fixes N+1 pattern)
+      virtual void ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
@@ -2226,6 +2397,8 @@ class CurrencyService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetSupportedCurrenciesResponse>* PrepareAsyncGetSupportedCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::Empty& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Money>* AsyncConvertRaw(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Money>* PrepareAsyncConvertRaw(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>* AsyncConvertCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>* PrepareAsyncConvertCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
@@ -2244,6 +2417,13 @@ class CurrencyService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::Money>> PrepareAsyncConvert(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::Money>>(PrepareAsyncConvertRaw(context, request, cq));
     }
+    ::grpc::Status ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::oteldemo::ConvertCurrenciesResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>> AsyncConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>>(AsyncConvertCurrenciesRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>> PrepareAsyncConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>>(PrepareAsyncConvertCurrenciesRaw(context, request, cq));
+    }
     class async final :
       public StubInterface::async_interface {
      public:
@@ -2251,6 +2431,8 @@ class CurrencyService final {
       void GetSupportedCurrencies(::grpc::ClientContext* context, const ::oteldemo::Empty* request, ::oteldemo::GetSupportedCurrenciesResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void Convert(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest* request, ::oteldemo::Money* response, std::function<void(::grpc::Status)>) override;
       void Convert(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest* request, ::oteldemo::Money* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response, std::function<void(::grpc::Status)>) override;
+      void ConvertCurrencies(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -2266,8 +2448,11 @@ class CurrencyService final {
     ::grpc::ClientAsyncResponseReader< ::oteldemo::GetSupportedCurrenciesResponse>* PrepareAsyncGetSupportedCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::Empty& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::oteldemo::Money>* AsyncConvertRaw(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::oteldemo::Money>* PrepareAsyncConvertRaw(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>* AsyncConvertCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::oteldemo::ConvertCurrenciesResponse>* PrepareAsyncConvertCurrenciesRaw(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_GetSupportedCurrencies_;
     const ::grpc::internal::RpcMethod rpcmethod_Convert_;
+    const ::grpc::internal::RpcMethod rpcmethod_ConvertCurrencies_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -2277,6 +2462,8 @@ class CurrencyService final {
     virtual ~Service();
     virtual ::grpc::Status GetSupportedCurrencies(::grpc::ServerContext* context, const ::oteldemo::Empty* request, ::oteldemo::GetSupportedCurrenciesResponse* response);
     virtual ::grpc::Status Convert(::grpc::ServerContext* context, const ::oteldemo::CurrencyConversionRequest* request, ::oteldemo::Money* response);
+    // Batch method to convert multiple amounts in a single call (fixes N+1 pattern)
+    virtual ::grpc::Status ConvertCurrencies(::grpc::ServerContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_GetSupportedCurrencies : public BaseClass {
@@ -2318,7 +2505,27 @@ class CurrencyService final {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_GetSupportedCurrencies<WithAsyncMethod_Convert<Service > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_ConvertCurrencies : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_ConvertCurrencies() {
+      ::grpc::Service::MarkMethodAsync(2);
+    }
+    ~WithAsyncMethod_ConvertCurrencies() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConvertCurrencies(::grpc::ServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestConvertCurrencies(::grpc::ServerContext* context, ::oteldemo::ConvertCurrenciesRequest* request, ::grpc::ServerAsyncResponseWriter< ::oteldemo::ConvertCurrenciesResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_GetSupportedCurrencies<WithAsyncMethod_Convert<WithAsyncMethod_ConvertCurrencies<Service > > > AsyncService;
   template <class BaseClass>
   class WithCallbackMethod_GetSupportedCurrencies : public BaseClass {
    private:
@@ -2373,7 +2580,34 @@ class CurrencyService final {
     virtual ::grpc::ServerUnaryReactor* Convert(
       ::grpc::CallbackServerContext* /*context*/, const ::oteldemo::CurrencyConversionRequest* /*request*/, ::oteldemo::Money* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_GetSupportedCurrencies<WithCallbackMethod_Convert<Service > > CallbackService;
+  template <class BaseClass>
+  class WithCallbackMethod_ConvertCurrencies : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_ConvertCurrencies() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::oteldemo::ConvertCurrenciesRequest* request, ::oteldemo::ConvertCurrenciesResponse* response) { return this->ConvertCurrencies(context, request, response); }));}
+    void SetMessageAllocatorFor_ConvertCurrencies(
+        ::grpc::MessageAllocator< ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_ConvertCurrencies() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConvertCurrencies(::grpc::ServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ConvertCurrencies(
+      ::grpc::CallbackServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_GetSupportedCurrencies<WithCallbackMethod_Convert<WithCallbackMethod_ConvertCurrencies<Service > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_GetSupportedCurrencies : public BaseClass {
@@ -2405,6 +2639,23 @@ class CurrencyService final {
     }
     // disable synchronous version of this method
     ::grpc::Status Convert(::grpc::ServerContext* /*context*/, const ::oteldemo::CurrencyConversionRequest* /*request*/, ::oteldemo::Money* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithGenericMethod_ConvertCurrencies : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_ConvertCurrencies() {
+      ::grpc::Service::MarkMethodGeneric(2);
+    }
+    ~WithGenericMethod_ConvertCurrencies() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConvertCurrencies(::grpc::ServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2450,6 +2701,26 @@ class CurrencyService final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_ConvertCurrencies : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_ConvertCurrencies() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_ConvertCurrencies() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConvertCurrencies(::grpc::ServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestConvertCurrencies(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawCallbackMethod_GetSupportedCurrencies : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
@@ -2491,6 +2762,28 @@ class CurrencyService final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Convert(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_ConvertCurrencies : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_ConvertCurrencies() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->ConvertCurrencies(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_ConvertCurrencies() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ConvertCurrencies(::grpc::ServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* ConvertCurrencies(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
@@ -2547,9 +2840,36 @@ class CurrencyService final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedConvert(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::oteldemo::CurrencyConversionRequest,::oteldemo::Money>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_GetSupportedCurrencies<WithStreamedUnaryMethod_Convert<Service > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ConvertCurrencies : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_ConvertCurrencies() {
+      ::grpc::Service::MarkMethodStreamed(2,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::oteldemo::ConvertCurrenciesRequest, ::oteldemo::ConvertCurrenciesResponse>* streamer) {
+                       return this->StreamedConvertCurrencies(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_ConvertCurrencies() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ConvertCurrencies(::grpc::ServerContext* /*context*/, const ::oteldemo::ConvertCurrenciesRequest* /*request*/, ::oteldemo::ConvertCurrenciesResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedConvertCurrencies(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::oteldemo::ConvertCurrenciesRequest,::oteldemo::ConvertCurrenciesResponse>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_GetSupportedCurrencies<WithStreamedUnaryMethod_Convert<WithStreamedUnaryMethod_ConvertCurrencies<Service > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_GetSupportedCurrencies<WithStreamedUnaryMethod_Convert<Service > > StreamedService;
+  typedef WithStreamedUnaryMethod_GetSupportedCurrencies<WithStreamedUnaryMethod_Convert<WithStreamedUnaryMethod_ConvertCurrencies<Service > > > StreamedService;
 };
 
 // -------------Payment service-----------------

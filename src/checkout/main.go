@@ -503,22 +503,109 @@ func (cs *checkout) emptyUserCart(ctx context.Context, userID string) error {
 	return nil
 }
 
+// prepOrderItems prepares order items from cart items using batch RPC calls.
+// This eliminates the N+1 query anti-pattern by fetching all products and
+// converting all currencies in just 2 batch calls instead of 2N individual calls.
 func (cs *checkout) prepOrderItems(ctx context.Context, items []*pb.CartItem, userCurrency string) ([]*pb.OrderItem, error) {
-	out := make([]*pb.OrderItem, len(items))
+	ctx, span := tracer.Start(ctx, "prepOrderItems")
+	defer span.End()
 
+	// Handle empty cart early
+	if len(items) == 0 {
+		logger.Info("prepOrderItems: empty cart, nothing to prepare")
+		return []*pb.OrderItem{}, nil
+	}
+
+	// Step 1: Extract all product IDs from cart
+	productIds := make([]string, len(items))
 	for i, item := range items {
-		product, err := cs.productCatalogSvcClient.GetProduct(ctx, &pb.GetProductRequest{Id: item.GetProductId()})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get product #%q", item.GetProductId())
+		productIds[i] = item.GetProductId()
+	}
+
+	span.SetAttributes(
+		attribute.Int("app.cart.items.count", len(items)),
+		attribute.StringSlice("app.products.requested_ids", productIds),
+		attribute.String("app.currency.target", userCurrency),
+	)
+
+	logger.Info(fmt.Sprintf("prepOrderItems: preparing %d items", len(items)))
+
+	// Step 2: Batch fetch ALL products in ONE RPC call
+	// This replaces N individual GetProduct() calls
+	productsResp, err := cs.productCatalogSvcClient.GetProducts(
+		ctx, &pb.GetProductsRequest{Ids: productIds})
+	if err != nil {
+		span.RecordError(err)
+		return nil, fmt.Errorf("failed to batch get products: %+v", err)
+	}
+
+	// Create product lookup map for O(1) access by ID
+	productMap := make(map[string]*pb.Product, len(productsResp.GetProducts()))
+	for _, p := range productsResp.GetProducts() {
+		productMap[p.GetId()] = p
+	}
+
+	span.SetAttributes(
+		attribute.Int("app.products.found.count", len(productMap)),
+	)
+
+	// Validate all products were found
+	for _, id := range productIds {
+		if _, ok := productMap[id]; !ok {
+			err := fmt.Errorf("product #%q not found in batch response", id)
+			span.RecordError(err)
+			return nil, err
 		}
-		price, err := cs.convertCurrency(ctx, product.GetPriceUsd(), userCurrency)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert price of %q to %s", item.GetProductId(), userCurrency)
-		}
+	}
+
+	// Step 3: Collect all USD prices to convert
+	amounts := make([]*pb.Money, 0, len(items))
+	for _, item := range items {
+		product := productMap[item.GetProductId()]
+		amounts = append(amounts, product.GetPriceUsd())
+	}
+
+	// Step 4: Batch convert ALL currencies in ONE RPC call
+	// This replaces N individual Convert() calls
+	convertResp, err := cs.currencySvcClient.ConvertCurrencies(
+		ctx, &pb.ConvertCurrenciesRequest{
+			Amounts: amounts,
+			ToCode:  userCurrency,
+		})
+	if err != nil {
+		span.RecordError(err)
+		return nil, fmt.Errorf("failed to batch convert currencies: %+v", err)
+	}
+
+	// Validate response size matches request
+	if len(convertResp.GetConverted()) != len(amounts) {
+		err := fmt.Errorf("currency conversion response size mismatch: got %d, expected %d",
+			len(convertResp.GetConverted()), len(amounts))
+		span.RecordError(err)
+		return nil, err
+	}
+
+	// Step 5: Assemble final order items
+	out := make([]*pb.OrderItem, len(items))
+	for i, item := range items {
+		product := productMap[item.GetProductId()]
+		convertedPrice := convertResp.GetConverted()[i]
+
 		out[i] = &pb.OrderItem{
 			Item: item,
-			Cost: price}
+			Cost: convertedPrice,
+		}
+
+		// Log for debugging (optional - can be removed in production)
+		_ = product // Used for potential debug logging
 	}
+
+	span.SetAttributes(
+		attribute.Int("app.order.items.prepared_count", len(out)),
+	)
+
+	logger.Info(fmt.Sprintf("prepOrderItems: successfully prepared %d order items", len(out)))
+
 	return out, nil
 }
 

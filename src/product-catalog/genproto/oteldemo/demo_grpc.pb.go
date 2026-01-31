@@ -316,6 +316,7 @@ const (
 	ProductCatalogService_ListProducts_FullMethodName   = "/oteldemo.ProductCatalogService/ListProducts"
 	ProductCatalogService_GetProduct_FullMethodName     = "/oteldemo.ProductCatalogService/GetProduct"
 	ProductCatalogService_SearchProducts_FullMethodName = "/oteldemo.ProductCatalogService/SearchProducts"
+	ProductCatalogService_GetProducts_FullMethodName    = "/oteldemo.ProductCatalogService/GetProducts"
 )
 
 // ProductCatalogServiceClient is the client API for ProductCatalogService service.
@@ -325,6 +326,8 @@ type ProductCatalogServiceClient interface {
 	ListProducts(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListProductsResponse, error)
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*Product, error)
 	SearchProducts(ctx context.Context, in *SearchProductsRequest, opts ...grpc.CallOption) (*SearchProductsResponse, error)
+	// Batch method to fetch multiple products in a single call (fixes N+1 pattern)
+	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
 }
 
 type productCatalogServiceClient struct {
@@ -365,6 +368,16 @@ func (c *productCatalogServiceClient) SearchProducts(ctx context.Context, in *Se
 	return out, nil
 }
 
+func (c *productCatalogServiceClient) GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProductsResponse)
+	err := c.cc.Invoke(ctx, ProductCatalogService_GetProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProductCatalogServiceServer is the server API for ProductCatalogService service.
 // All implementations must embed UnimplementedProductCatalogServiceServer
 // for forward compatibility.
@@ -372,6 +385,8 @@ type ProductCatalogServiceServer interface {
 	ListProducts(context.Context, *Empty) (*ListProductsResponse, error)
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
 	SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error)
+	// Batch method to fetch multiple products in a single call (fixes N+1 pattern)
+	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
 	mustEmbedUnimplementedProductCatalogServiceServer()
 }
 
@@ -390,6 +405,9 @@ func (UnimplementedProductCatalogServiceServer) GetProduct(context.Context, *Get
 }
 func (UnimplementedProductCatalogServiceServer) SearchProducts(context.Context, *SearchProductsRequest) (*SearchProductsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchProducts not implemented")
+}
+func (UnimplementedProductCatalogServiceServer) GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProducts not implemented")
 }
 func (UnimplementedProductCatalogServiceServer) mustEmbedUnimplementedProductCatalogServiceServer() {}
 func (UnimplementedProductCatalogServiceServer) testEmbeddedByValue()                               {}
@@ -466,6 +484,24 @@ func _ProductCatalogService_SearchProducts_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProductCatalogService_GetProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductCatalogServiceServer).GetProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProductCatalogService_GetProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductCatalogServiceServer).GetProducts(ctx, req.(*GetProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProductCatalogService_ServiceDesc is the grpc.ServiceDesc for ProductCatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -484,6 +520,10 @@ var ProductCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchProducts",
 			Handler:    _ProductCatalogService_SearchProducts_Handler,
+		},
+		{
+			MethodName: "GetProducts",
+			Handler:    _ProductCatalogService_GetProducts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -811,6 +851,7 @@ var ShippingService_ServiceDesc = grpc.ServiceDesc{
 const (
 	CurrencyService_GetSupportedCurrencies_FullMethodName = "/oteldemo.CurrencyService/GetSupportedCurrencies"
 	CurrencyService_Convert_FullMethodName                = "/oteldemo.CurrencyService/Convert"
+	CurrencyService_ConvertCurrencies_FullMethodName      = "/oteldemo.CurrencyService/ConvertCurrencies"
 )
 
 // CurrencyServiceClient is the client API for CurrencyService service.
@@ -819,6 +860,8 @@ const (
 type CurrencyServiceClient interface {
 	GetSupportedCurrencies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetSupportedCurrenciesResponse, error)
 	Convert(ctx context.Context, in *CurrencyConversionRequest, opts ...grpc.CallOption) (*Money, error)
+	// Batch method to convert multiple amounts in a single call (fixes N+1 pattern)
+	ConvertCurrencies(ctx context.Context, in *ConvertCurrenciesRequest, opts ...grpc.CallOption) (*ConvertCurrenciesResponse, error)
 }
 
 type currencyServiceClient struct {
@@ -849,12 +892,24 @@ func (c *currencyServiceClient) Convert(ctx context.Context, in *CurrencyConvers
 	return out, nil
 }
 
+func (c *currencyServiceClient) ConvertCurrencies(ctx context.Context, in *ConvertCurrenciesRequest, opts ...grpc.CallOption) (*ConvertCurrenciesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConvertCurrenciesResponse)
+	err := c.cc.Invoke(ctx, CurrencyService_ConvertCurrencies_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CurrencyServiceServer is the server API for CurrencyService service.
 // All implementations must embed UnimplementedCurrencyServiceServer
 // for forward compatibility.
 type CurrencyServiceServer interface {
 	GetSupportedCurrencies(context.Context, *Empty) (*GetSupportedCurrenciesResponse, error)
 	Convert(context.Context, *CurrencyConversionRequest) (*Money, error)
+	// Batch method to convert multiple amounts in a single call (fixes N+1 pattern)
+	ConvertCurrencies(context.Context, *ConvertCurrenciesRequest) (*ConvertCurrenciesResponse, error)
 	mustEmbedUnimplementedCurrencyServiceServer()
 }
 
@@ -870,6 +925,9 @@ func (UnimplementedCurrencyServiceServer) GetSupportedCurrencies(context.Context
 }
 func (UnimplementedCurrencyServiceServer) Convert(context.Context, *CurrencyConversionRequest) (*Money, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Convert not implemented")
+}
+func (UnimplementedCurrencyServiceServer) ConvertCurrencies(context.Context, *ConvertCurrenciesRequest) (*ConvertCurrenciesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConvertCurrencies not implemented")
 }
 func (UnimplementedCurrencyServiceServer) mustEmbedUnimplementedCurrencyServiceServer() {}
 func (UnimplementedCurrencyServiceServer) testEmbeddedByValue()                         {}
@@ -928,6 +986,24 @@ func _CurrencyService_Convert_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CurrencyService_ConvertCurrencies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConvertCurrenciesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CurrencyServiceServer).ConvertCurrencies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CurrencyService_ConvertCurrencies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CurrencyServiceServer).ConvertCurrencies(ctx, req.(*ConvertCurrenciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CurrencyService_ServiceDesc is the grpc.ServiceDesc for CurrencyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -942,6 +1018,10 @@ var CurrencyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Convert",
 			Handler:    _CurrencyService_Convert_Handler,
+		},
+		{
+			MethodName: "ConvertCurrencies",
+			Handler:    _CurrencyService_ConvertCurrencies_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -44,6 +44,9 @@ class MockProductCatalogServiceStub : public ProductCatalogService::StubInterfac
   MOCK_METHOD3(SearchProducts, ::grpc::Status(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::oteldemo::SearchProductsResponse* response));
   MOCK_METHOD3(AsyncSearchProductsRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::SearchProductsResponse>*(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq));
   MOCK_METHOD3(PrepareAsyncSearchProductsRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::SearchProductsResponse>*(::grpc::ClientContext* context, const ::oteldemo::SearchProductsRequest& request, ::grpc::CompletionQueue* cq));
+  MOCK_METHOD3(GetProducts, ::grpc::Status(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::oteldemo::GetProductsResponse* response));
+  MOCK_METHOD3(AsyncGetProductsRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>*(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq));
+  MOCK_METHOD3(PrepareAsyncGetProductsRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::GetProductsResponse>*(::grpc::ClientContext* context, const ::oteldemo::GetProductsRequest& request, ::grpc::CompletionQueue* cq));
 };
 
 class MockProductReviewServiceStub : public ProductReviewService::StubInterface {
@@ -77,6 +80,9 @@ class MockCurrencyServiceStub : public CurrencyService::StubInterface {
   MOCK_METHOD3(Convert, ::grpc::Status(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::oteldemo::Money* response));
   MOCK_METHOD3(AsyncConvertRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Money>*(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq));
   MOCK_METHOD3(PrepareAsyncConvertRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::Money>*(::grpc::ClientContext* context, const ::oteldemo::CurrencyConversionRequest& request, ::grpc::CompletionQueue* cq));
+  MOCK_METHOD3(ConvertCurrencies, ::grpc::Status(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::oteldemo::ConvertCurrenciesResponse* response));
+  MOCK_METHOD3(AsyncConvertCurrenciesRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>*(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq));
+  MOCK_METHOD3(PrepareAsyncConvertCurrenciesRaw, ::grpc::ClientAsyncResponseReaderInterface< ::oteldemo::ConvertCurrenciesResponse>*(::grpc::ClientContext* context, const ::oteldemo::ConvertCurrenciesRequest& request, ::grpc::CompletionQueue* cq));
 };
 
 class MockPaymentServiceStub : public PaymentService::StubInterface {
