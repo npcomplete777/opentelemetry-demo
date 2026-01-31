@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - accounting
+  - ad
+  - admin-secret
+  - agent-collector
+  - all-in-one
+  - cart
+  - checkout
+  - currency
+  - email
+  - flagd
+  - fraud-detection
+  - frontend
+  - frontend-proxy
+  - grafana
+  - image-provider
+  - jaeger
+  - kafka
+  - llm
+  - load-generator
+  - opensearch
+  - otel
+  - payment
+  - postgresql
+  - product-catalog
+  - product-reviews
+  - quote
+  - recommendation
+  - server
+  - shipping
+  - valkey-cart
