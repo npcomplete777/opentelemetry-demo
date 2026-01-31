@@ -1,0 +1,71 @@
+# Service build configuration
+# Each service defines its build parameters
+
+services:
+  adservice:
+    path: src/adservice
+    dockerfile: src/adservice/Dockerfile
+    language: java
+
+  cartservice:
+    path: src/cartservice
+    dockerfile: src/cartservice/src/Dockerfile
+    language: dotnet
+
+  checkoutservice:
+    path: src/checkoutservice
+    dockerfile: src/checkoutservice/Dockerfile
+    language: go
+    proto_dependent: true
+
+  currencyservice:
+    path: src/currencyservice
+    dockerfile: src/currencyservice/Dockerfile
+    language: cpp
+    proto_dependent: true
+
+  emailservice:
+    path: src/emailservice
+    dockerfile: src/emailservice/Dockerfile
+    language: ruby
+
+  frontend:
+    path: src/frontend
+    dockerfile: src/frontend/Dockerfile
+    language: typescript
+
+  frontendproxy:
+    path: src/frontendproxy
+    dockerfile: src/frontendproxy/Dockerfile
+    language: envoy
+
+  loadgenerator:
+    path: src/loadgenerator
+    dockerfile: src/loadgenerator/Dockerfile
+    language: python
+
+  paymentservice:
+    path: src/paymentservice
+    dockerfile: src/paymentservice/Dockerfile
+    language: nodejs
+
+  productcatalogservice:
+    path: src/productcatalogservice
+    dockerfile: src/productcatalogservice/Dockerfile
+    language: go
+    proto_dependent: true
+
+  quoteservice:
+    path: src/quoteservice
+    dockerfile: src/quoteservice/Dockerfile
+    language: php
+
+  recommendationservice:
+    path: src/recommendationservice
+    dockerfile: src/recommendationservice/Dockerfile
+    language: python
+
+  shippingservice:
+    path: src/shippingservice
+    dockerfile: src/shippingservice/Dockerfile
+    language: rust

@@ -1,0 +1,199 @@
+name: Build Services
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pb/**'
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to build (comma-separated, or "all")'
+        required: false
+        default: ''
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE: ${{ github.repository_owner }}/opentelemetry-demo
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      proto_changed: ${{ steps.detect.outputs.proto_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed services
+        id: detect
+        run: |
+          # If manual trigger with specific services
+          if [ -n "${{ inputs.services }}" ]; then
+            if [ "${{ inputs.services }}" == "all" ]; then
+              services='["adservice","cartservice","checkoutservice","currencyservice","emailservice","frontend","loadgenerator","paymentservice","productcatalogservice","quoteservice","recommendationservice","shippingservice"]'
+            else
+              services=$(echo "${{ inputs.services }}" | jq -R -c 'split(",") | map(gsub("\\s"; ""))')
+            fi
+            echo "services=$services" >> $GITHUB_OUTPUT
+            echo "proto_changed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if proto files changed
+          proto_changed="false"
+          if git diff --name-only HEAD~1 | grep -q "^pb/"; then
+            proto_changed="true"
+          fi
+          echo "proto_changed=$proto_changed" >> $GITHUB_OUTPUT
+
+          # Detect changed services from src/
+          changed_dirs=$(git diff --name-only HEAD~1 | grep "^src/" | cut -d'/' -f2 | sort -u)
+
+          # If proto changed, add proto-dependent services
+          if [ "$proto_changed" == "true" ]; then
+            changed_dirs="$changed_dirs
+          checkoutservice
+          currencyservice
+          productcatalogservice"
+          fi
+
+          # Convert to unique JSON array
+          services=$(echo "$changed_dirs" | sort -u | grep -v '^$' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+
+          if [ "$services" == "[]" ] || [ -z "$services" ]; then
+            services='[]'
+          fi
+
+          echo "services=$services" >> $GITHUB_OUTPUT
+          echo "Detected services to build: $services"
+
+  build:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+      fail-fast: false
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      image_tags: ${{ steps.collect.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Read service config
+        id: config
+        run: |
+          # Parse service config from YAML using grep/sed (no yq dependency)
+          service="${{ matrix.service }}"
+          config_file=".github/service-config.yaml"
+
+          # Extract dockerfile path from config (simple grep approach)
+          # Look for the service block and extract dockerfile
+          dockerfile=$(awk "/^  $service:$/,/^  [a-z]/" $config_file | grep "dockerfile:" | head -1 | sed 's/.*dockerfile: //')
+
+          # Fallback if not found in config
+          if [ -z "$dockerfile" ]; then
+            dockerfile="src/$service/Dockerfile"
+          fi
+
+          # Check if dockerfile exists, try alternate location
+          if [ ! -f "$dockerfile" ]; then
+            if [ -f "src/$service/src/Dockerfile" ]; then
+              dockerfile="src/$service/src/Dockerfile"
+            fi
+          fi
+
+          echo "dockerfile=$dockerfile" >> $GITHUB_OUTPUT
+          echo "Using Dockerfile: $dockerfile"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ steps.config.outputs.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/${{ matrix.service }}:${{ steps.sha.outputs.short }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}/${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Output image tag
+        id: collect
+        run: |
+          echo "tags=${{ matrix.service }}=${{ steps.sha.outputs.short }}" >> $GITHUB_OUTPUT
+
+  update-kustomize:
+    needs: [detect-changes, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Pull latest
+        run: git pull origin main
+
+      - name: Update Kustomize image tags
+        run: |
+          cd k8s/overlays/demo
+          sha="${{ github.sha }}"
+          short_sha="${sha:0:7}"
+
+          services='${{ needs.detect-changes.outputs.services }}'
+
+          for service in $(echo $services | jq -r '.[]'); do
+            echo "Updating $service to tag $short_sha"
+
+            # Check if image entry exists
+            if grep -q "name:.*$service" kustomization.yaml; then
+              # Update existing entry
+              sed -i "s|newTag:.*# $service|newTag: $short_sha # $service|" kustomization.yaml
+            else
+              # Add new entry to images section
+              cat >> kustomization.yaml << IMGEOF
+
+  - name: ghcr.io/open-telemetry/demo/$service
+    newName: ghcr.io/${{ github.repository_owner }}/opentelemetry-demo/$service
+    newTag: $short_sha # $service
+IMGEOF
+            fi
+          done
+
+          cat kustomization.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/overlays/demo/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore: update image tags for $(echo '${{ needs.detect-changes.outputs.services }}' | jq -r 'join(", ")')"
+          git push
