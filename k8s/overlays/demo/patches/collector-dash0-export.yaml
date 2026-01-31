@@ -25,7 +25,7 @@ data:
 
     exporters:
       otlphttp/dash0:
-        endpoint: https://ingress.eu-west-1.aws.dash0.com
+        endpoint: https://ingress.us-west-2.aws.dash0.com
         headers:
           Authorization: "Bearer auth_oBkifRxvDyO5ZIv4zmpmvmyfV3AZ1EUQ"
       debug:
