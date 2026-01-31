@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-agent
+  namespace: otel-demo
+data:
+  relay: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 1000
+      resource:
+        attributes:
+          - key: dash0.dataset
+            value: otel-demo-gitops
+            action: upsert
+
+    exporters:
+      otlphttp/dash0:
+        endpoint: https://ingress.eu-west-1.aws.dash0.com
+        headers:
+          Authorization: "Bearer auth_oBkifRxvDyO5ZIv4zmpmvmyfV3AZ1EUQ"
+      debug:
+        verbosity: basic
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [otlphttp/dash0, debug]
+        metrics:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [otlphttp/dash0, debug]
+        logs:
+          receivers: [otlp]
+          processors: [batch, resource]
+          exporters: [otlphttp/dash0, debug]

@@ -6,5 +6,7 @@ namespace: otel-demo
 resources:
   - ../../base
 
-# Image overrides - GitHub Actions will append new tags here
+patches:
+  - path: patches/collector-dash0-export.yaml
+
 images: []
