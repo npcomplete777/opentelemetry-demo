@@ -180,12 +180,10 @@ jobs:
               sed -i "s|newTag:.*# $service|newTag: $short_sha # $service|" kustomization.yaml
             else
               # Add new entry to images section
-              cat >> kustomization.yaml << IMGEOF
-
-  - name: ghcr.io/open-telemetry/demo/$service
-    newName: ghcr.io/${{ github.repository_owner }}/opentelemetry-demo/$service
-    newTag: $short_sha # $service
-IMGEOF
+              echo "" >> kustomization.yaml
+              echo "  - name: ghcr.io/open-telemetry/demo/$service" >> kustomization.yaml
+              echo "    newName: ghcr.io/${{ github.repository_owner }}/opentelemetry-demo/$service" >> kustomization.yaml
+              echo "    newTag: $short_sha # $service" >> kustomization.yaml
             fi
           done
 
