@@ -10,5 +10,6 @@ patches:
   - path: patches/collector-dash0-export.yaml
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
+  - path: patches/resource-limits.yaml
 
 images: []
