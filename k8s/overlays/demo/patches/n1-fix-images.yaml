@@ -1,4 +1,4 @@
-# Strategic merge patch to update images with N+1 fix
+# Strategic merge patch to update images and resources for N+1 fix
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -9,6 +9,16 @@ spec:
       containers:
         - name: checkout
           image: ghcr.io/npcomplete777/opentelemetry-demo/checkoutservice:bed6bfd
+          env:
+            - name: GOMEMLIMIT
+              value: 180MiB
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -20,6 +30,13 @@ spec:
       containers:
         - name: product-catalog
           image: ghcr.io/npcomplete777/opentelemetry-demo/productcatalogservice:bed6bfd
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -31,3 +48,10 @@ spec:
       containers:
         - name: currency
           image: ghcr.io/npcomplete777/opentelemetry-demo/currencyservice:bed6bfd
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
