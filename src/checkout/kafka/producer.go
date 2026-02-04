@@ -5,6 +5,7 @@ package kafka
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/IBM/sarama"
 )
@@ -36,9 +37,10 @@ func CreateKafkaProducer(brokers []string, logger *slog.Logger) (sarama.AsyncPro
 	saramaConfig.Producer.Return.Successes = true
 	saramaConfig.Producer.Return.Errors = true
 
-	// Sarama has an issue in a single broker kafka if the kafka broker is restarted.
-	// This setting is to prevent that issue from manifesting itself, but may swallow failed messages.
-	saramaConfig.Producer.RequiredAcks = sarama.NoResponse
+	// Ensure order messages are durably written
+	saramaConfig.Producer.RequiredAcks = sarama.WaitForLocal // Wait for leader ack (balance of safety and performance)
+	saramaConfig.Producer.Retry.Max = 3
+	saramaConfig.Producer.Retry.Backoff = 100 * time.Millisecond
 
 	saramaConfig.Version = ProtocolVersion
 
