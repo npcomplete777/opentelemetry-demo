@@ -622,42 +622,62 @@ func (cs *checkout) sendToPostProcessor(ctx context.Context, result *pb.OrderRes
 
 	// Inject tracing info into message
 	span := createProducerSpan(ctx, &msg)
-	defer span.End()
 
-	// Send message and handle response
+	// FIX: Async Kafka writes to prevent 504 timeouts
+	// Problem: Blocking on Kafka acknowledgment caused requests to exceed
+	// Envoy's 15s timeout while Kafka took 2+ minutes to respond.
+	// Solution: Fire-and-forget with background goroutine for ack handling.
+	// The order is already committed - we just need to notify post-processor.
 	startTime := time.Now()
+
+	// Non-blocking send to Kafka input channel
 	select {
 	case cs.KafkaProducerClient.Input() <- &msg:
-		select {
-		case successMsg := <-cs.KafkaProducerClient.Successes():
-			span.SetAttributes(
-				attribute.Bool("messaging.kafka.producer.success", true),
-				attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
-				attribute.KeyValue(semconv.MessagingKafkaMessageOffset(int(successMsg.Offset))),
-			)
-			logger.Info(fmt.Sprintf("Successful to write message. offset: %v, duration: %v", successMsg.Offset, time.Since(startTime)))
-		case errMsg := <-cs.KafkaProducerClient.Errors():
-			span.SetAttributes(
-				attribute.Bool("messaging.kafka.producer.success", false),
-				attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
-			)
-			span.SetStatus(otelcodes.Error, errMsg.Err.Error())
-			logger.Error(fmt.Sprintf("Failed to write message: %v", errMsg.Err))
-		case <-ctx.Done():
-			span.SetAttributes(
-				attribute.Bool("messaging.kafka.producer.success", false),
-				attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
-			)
-			span.SetStatus(otelcodes.Error, "Context cancelled: "+ctx.Err().Error())
-			logger.Warn(fmt.Sprintf("Context canceled before success message received: %v", ctx.Err()))
-		}
-	case <-ctx.Done():
+		// Message queued successfully - return immediately to client
 		span.SetAttributes(
-			attribute.Bool("messaging.kafka.producer.success", false),
-			attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
+			attribute.Bool("messaging.kafka.producer.queued", true),
+			attribute.Int("messaging.kafka.producer.queue_ms", int(time.Since(startTime).Milliseconds())),
 		)
-		span.SetStatus(otelcodes.Error, "Failed to send: "+ctx.Err().Error())
-		logger.Error(fmt.Sprintf("Failed to send message to Kafka within context deadline: %v", ctx.Err()))
+		logger.Info("Message queued to Kafka, returning to client immediately")
+
+		// Handle Kafka acknowledgment asynchronously
+		go func(span trace.Span, startTime time.Time) {
+			defer span.End()
+
+			select {
+			case successMsg := <-cs.KafkaProducerClient.Successes():
+				span.SetAttributes(
+					attribute.Bool("messaging.kafka.producer.success", true),
+					attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
+					attribute.KeyValue(semconv.MessagingKafkaMessageOffset(int(successMsg.Offset))),
+				)
+				logger.Info(fmt.Sprintf("Kafka write confirmed. offset: %v, duration: %v", successMsg.Offset, time.Since(startTime)))
+			case errMsg := <-cs.KafkaProducerClient.Errors():
+				span.SetAttributes(
+					attribute.Bool("messaging.kafka.producer.success", false),
+					attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
+				)
+				span.SetStatus(otelcodes.Error, errMsg.Err.Error())
+				logger.Error(fmt.Sprintf("Kafka write failed (async): %v", errMsg.Err))
+				// TODO: Consider adding to dead-letter queue or retry mechanism
+			case <-time.After(5 * time.Minute):
+				span.SetAttributes(
+					attribute.Bool("messaging.kafka.producer.success", false),
+					attribute.Int("messaging.kafka.producer.duration_ms", int(time.Since(startTime).Milliseconds())),
+				)
+				span.SetStatus(otelcodes.Error, "Kafka acknowledgment timeout (5m)")
+				logger.Warn("Kafka acknowledgment timeout after 5 minutes")
+			}
+		}(span, startTime)
+
+	case <-ctx.Done():
+		defer span.End()
+		span.SetAttributes(
+			attribute.Bool("messaging.kafka.producer.queued", false),
+			attribute.Int("messaging.kafka.producer.queue_ms", int(time.Since(startTime).Milliseconds())),
+		)
+		span.SetStatus(otelcodes.Error, "Failed to queue: "+ctx.Err().Error())
+		logger.Error(fmt.Sprintf("Failed to queue message to Kafka: %v", ctx.Err()))
 		return
 	}
 
