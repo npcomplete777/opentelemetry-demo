@@ -22,6 +22,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/log/global"
+	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
 
@@ -150,6 +151,8 @@ type checkout struct {
 	currencySvcClient       pb.CurrencyServiceClient
 	emailSvcClient          pb.EmailServiceClient
 	paymentSvcClient        pb.PaymentServiceClient
+	// Connection tracking for metrics
+	connections map[string]*grpc.ClientConn
 }
 
 func main() {
@@ -199,36 +202,46 @@ func main() {
 	tracer = tp.Tracer("checkout")
 
 	svc := new(checkout)
+	svc.connections = make(map[string]*grpc.ClientConn)
 
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_ADDR")
 	c := mustCreateClient(svc.shippingSvcAddr)
+	svc.connections["shipping"] = c
 	svc.shippingSvcClient = pb.NewShippingServiceClient(c)
 	defer c.Close()
 
 	mustMapEnv(&svc.productCatalogSvcAddr, "PRODUCT_CATALOG_ADDR")
 	c = mustCreateClient(svc.productCatalogSvcAddr)
+	svc.connections["product-catalog"] = c
 	svc.productCatalogSvcClient = pb.NewProductCatalogServiceClient(c)
 	defer c.Close()
 
 	mustMapEnv(&svc.cartSvcAddr, "CART_ADDR")
 	c = mustCreateClient(svc.cartSvcAddr)
+	svc.connections["cart"] = c
 	svc.cartSvcClient = pb.NewCartServiceClient(c)
 	defer c.Close()
 
 	mustMapEnv(&svc.currencySvcAddr, "CURRENCY_ADDR")
 	c = mustCreateClient(svc.currencySvcAddr)
+	svc.connections["currency"] = c
 	svc.currencySvcClient = pb.NewCurrencyServiceClient(c)
 	defer c.Close()
 
 	mustMapEnv(&svc.emailSvcAddr, "EMAIL_ADDR")
 	c = mustCreateClient(svc.emailSvcAddr)
+	svc.connections["email"] = c
 	svc.emailSvcClient = pb.NewEmailServiceClient(c)
 	defer c.Close()
 
 	mustMapEnv(&svc.paymentSvcAddr, "PAYMENT_ADDR")
 	c = mustCreateClient(svc.paymentSvcAddr)
+	svc.connections["payment"] = c
 	svc.paymentSvcClient = pb.NewPaymentServiceClient(c)
 	defer c.Close()
+
+	// Start connection metrics collection
+	svc.startConnectionMetrics(mp)
 
 	svc.kafkaBrokerSvcAddr = os.Getenv("KAFKA_ADDR")
 
@@ -278,6 +291,32 @@ func mustMapEnv(target *string, envKey string) {
 		panic(fmt.Sprintf("environment variable %q not set", envKey))
 	}
 	*target = v
+}
+
+// startConnectionMetrics starts a background goroutine that exposes gRPC connection state metrics
+func (cs *checkout) startConnectionMetrics(mp *sdkmetric.MeterProvider) {
+	meter := mp.Meter("checkout.connections")
+
+	// Observable gauge for connection state
+	connState, _ := meter.Int64ObservableGauge(
+		"grpc.client.connection.state",
+		metric.WithDescription("gRPC connection state: 0=idle, 1=connecting, 2=ready, 3=transient_failure, 4=shutdown"),
+	)
+
+	// Register callback to observe connection states
+	meter.RegisterCallback(func(ctx context.Context, o metric.Observer) error {
+		for name, conn := range cs.connections {
+			state := conn.GetState()
+			o.ObserveInt64(connState, int64(state),
+				metric.WithAttributes(
+					attribute.String("service.name", "checkout"),
+					attribute.String("rpc.target_service", name),
+				))
+		}
+		return nil
+	}, connState)
+
+	logger.Info("gRPC connection metrics initialized")
 }
 
 func (cs *checkout) Check(ctx context.Context, req *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
@@ -442,6 +481,14 @@ func (cs *checkout) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Contex
 }
 
 func mustCreateClient(svcAddr string) *grpc.ClientConn {
+	meter := otel.Meter("checkout.connections")
+	dialAttempts, _ := meter.Int64Counter("grpc.client.connection.dial_attempts_total",
+		metric.WithDescription("Total number of gRPC dial attempts"))
+
+	dialAttempts.Add(context.Background(), 1,
+		metric.WithAttributes(attribute.String("rpc.target", svcAddr)),
+	)
+
 	c, err := grpc.NewClient(svcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
