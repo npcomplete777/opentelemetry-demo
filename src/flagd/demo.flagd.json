@@ -146,6 +146,18 @@
         "10000x": 10000
       },
       "defaultVariant": "off"
+    },
+    "paymentLatencyInjection": {
+      "description": "Inject latency into payment service to trigger circuit breaker",
+      "state": "ENABLED",
+      "variants": {
+        "off": 0,
+        "500ms": 500,
+        "2sec": 2000,
+        "5sec": 5000,
+        "timeout": 30000
+      },
+      "defaultVariant": "off"
     }
   }
 }

@@ -26,6 +26,14 @@ module.exports.charge = async request => {
 
   await OpenFeature.setProviderAndWait(flagProvider);
 
+  // Inject latency to trigger circuit breaker testing
+  const latencyMs = await OpenFeature.getClient().getNumberValue("paymentLatencyInjection", 0);
+  if (latencyMs > 0) {
+    logger.info({ latencyMs }, 'Injecting payment latency for circuit breaker testing');
+    span.setAttributes({ 'app.payment.injected_latency_ms': latencyMs });
+    await new Promise(resolve => setTimeout(resolve, latencyMs));
+  }
+
   const numberVariant =  await OpenFeature.getClient().getNumberValue("paymentFailure", 0);
 
   if (numberVariant > 0) {

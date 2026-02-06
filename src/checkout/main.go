@@ -31,6 +31,7 @@ import (
 	otelhooks "github.com/open-feature/go-sdk-contrib/hooks/open-telemetry/pkg"
 	flagd "github.com/open-feature/go-sdk-contrib/providers/flagd/pkg"
 	"github.com/open-feature/go-sdk/openfeature"
+	"github.com/sony/gobreaker/v2"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -152,7 +153,8 @@ type checkout struct {
 	emailSvcClient          pb.EmailServiceClient
 	paymentSvcClient        pb.PaymentServiceClient
 	// Connection tracking for metrics
-	connections map[string]*grpc.ClientConn
+	connections        map[string]*grpc.ClientConn
+	paymentCircuitBreaker *gobreaker.CircuitBreaker[string]
 }
 
 func main() {
@@ -203,6 +205,21 @@ func main() {
 
 	svc := new(checkout)
 	svc.connections = make(map[string]*grpc.ClientConn)
+
+	// Initialize circuit breaker for payment service
+	svc.paymentCircuitBreaker = gobreaker.NewCircuitBreaker[string](gobreaker.Settings{
+		Name:        "payment-service",
+		MaxRequests: 1, // Only allow 1 probe request in half-open state
+		Interval:    30 * time.Second, // Evaluation window for counting failures
+		Timeout:     15 * time.Second, // How long to stay open before trying half-open
+		ReadyToTrip: func(counts gobreaker.Counts) bool {
+			// Trip after 3 consecutive failures
+			return counts.ConsecutiveFailures >= 3
+		},
+		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
+			logger.Info(fmt.Sprintf("Circuit breaker %s: %s → %s", name, from.String(), to.String()))
+		},
+	})
 
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_ADDR")
 	c := mustCreateClient(svc.shippingSvcAddr)
@@ -595,20 +612,53 @@ func (cs *checkout) convertCurrency(ctx context.Context, from *pb.Money, toCurre
 }
 
 func (cs *checkout) chargeCard(ctx context.Context, amount *pb.Money, paymentInfo *pb.CreditCardInfo) (string, error) {
-	paymentService := cs.paymentSvcClient
-	if cs.isFeatureFlagEnabled(ctx, "paymentUnreachable") {
-		badAddress := "badAddress:50051"
-		c := mustCreateClient(badAddress)
-		paymentService = pb.NewPaymentServiceClient(c)
+	span := trace.SpanFromContext(ctx)
+
+	// Add circuit breaker state to span
+	cbState := cs.paymentCircuitBreaker.State()
+	span.SetAttributes(
+		attribute.String("circuit_breaker.name", "payment-service"),
+		attribute.String("circuit_breaker.state", cbState.String()),
+	)
+
+	// Wrap payment call in circuit breaker
+	txID, err := cs.paymentCircuitBreaker.Execute(func() (string, error) {
+		paymentService := cs.paymentSvcClient
+		if cs.isFeatureFlagEnabled(ctx, "paymentUnreachable") {
+			badAddress := "badAddress:50051"
+			c := mustCreateClient(badAddress)
+			paymentService = pb.NewPaymentServiceClient(c)
+		}
+
+		paymentResp, err := paymentService.Charge(ctx, &pb.ChargeRequest{
+			Amount:     amount,
+			CreditCard: paymentInfo})
+		if err != nil {
+			return "", fmt.Errorf("could not charge the card: %+v", err)
+		}
+		return paymentResp.GetTransactionId(), nil
+	})
+
+	// Handle circuit breaker errors
+	if err != nil {
+		if err == gobreaker.ErrOpenState {
+			// Circuit breaker is open - add telemetry attributes
+			span.SetAttributes(
+				attribute.Bool("circuit_breaker.tripped", true),
+				attribute.String("circuit_breaker.reason", "consecutive_failures"),
+			)
+			span.SetStatus(otelcodes.Error, "circuit breaker open: payment service unavailable")
+			logger.LogAttrs(
+				ctx,
+				slog.LevelWarn, "Circuit breaker tripped for payment service",
+				slog.String("state", cbState.String()),
+			)
+			return "", fmt.Errorf("payment service unavailable (circuit breaker open)")
+		}
+		return "", err
 	}
 
-	paymentResp, err := paymentService.Charge(ctx, &pb.ChargeRequest{
-		Amount:     amount,
-		CreditCard: paymentInfo})
-	if err != nil {
-		return "", fmt.Errorf("could not charge the card: %+v", err)
-	}
-	return paymentResp.GetTransactionId(), nil
+	return txID, nil
 }
 
 func (cs *checkout) sendOrderConfirmation(ctx context.Context, email string, order *pb.OrderResult) error {
