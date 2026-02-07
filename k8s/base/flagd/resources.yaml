@@ -170,6 +170,15 @@ data:
             "10000x": 10000
           },
           "defaultVariant": "off"
+        },
+        "userServicePoolExhaustion": {
+          "description": "User service connection pool exhaustion anti-pattern - constrained pool creates bimodal latency distribution (Hourglass geometry)",
+          "state": "ENABLED",
+          "variants": {
+            "on": true,
+            "off": false
+          },
+          "defaultVariant": "off"
         }
       }
     }
