@@ -155,6 +155,15 @@
         "10000x": 10000
       },
       "defaultVariant": "off"
+    },
+    "reviewServiceNPlusOne": {
+      "description": "Review service N+1 anti-pattern - fetches user profiles individually instead of batch (Comb geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
     }
   }
 }
