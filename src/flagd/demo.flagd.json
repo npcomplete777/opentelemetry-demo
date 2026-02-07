@@ -155,6 +155,15 @@
         "10000x": 10000
       },
       "defaultVariant": "off"
+    },
+    "inventoryServiceRetryStorm": {
+      "description": "Inventory service retry storm - simulates optimistic locking conflicts with exponential backoff (staircase geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
     }
   }
 }

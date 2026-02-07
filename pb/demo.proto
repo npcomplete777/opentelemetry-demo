@@ -352,3 +352,68 @@ message DeleteFlagRequest {
 }
 
 message DeleteFlagResponse {}
+
+// ------------Inventory service------------------
+
+service InventoryService {
+    // Reserve stock for an order — decrements available count
+    rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {}
+
+    // Release a previous reservation (order cancelled/timed out)
+    rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse) {}
+
+    // Check current stock level for a product
+    rpc GetStockLevel(GetStockLevelRequest) returns (GetStockLevelResponse) {}
+
+    // Batch check stock levels
+    rpc BatchGetStockLevels(BatchGetStockLevelRequest) returns (BatchGetStockLevelResponse) {}
+}
+
+message StockItem {
+    string product_id = 1;
+    int32 quantity = 2;
+}
+
+message ReserveStockRequest {
+    string order_id = 1;
+    repeated StockItem items = 2;
+}
+
+message StockItemStatus {
+    string product_id = 1;
+    bool available = 2;
+    int32 available_quantity = 3;
+    int32 requested_quantity = 4;
+}
+
+message ReserveStockResponse {
+    bool success = 1;
+    string reservation_id = 2;
+    repeated StockItemStatus item_statuses = 3;
+}
+
+message ReleaseStockRequest {
+    string reservation_id = 1;
+}
+
+message ReleaseStockResponse {
+    bool success = 1;
+}
+
+message GetStockLevelRequest {
+    string product_id = 1;
+}
+
+message GetStockLevelResponse {
+    string product_id = 1;
+    int32 available = 2;
+    int32 reserved = 3;
+}
+
+message BatchGetStockLevelRequest {
+    repeated string product_ids = 1;
+}
+
+message BatchGetStockLevelResponse {
+    repeated GetStockLevelResponse levels = 1;
+}
