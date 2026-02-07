@@ -405,3 +405,39 @@ message GetNotificationStatusResponse {
     string notification_id = 1;
     repeated NotificationChannelStatus channel_statuses = 2;
 }
+
+// ---------------Search Service----------------
+
+service SearchService {
+    rpc SearchProducts(SearchRequest) returns (SearchResponse) {}
+    rpc GetSuggestions(SuggestionsRequest) returns (SuggestionsResponse) {}
+}
+
+message SearchRequest {
+    string query = 1;
+    int32 max_results = 2;
+    string category_filter = 3;
+    string sort_by = 4;  // "relevance", "price_asc", "price_desc", "rating"
+}
+
+message SearchResultItem {
+    string product_id = 1;
+    string name = 2;
+    double relevance_score = 3;
+    Money price = 4;
+}
+
+message SearchResponse {
+    repeated SearchResultItem results = 1;
+    int32 total_matches = 2;
+    double search_duration_ms = 3;
+}
+
+message SuggestionsRequest {
+    string partial_query = 1;
+    int32 max_suggestions = 2;
+}
+
+message SuggestionsResponse {
+    repeated string suggestions = 1;
+}

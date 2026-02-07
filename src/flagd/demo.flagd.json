@@ -164,6 +164,15 @@
         "off": false
       },
       "defaultVariant": "off"
+    },
+    "searchServiceSyncOverAsync": {
+      "description": "Search service sync-over-async anti-pattern - blocks event loop waiting on async operation (Lollipop geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
     }
   }
 }
