@@ -352,3 +352,56 @@ message DeleteFlagRequest {
 }
 
 message DeleteFlagResponse {}
+
+// ------------Notification service------------------
+
+service NotificationService {
+    // Send a notification across configured channels
+    rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse) {}
+
+    // Check delivery status of a notification
+    rpc GetNotificationStatus(GetNotificationStatusRequest) returns (GetNotificationStatusResponse) {}
+}
+
+enum NotificationType {
+    ORDER_CONFIRMATION = 0;
+    SHIPPING_UPDATE = 1;
+    PROMOTIONAL = 2;
+    REVIEW_REQUEST = 3;
+}
+
+enum NotificationChannel {
+    EMAIL = 0;
+    SMS = 1;
+    WEBHOOK = 2;
+    PUSH = 3;
+}
+
+message SendNotificationRequest {
+    string user_id = 1;
+    string order_id = 2;
+    NotificationType type = 3;
+    string subject = 4;
+    string body = 5;
+    repeated NotificationChannel channels = 6;
+}
+
+message SendNotificationResponse {
+    string notification_id = 1;
+    bool accepted = 2;  // NOT "delivered" — just "accepted for dispatch"
+}
+
+message GetNotificationStatusRequest {
+    string notification_id = 1;
+}
+
+message NotificationChannelStatus {
+    NotificationChannel channel = 1;
+    string status = 2;  // "pending", "delivered", "failed"
+    string error_message = 3;
+}
+
+message GetNotificationStatusResponse {
+    string notification_id = 1;
+    repeated NotificationChannelStatus channel_statuses = 2;
+}

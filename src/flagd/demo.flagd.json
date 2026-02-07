@@ -155,6 +155,15 @@
         "10000x": 10000
       },
       "defaultVariant": "off"
+    },
+    "notificationServiceFireAndForget": {
+      "description": "Notification service fire-and-forget anti-pattern - dispatches notifications asynchronously without awaiting completion (Ghost geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
     }
   }
 }
