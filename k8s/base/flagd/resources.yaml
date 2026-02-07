@@ -89,6 +89,15 @@ data:
           },
           "defaultVariant": "off"
         },
+        "adServiceNPlusOne": {
+          "description": "Inject N+1 anti-pattern in ad service - fetch product details individually for each ad",
+          "state": "ENABLED",
+          "variants": {
+            "on": true,
+            "off": false
+          },
+          "defaultVariant": "off"
+        },
         "kafkaQueueProblems": {
           "description": "Overloads Kafka queue while simultaneously introducing a consumer side delay leading to a lag spike",
           "state": "ENABLED",

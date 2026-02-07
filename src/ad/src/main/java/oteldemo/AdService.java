@@ -37,6 +37,8 @@ import org.apache.logging.log4j.Logger;
 import oteldemo.Demo.Ad;
 import oteldemo.Demo.AdRequest;
 import oteldemo.Demo.AdResponse;
+import oteldemo.Demo.GetProductRequest;
+import oteldemo.Demo.Product;
 import oteldemo.problempattern.GarbageCollectionTrigger;
 import oteldemo.problempattern.CPULoad;
 import dev.openfeature.contrib.providers.flagd.FlagdOptions;
@@ -57,6 +59,7 @@ public final class AdService {
 
   private Server server;
   private HealthStatusManager healthMgr;
+  private ManagedChannel productCatalogChannel;
 
   private static final AdService service = new AdService();
   private static final Tracer tracer = GlobalOpenTelemetry.getTracer("ad");
@@ -82,6 +85,20 @@ public final class AdService {
                         new IllegalStateException(
                             "environment vars: AD_PORT must not be null")));
     healthMgr = new HealthStatusManager();
+
+    // Initialize Product Catalog Service connection for N+1 experiment
+    String productCatalogAddr =
+        Optional.ofNullable(System.getenv("PRODUCT_CATALOG_SERVICE_ADDR"))
+            .orElse("productcatalog:3550");
+    logger.info("Connecting to Product Catalog at: " + productCatalogAddr);
+
+    String[] parts = productCatalogAddr.split(":");
+    String host = parts[0];
+    int productCatalogPort = parts.length > 1 ? Integer.parseInt(parts[1]) : 3550;
+
+    productCatalogChannel = ManagedChannelBuilder.forAddress(host, productCatalogPort)
+        .usePlaintext()
+        .build();
 
     // Create a flagd instance with OpenTelemetry
     FlagdOptions options =
@@ -118,6 +135,9 @@ public final class AdService {
       healthMgr.clearStatus("");
       server.shutdown();
     }
+    if (productCatalogChannel != null) {
+      productCatalogChannel.shutdown();
+    }
   }
 
   private enum AdRequestType {
@@ -131,12 +151,13 @@ public final class AdService {
   }
 
   private static class AdServiceImpl extends oteldemo.AdServiceGrpc.AdServiceImplBase {
-    
+
     private static final String AD_FAILURE = "adFailure";
     private static final String AD_MANUAL_GC_FEATURE_FLAG = "adManualGc";
     private static final String AD_HIGH_CPU_FEATURE_FLAG = "adHighCpu";
+    private static final String AD_N_PLUS_ONE_FEATURE_FLAG = "adServiceNPlusOne";
     private static final Client ffClient = OpenFeatureAPI.getInstance().getClient();
-    
+
     private AdServiceImpl() {}
 
     /**
@@ -212,6 +233,11 @@ public final class AdService {
           gct.doExecute();
         }
 
+        // N+1 Anti-Pattern Experiment: Fetch product details individually
+        if (ffClient.getBooleanValue(AD_N_PLUS_ONE_FEATURE_FLAG, false, evaluationContext)) {
+          service.fetchProductDetailsNPlusOne(allAds, span);
+        }
+
         AdResponse reply = AdResponse.newBuilder().addAllAds(allAds).build();
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
@@ -257,6 +283,67 @@ public final class AdService {
     }
 
     return ads;
+  }
+
+  /**
+   * N+1 Anti-Pattern: Fetch product details individually for each ad
+   * This creates the "comb" geometry with sequential GetProduct calls
+   */
+  private void fetchProductDetailsNPlusOne(List<Ad> ads, Span parentSpan) {
+    if (productCatalogChannel == null) {
+      logger.warn("Product catalog channel not initialized, skipping N+1 pattern");
+      return;
+    }
+
+    // Extract product IDs from ad redirect URLs
+    List<String> productIds = new ArrayList<>();
+    for (Ad ad : ads) {
+      String url = ad.getRedirectUrl();
+      if (url.contains("/product/")) {
+        String productId = url.substring(url.lastIndexOf("/") + 1);
+        productIds.add(productId);
+      }
+    }
+
+    if (productIds.isEmpty()) {
+      logger.info("No product IDs found in ads, skipping N+1 pattern");
+      return;
+    }
+
+    // Set attributes on parent span to indicate N+1 mode
+    parentSpan.setAttribute("app.ad.mode", "n_plus_one");
+    parentSpan.setAttribute("app.ad.product_count", productIds.size());
+    logger.info("N+1 mode enabled: fetching " + productIds.size() + " products individually");
+
+    // Create product catalog stub
+    oteldemo.ProductCatalogServiceGrpc.ProductCatalogServiceBlockingStub catalogStub =
+        oteldemo.ProductCatalogServiceGrpc.newBlockingStub(productCatalogChannel);
+
+    // Fetch each product individually to create the N+1 pattern
+    for (int i = 0; i < productIds.size(); i++) {
+      String productId = productIds.get(i);
+
+      // Create a manual span for each GetProduct call to add custom attributes
+      Span productSpan = tracer.spanBuilder("GetProduct").startSpan();
+      try (Scope ignored = productSpan.makeCurrent()) {
+        productSpan.setAttribute("app.ad.sequential_call_index", i);
+        productSpan.setAttribute("app.product.id", productId);
+
+        // The actual gRPC call - auto-instrumented by javaagent
+        Product product = catalogStub.getProduct(
+            GetProductRequest.newBuilder().setId(productId).build());
+
+        logger.debug("Fetched product " + productId + " individually (index " + i + ")");
+      } catch (Exception e) {
+        productSpan.recordException(e);
+        productSpan.setStatus(StatusCode.ERROR, "Failed to fetch product " + productId);
+        logger.warn("Failed to fetch product " + productId + ": " + e.getMessage());
+      } finally {
+        productSpan.end();
+      }
+    }
+
+    logger.info("Completed N+1 pattern: fetched " + productIds.size() + " products individually");
   }
 
   private static AdService getInstance() {
