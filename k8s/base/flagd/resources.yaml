@@ -53,6 +53,15 @@ data:
           },
           "defaultVariant": "off"
         },
+        "recommendationServiceNPlusOne": {
+          "description": "Inject N+1 anti-pattern in recommendation service - fetch products individually instead of batch",
+          "state": "ENABLED",
+          "variants": {
+            "on": true,
+            "off": false
+          },
+          "defaultVariant": "off"
+        },
         "adManualGc": {
           "description": "Triggers full manual garbage collections in the ad service",
           "state": "ENABLED",

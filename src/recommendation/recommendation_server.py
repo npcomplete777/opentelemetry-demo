@@ -81,7 +81,7 @@ def get_product_list(request_product_ids):
                 first_run = False
                 span.set_attribute("app.cache_hit", False)
                 logger.info("get_product_list: cache miss")
-                cat_response = product_catalog_stub.GetProduct(demo_pb2.Empty())
+                cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
                 response_ids = [x.id for x in cat_response.products]
                 cached_ids = cached_ids + response_ids
                 cached_ids = cached_ids + cached_ids[:len(cached_ids) // 4]
@@ -110,7 +110,35 @@ def get_product_list(request_product_ids):
 
         span.set_attribute("app.filtered_products.list", prod_list)
 
-        return prod_list
+        # Feature flag scenario - N+1 anti-pattern
+        # When enabled, fetch each recommended product individually instead of using the batch result
+        if check_feature_flag("recommendationServiceNPlusOne"):
+            span.set_attribute("app.recommendation.mode", "n_plus_one")
+            span.set_attribute("app.recommendation.product_count", len(prod_list))
+            logger.info(f"get_product_list: N+1 mode enabled, fetching {len(prod_list)} products individually")
+
+            # Fetch each product individually to create the N+1 pattern
+            validated_prod_list = []
+            for idx, product_id in enumerate(prod_list):
+                with tracer.start_as_current_span("GetProduct") as product_span:
+                    product_span.set_attribute("app.product.id", product_id)
+                    product_span.set_attribute("app.recommendation.sequential_call_index", idx)
+                    try:
+                        # Individual GetProduct call - this creates the sequential "comb" pattern
+                        product = product_catalog_stub.GetProduct(demo_pb2.GetProductRequest(id=product_id))
+                        validated_prod_list.append(product.id)
+                        logger.debug(f"get_product_list: fetched product {product_id} individually")
+                    except grpc.RpcError as e:
+                        logger.error(f"get_product_list: failed to fetch product {product_id}: {e}")
+                        # Skip products that fail to fetch
+                        continue
+
+            return validated_prod_list
+        else:
+            span.set_attribute("app.recommendation.mode", "batch")
+            span.set_attribute("app.recommendation.product_count", len(prod_list))
+            logger.info("get_product_list: batch mode (efficient)")
+            return prod_list
 
 
 def must_map_env(key: str):
@@ -123,7 +151,7 @@ def must_map_env(key: str):
 def check_feature_flag(flag_name: str):
     # Initialize OpenFeature
     client = api.get_client()
-    return client.get_boolean_value("recommendationCacheFailure", False)
+    return client.get_boolean_value(flag_name, False)
 
 
 if __name__ == "__main__":
