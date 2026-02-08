@@ -155,6 +155,15 @@
         "10000x": 10000
       },
       "defaultVariant": "off"
+    },
+    "orderServiceCascadingFailure": {
+      "description": "Inject cascading failure anti-pattern in order service - continue orchestration after payment failure",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
     }
   }
 }

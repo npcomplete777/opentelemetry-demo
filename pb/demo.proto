@@ -352,3 +352,49 @@ message DeleteFlagRequest {
 }
 
 message DeleteFlagResponse {}
+
+// ---------------Order Service----------------
+
+service OrderService {
+    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {}
+    rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {}
+    rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}
+}
+
+message CreateOrderRequest {
+    string user_id = 1;
+    string cart_id = 2;
+    string currency_code = 3;
+    Address shipping_address = 4;
+    CreditCardInfo credit_card = 5;
+}
+
+message CreateOrderResponse {
+    string order_id = 1;
+    string status = 2;         // "completed", "failed"
+    string failure_stage = 3;   // which stage failed, if any
+    string error_message = 4;
+}
+
+message GetOrderRequest {
+    string order_id = 1;
+}
+
+message OrderStatus {
+    string order_id = 1;
+    string status = 2;
+    string stage = 3;
+    int64 created_at = 4;
+}
+
+message GetOrderResponse {
+    OrderStatus order = 1;
+}
+
+message CancelOrderRequest {
+    string order_id = 1;
+}
+
+message CancelOrderResponse {
+    bool success = 1;
+}
