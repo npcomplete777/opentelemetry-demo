@@ -170,6 +170,15 @@ data:
             "10000x": 10000
           },
           "defaultVariant": "off"
+        },
+        "pricingServiceUnboundedFanOut": {
+          "description": "Inject unbounded concurrency anti-pattern in pricing service - spawn unlimited goroutines for bulk price requests",
+          "state": "ENABLED",
+          "variants": {
+            "on": true,
+            "off": false
+          },
+          "defaultVariant": "off"
         }
       }
     }

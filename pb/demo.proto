@@ -352,3 +352,49 @@ message DeleteFlagRequest {
 }
 
 message DeleteFlagResponse {}
+
+// ------------Pricing service------------------
+
+service PricingService {
+    rpc GetProductPrice(GetProductPriceRequest) returns (GetProductPriceResponse);
+    rpc GetBulkPrices(GetBulkPricesRequest) returns (GetBulkPricesResponse);
+    rpc CalculateDiscount(CalculateDiscountRequest) returns (CalculateDiscountResponse);
+}
+
+message GetProductPriceRequest {
+    string product_id = 1;
+    string currency_code = 2;
+    int32 quantity = 3;
+}
+
+message ProductPrice {
+    string product_id = 1;
+    Money base_price = 2;
+    Money discounted_price = 3;
+    double discount_percent = 4;
+    string currency_code = 5;
+}
+
+message GetProductPriceResponse {
+    ProductPrice price = 1;
+}
+
+message GetBulkPricesRequest {
+    repeated string product_ids = 1;
+    string currency_code = 2;
+}
+
+message GetBulkPricesResponse {
+    repeated ProductPrice prices = 1;
+}
+
+message CalculateDiscountRequest {
+    repeated CartItem items = 1;
+    string promo_code = 2;
+}
+
+message CalculateDiscountResponse {
+    Money total_before_discount = 1;
+    Money total_after_discount = 2;
+    double discount_percent = 3;
+}
