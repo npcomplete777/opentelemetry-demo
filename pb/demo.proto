@@ -353,50 +353,48 @@ message DeleteFlagRequest {
 
 message DeleteFlagResponse {}
 
-// ---------------User Service----------------
+// ---------------Order Service----------------
 
-service UserService {
-    rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse) {}
-    rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse) {}
-    rpc GetUserAddress(GetUserAddressRequest) returns (GetUserAddressResponse) {}
+service OrderService {
+    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {}
+    rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {}
+    rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}
 }
 
-message GetUserProfileRequest {
+message CreateOrderRequest {
     string user_id = 1;
+    string cart_id = 2;
+    string currency_code = 3;
+    Address shipping_address = 4;
+    CreditCardInfo credit_card = 5;
 }
 
-message UserProfile {
-    string user_id = 1;
-    string display_name = 2;
-    string email = 3;
-    string avatar_url = 4;
-    string preferred_currency = 5;
-    string preferred_language = 6;
-    int64 created_at = 7;
+message CreateOrderResponse {
+    string order_id = 1;
+    string status = 2;         // "completed", "failed"
+    string failure_stage = 3;   // which stage failed, if any
+    string error_message = 4;
 }
 
-message GetUserProfileResponse {
-    UserProfile profile = 1;
+message GetOrderRequest {
+    string order_id = 1;
 }
 
-message UpdatePreferencesRequest {
-    string user_id = 1;
-    string preferred_currency = 2;
-    string preferred_language = 3;
+message OrderStatus {
+    string order_id = 1;
+    string status = 2;
+    string stage = 3;
+    int64 created_at = 4;
 }
 
-message UpdatePreferencesResponse {
+message GetOrderResponse {
+    OrderStatus order = 1;
+}
+
+message CancelOrderRequest {
+    string order_id = 1;
+}
+
+message CancelOrderResponse {
     bool success = 1;
-}
-
-message GetUserAddressRequest {
-    string user_id = 1;
-}
-
-message GetUserAddressResponse {
-    string street = 1;
-    string city = 2;
-    string state = 3;
-    string zip = 4;
-    string country = 5;
 }

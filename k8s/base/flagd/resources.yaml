@@ -171,8 +171,8 @@ data:
           },
           "defaultVariant": "off"
         },
-        "userServicePoolExhaustion": {
-          "description": "User service connection pool exhaustion anti-pattern - constrained pool creates bimodal latency distribution (Hourglass geometry)",
+        "orderServiceCascadingFailure": {
+          "description": "Inject cascading failure anti-pattern in order service - continue orchestration after payment failure",
           "state": "ENABLED",
           "variants": {
             "on": true,
