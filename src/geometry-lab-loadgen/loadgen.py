@@ -41,7 +41,7 @@ PRODUCT_IDS = [
     "6E92ZMYYFZ",  # Air Plant
 ]
 
-USER_IDS = ["user-123", "user-456", "user-789", "user-abc", "user-xyz"]
+USER_IDS = ["user-001", "user-002", "user-003", "user-010", "user-025", "user-050"]
 
 
 def call_inventory_service():
@@ -181,7 +181,7 @@ def call_order_service():
                 city="Portland",
                 state="OR",
                 country="USA",
-                zip_code=97201
+                zip_code="97201"
             )
 
             card = demo_pb2.CreditCardInfo(
