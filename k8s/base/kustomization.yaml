@@ -3,9 +3,9 @@ kind: Kustomization
 resources:
   - accounting
   - ad
-  - admin-secret
+  # - admin-secret  # REMOVED: Only contained grafana admin password
   - agent-collector
-  - all-in-one
+  # - all-in-one  # REMOVED: Only contained jaeger resources
   - cart
   - checkout
   - currency
@@ -14,7 +14,7 @@ resources:
   - fraud-detection
   - frontend
   - frontend-proxy
-  - grafana
+  # - grafana  # REMOVED: Using Dash0 for visualization
   - image-provider
   # - jaeger  # REMOVED: Using Dash0 for distributed tracing
   - kafka

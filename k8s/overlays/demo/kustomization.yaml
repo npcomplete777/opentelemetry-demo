@@ -14,7 +14,7 @@ patches:
   # Scale down redundant backends - using Dash0 instead
   - path: patches/scale-down-prometheus.yaml
   # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
-  - path: patches/scale-down-grafana.yaml
+  # - path: patches/scale-down-grafana.yaml  # REMOVED: grafana removed from base
   # - path: patches/scale-down-opensearch.yaml  # REMOVED: opensearch removed from base
 
 # Image overrides - GitHub Actions will update tags here
