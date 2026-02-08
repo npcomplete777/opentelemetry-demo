@@ -20,6 +20,8 @@ resources:
   - kafka
   - llm
   - load-generator
+  # Geometry Lab services
+  - notification
   # - opensearch  # REMOVED: Using Dash0 for log aggregation
   - otel
   - payment
@@ -28,6 +30,8 @@ resources:
   - product-reviews
   - quote
   - recommendation
+  - search
   - server
   - shipping
+  - user
   - valkey-cart
