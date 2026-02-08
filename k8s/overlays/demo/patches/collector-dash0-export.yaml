@@ -24,14 +24,14 @@ data:
       resource:
         attributes:
           - key: dash0.dataset
-            value: otel-demo-gitops
+            value: default
             action: upsert
 
     exporters:
       otlphttp/dash0:
         endpoint: https://ingress.us-west-2.aws.dash0.com
         headers:
-          Authorization: "Bearer auth_oBkifRxvDyO5ZIv4zmpmvmyfV3AZ1EUQ"
+          Authorization: "Bearer auth_weI4rzoX0bfwy2eKvpjtBTZAhQAcw11j"
       debug:
         verbosity: basic
 
