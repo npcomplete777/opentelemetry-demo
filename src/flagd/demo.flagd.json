@@ -156,6 +156,60 @@
       },
       "defaultVariant": "off"
     },
+    "inventoryServiceRetryStorm": {
+      "description": "Inventory service retry storm - simulates optimistic locking conflicts with exponential backoff (staircase geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
+    "reviewServiceNPlusOne": {
+      "description": "Review service N+1 anti-pattern - fetches user profiles individually instead of batch (Comb geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
+    "notificationServiceFireAndForget": {
+      "description": "Notification service fire-and-forget anti-pattern - dispatches notifications asynchronously without awaiting completion (Ghost geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
+    "searchServiceSyncOverAsync": {
+      "description": "Search service sync-over-async anti-pattern - blocks event loop waiting on async operation (Lollipop geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
+    "userServicePoolExhaustion": {
+      "description": "User service connection pool exhaustion anti-pattern - constrained pool creates bimodal latency distribution (Hourglass geometry)",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
+    "orderServiceCascadingFailure": {
+      "description": "Inject cascading failure anti-pattern in order service - continue orchestration after payment failure",
+      "state": "ENABLED",
+      "variants": {
+        "on": true,
+        "off": false
+      },
+      "defaultVariant": "off"
+    },
     "pricingServiceUnboundedFanOut": {
       "description": "Inject unbounded concurrency anti-pattern in pricing service - spawn unlimited goroutines for bulk price requests",
       "state": "ENABLED",

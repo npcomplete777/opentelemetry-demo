@@ -353,6 +353,312 @@ message DeleteFlagRequest {
 
 message DeleteFlagResponse {}
 
+// ------------Inventory service------------------
+
+service InventoryService {
+    // Reserve stock for an order — decrements available count
+    rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {}
+
+    // Release a previous reservation (order cancelled/timed out)
+    rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse) {}
+
+    // Check current stock level for a product
+    rpc GetStockLevel(GetStockLevelRequest) returns (GetStockLevelResponse) {}
+
+    // Batch check stock levels
+    rpc BatchGetStockLevels(BatchGetStockLevelRequest) returns (BatchGetStockLevelResponse) {}
+}
+
+message StockItem {
+    string product_id = 1;
+    int32 quantity = 2;
+}
+
+message ReserveStockRequest {
+    string order_id = 1;
+    repeated StockItem items = 2;
+}
+
+message StockItemStatus {
+    string product_id = 1;
+    bool available = 2;
+    int32 available_quantity = 3;
+    int32 requested_quantity = 4;
+}
+
+message ReserveStockResponse {
+    bool success = 1;
+    string reservation_id = 2;
+    repeated StockItemStatus item_statuses = 3;
+}
+
+message ReleaseStockRequest {
+    string reservation_id = 1;
+}
+
+message ReleaseStockResponse {
+    bool success = 1;
+}
+
+message GetStockLevelRequest {
+    string product_id = 1;
+}
+
+message GetStockLevelResponse {
+    string product_id = 1;
+    int32 available = 2;
+    int32 reserved = 3;
+}
+
+message BatchGetStockLevelRequest {
+    repeated string product_ids = 1;
+}
+
+message BatchGetStockLevelResponse {
+    repeated GetStockLevelResponse levels = 1;
+}
+
+// ------------Review service------------------
+
+service ReviewService {
+    // Submit a new review
+    rpc SubmitReview(SubmitReviewRequest) returns (SubmitReviewResponse) {}
+
+    // List reviews for a product
+    rpc ListProductReviews(ListProductReviewsRequest) returns (ListProductReviewsResponse) {}
+
+    // Get average rating for a product
+    rpc GetRating(GetRatingRequest) returns (GetRatingResponse) {}
+}
+
+message SubmitReviewRequest {
+    string product_id = 1;
+    string user_id = 2;
+    int32 rating = 3;        // 1-5 stars
+    string title = 4;
+    string body = 5;
+}
+
+message SubmitReviewResponse {
+    string review_id = 1;
+    bool success = 2;
+}
+
+message ListProductReviewsRequest {
+    string product_id = 1;
+    int32 limit = 2;          // max reviews to return, default 10
+}
+
+message ReviewItem {
+    string review_id = 1;
+    string product_id = 2;
+    string user_id = 3;
+    string user_display_name = 4;
+    int32 rating = 5;
+    string title = 6;
+    string body = 7;
+    int64 created_at = 8;
+}
+
+message ListProductReviewsResponse {
+    repeated ReviewItem reviews = 1;
+    double average_rating = 2;
+    int32 total_count = 3;
+}
+
+message GetRatingRequest {
+    string product_id = 1;
+}
+
+message GetRatingResponse {
+    string product_id = 1;
+    double average_rating = 2;
+    int32 review_count = 3;
+}
+
+// ------------Notification service------------------
+
+service NotificationService {
+    // Send a notification across configured channels
+    rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse) {}
+
+    // Check delivery status of a notification
+    rpc GetNotificationStatus(GetNotificationStatusRequest) returns (GetNotificationStatusResponse) {}
+}
+
+enum NotificationType {
+    ORDER_CONFIRMATION = 0;
+    SHIPPING_UPDATE = 1;
+    PROMOTIONAL = 2;
+    REVIEW_REQUEST = 3;
+}
+
+enum NotificationChannel {
+    EMAIL = 0;
+    SMS = 1;
+    WEBHOOK = 2;
+    PUSH = 3;
+}
+
+message SendNotificationRequest {
+    string user_id = 1;
+    string order_id = 2;
+    NotificationType type = 3;
+    string subject = 4;
+    string body = 5;
+    repeated NotificationChannel channels = 6;
+}
+
+message SendNotificationResponse {
+    string notification_id = 1;
+    bool accepted = 2;  // NOT "delivered" — just "accepted for dispatch"
+}
+
+message GetNotificationStatusRequest {
+    string notification_id = 1;
+}
+
+message NotificationChannelStatus {
+    NotificationChannel channel = 1;
+    string status = 2;  // "pending", "delivered", "failed"
+    string error_message = 3;
+}
+
+message GetNotificationStatusResponse {
+    string notification_id = 1;
+    repeated NotificationChannelStatus channel_statuses = 2;
+}
+
+// ---------------Search Service----------------
+
+service SearchService {
+    rpc SearchProducts(SearchRequest) returns (SearchResponse) {}
+    rpc GetSuggestions(SuggestionsRequest) returns (SuggestionsResponse) {}
+}
+
+message SearchRequest {
+    string query = 1;
+    int32 max_results = 2;
+    string category_filter = 3;
+    string sort_by = 4;  // "relevance", "price_asc", "price_desc", "rating"
+}
+
+message SearchResultItem {
+    string product_id = 1;
+    string name = 2;
+    double relevance_score = 3;
+    Money price = 4;
+}
+
+message SearchResponse {
+    repeated SearchResultItem results = 1;
+    int32 total_matches = 2;
+    double search_duration_ms = 3;
+}
+
+message SuggestionsRequest {
+    string partial_query = 1;
+    int32 max_suggestions = 2;
+}
+
+message SuggestionsResponse {
+    repeated string suggestions = 1;
+}
+
+// ---------------User Service----------------
+
+service UserService {
+    rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse) {}
+    rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse) {}
+    rpc GetUserAddress(GetUserAddressRequest) returns (GetUserAddressResponse) {}
+}
+
+message GetUserProfileRequest {
+    string user_id = 1;
+}
+
+message UserProfile {
+    string user_id = 1;
+    string display_name = 2;
+    string email = 3;
+    string avatar_url = 4;
+    string preferred_currency = 5;
+    string preferred_language = 6;
+    int64 created_at = 7;
+}
+
+message GetUserProfileResponse {
+    UserProfile profile = 1;
+}
+
+message UpdatePreferencesRequest {
+    string user_id = 1;
+    string preferred_currency = 2;
+    string preferred_language = 3;
+}
+
+message UpdatePreferencesResponse {
+    bool success = 1;
+}
+
+message GetUserAddressRequest {
+    string user_id = 1;
+}
+
+message GetUserAddressResponse {
+    string street = 1;
+    string city = 2;
+    string state = 3;
+    string zip = 4;
+    string country = 5;
+}
+
+// ---------------Order Service----------------
+
+service OrderService {
+    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {}
+    rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {}
+    rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {}
+}
+
+message CreateOrderRequest {
+    string user_id = 1;
+    string cart_id = 2;
+    string currency_code = 3;
+    Address shipping_address = 4;
+    CreditCardInfo credit_card = 5;
+}
+
+message CreateOrderResponse {
+    string order_id = 1;
+    string status = 2;         // "completed", "failed"
+    string failure_stage = 3;   // which stage failed, if any
+    string error_message = 4;
+}
+
+message GetOrderRequest {
+    string order_id = 1;
+}
+
+message OrderStatus {
+    string order_id = 1;
+    string status = 2;
+    string stage = 3;
+    int64 created_at = 4;
+}
+
+message GetOrderResponse {
+    OrderStatus order = 1;
+}
+
+message CancelOrderRequest {
+    string order_id = 1;
+}
+
+message CancelOrderResponse {
+    bool success = 1;
+}
+
 // ------------Pricing service------------------
 
 service PricingService {
