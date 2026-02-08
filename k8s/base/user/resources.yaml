@@ -77,7 +77,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
               value: cumulative
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4318
+              value: http://$(OTEL_COLLECTOR_NAME):4317
             - name: USER_PORT
               value: "8080"
             - name: ASPNETCORE_URLS
