@@ -353,67 +353,60 @@ message DeleteFlagRequest {
 
 message DeleteFlagResponse {}
 
-// ------------Inventory service------------------
+// ------------Review service------------------
 
-service InventoryService {
-    // Reserve stock for an order — decrements available count
-    rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse) {}
+service ReviewService {
+    // Submit a new review
+    rpc SubmitReview(SubmitReviewRequest) returns (SubmitReviewResponse) {}
 
-    // Release a previous reservation (order cancelled/timed out)
-    rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse) {}
+    // List reviews for a product
+    rpc ListProductReviews(ListProductReviewsRequest) returns (ListProductReviewsResponse) {}
 
-    // Check current stock level for a product
-    rpc GetStockLevel(GetStockLevelRequest) returns (GetStockLevelResponse) {}
-
-    // Batch check stock levels
-    rpc BatchGetStockLevels(BatchGetStockLevelRequest) returns (BatchGetStockLevelResponse) {}
+    // Get average rating for a product
+    rpc GetRating(GetRatingRequest) returns (GetRatingResponse) {}
 }
 
-message StockItem {
+message SubmitReviewRequest {
     string product_id = 1;
-    int32 quantity = 2;
+    string user_id = 2;
+    int32 rating = 3;        // 1-5 stars
+    string title = 4;
+    string body = 5;
 }
 
-message ReserveStockRequest {
-    string order_id = 1;
-    repeated StockItem items = 2;
+message SubmitReviewResponse {
+    string review_id = 1;
+    bool success = 2;
 }
 
-message StockItemStatus {
+message ListProductReviewsRequest {
     string product_id = 1;
-    bool available = 2;
-    int32 available_quantity = 3;
-    int32 requested_quantity = 4;
+    int32 limit = 2;          // max reviews to return, default 10
 }
 
-message ReserveStockResponse {
-    bool success = 1;
-    string reservation_id = 2;
-    repeated StockItemStatus item_statuses = 3;
+message ReviewItem {
+    string review_id = 1;
+    string product_id = 2;
+    string user_id = 3;
+    string user_display_name = 4;
+    int32 rating = 5;
+    string title = 6;
+    string body = 7;
+    int64 created_at = 8;
 }
 
-message ReleaseStockRequest {
-    string reservation_id = 1;
+message ListProductReviewsResponse {
+    repeated ReviewItem reviews = 1;
+    double average_rating = 2;
+    int32 total_count = 3;
 }
 
-message ReleaseStockResponse {
-    bool success = 1;
-}
-
-message GetStockLevelRequest {
+message GetRatingRequest {
     string product_id = 1;
 }
 
-message GetStockLevelResponse {
+message GetRatingResponse {
     string product_id = 1;
-    int32 available = 2;
-    int32 reserved = 3;
-}
-
-message BatchGetStockLevelRequest {
-    repeated string product_ids = 1;
-}
-
-message BatchGetStockLevelResponse {
-    repeated GetStockLevelResponse levels = 1;
+    double average_rating = 2;
+    int32 review_count = 3;
 }

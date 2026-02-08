@@ -171,8 +171,8 @@ data:
           },
           "defaultVariant": "off"
         },
-        "inventoryServiceRetryStorm": {
-          "description": "Inventory service retry storm - simulates optimistic locking conflicts with exponential backoff (staircase geometry)",
+        "reviewServiceNPlusOne": {
+          "description": "Review service N+1 anti-pattern - fetches user profiles individually instead of batch (Comb geometry)",
           "state": "ENABLED",
           "variants": {
             "on": true,
