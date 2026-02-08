@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geometry-lab-loadgen
+  namespace: otel-demo
+  labels:
+    app: geometry-lab-loadgen
+    component: load-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geometry-lab-loadgen
+  template:
+    metadata:
+      labels:
+        app: geometry-lab-loadgen
+        component: load-generator
+      annotations:
+        # Disable auto-instrumentation - we just want to trigger the services
+        instrumentation.opentelemetry.io/inject-python: "false"
+    spec:
+      containers:
+      - name: loadgen
+        image: otel-demo-geometry-lab-loadgen:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        env:
+          - name: PYTHONUNBUFFERED
+            value: "1"
