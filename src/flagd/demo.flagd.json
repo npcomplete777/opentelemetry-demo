@@ -156,17 +156,8 @@
       },
       "defaultVariant": "off"
     },
-    "notificationServiceFireAndForget": {
-      "description": "Notification service fire-and-forget anti-pattern - dispatches notifications asynchronously without awaiting completion (Ghost geometry)",
-      "state": "ENABLED",
-      "variants": {
-        "on": true,
-        "off": false
-      },
-      "defaultVariant": "off"
-    },
-    "searchServiceSyncOverAsync": {
-      "description": "Search service sync-over-async anti-pattern - blocks event loop waiting on async operation (Lollipop geometry)",
+    "userServicePoolExhaustion": {
+      "description": "User service connection pool exhaustion anti-pattern - constrained pool creates bimodal latency distribution (Hourglass geometry)",
       "state": "ENABLED",
       "variants": {
         "on": true,

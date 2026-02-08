@@ -353,91 +353,50 @@ message DeleteFlagRequest {
 
 message DeleteFlagResponse {}
 
-// ------------Notification service------------------
+// ---------------User Service----------------
 
-service NotificationService {
-    // Send a notification across configured channels
-    rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse) {}
-
-    // Check delivery status of a notification
-    rpc GetNotificationStatus(GetNotificationStatusRequest) returns (GetNotificationStatusResponse) {}
+service UserService {
+    rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse) {}
+    rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse) {}
+    rpc GetUserAddress(GetUserAddressRequest) returns (GetUserAddressResponse) {}
 }
 
-enum NotificationType {
-    ORDER_CONFIRMATION = 0;
-    SHIPPING_UPDATE = 1;
-    PROMOTIONAL = 2;
-    REVIEW_REQUEST = 3;
-}
-
-enum NotificationChannel {
-    EMAIL = 0;
-    SMS = 1;
-    WEBHOOK = 2;
-    PUSH = 3;
-}
-
-message SendNotificationRequest {
+message GetUserProfileRequest {
     string user_id = 1;
-    string order_id = 2;
-    NotificationType type = 3;
-    string subject = 4;
-    string body = 5;
-    repeated NotificationChannel channels = 6;
 }
 
-message SendNotificationResponse {
-    string notification_id = 1;
-    bool accepted = 2;  // NOT "delivered" — just "accepted for dispatch"
+message UserProfile {
+    string user_id = 1;
+    string display_name = 2;
+    string email = 3;
+    string avatar_url = 4;
+    string preferred_currency = 5;
+    string preferred_language = 6;
+    int64 created_at = 7;
 }
 
-message GetNotificationStatusRequest {
-    string notification_id = 1;
+message GetUserProfileResponse {
+    UserProfile profile = 1;
 }
 
-message NotificationChannelStatus {
-    NotificationChannel channel = 1;
-    string status = 2;  // "pending", "delivered", "failed"
-    string error_message = 3;
+message UpdatePreferencesRequest {
+    string user_id = 1;
+    string preferred_currency = 2;
+    string preferred_language = 3;
 }
 
-message GetNotificationStatusResponse {
-    string notification_id = 1;
-    repeated NotificationChannelStatus channel_statuses = 2;
+message UpdatePreferencesResponse {
+    bool success = 1;
 }
 
-// ---------------Search Service----------------
-
-service SearchService {
-    rpc SearchProducts(SearchRequest) returns (SearchResponse) {}
-    rpc GetSuggestions(SuggestionsRequest) returns (SuggestionsResponse) {}
+message GetUserAddressRequest {
+    string user_id = 1;
 }
 
-message SearchRequest {
-    string query = 1;
-    int32 max_results = 2;
-    string category_filter = 3;
-    string sort_by = 4;  // "relevance", "price_asc", "price_desc", "rating"
-}
-
-message SearchResultItem {
-    string product_id = 1;
-    string name = 2;
-    double relevance_score = 3;
-    Money price = 4;
-}
-
-message SearchResponse {
-    repeated SearchResultItem results = 1;
-    int32 total_matches = 2;
-    double search_duration_ms = 3;
-}
-
-message SuggestionsRequest {
-    string partial_query = 1;
-    int32 max_suggestions = 2;
-}
-
-message SuggestionsResponse {
-    repeated string suggestions = 1;
+message GetUserAddressResponse {
+    string street = 1;
+    string city = 2;
+    string state = 3;
+    string zip = 4;
+    string country = 5;
 }
