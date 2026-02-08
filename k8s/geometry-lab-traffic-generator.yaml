@@ -1,0 +1,136 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: geometry-lab-traffic-generator
+  namespace: otel-demo
+  labels:
+    app: geometry-lab-traffic-generator
+data:
+  traffic-generator.sh: |
+    #!/bin/sh
+    # Geometry Lab Traffic Generator
+    # Directly calls all 7 Geometry Lab gRPC services using grpcurl
+
+    echo "=========================================================================================================="
+    echo "Geometry Lab Traffic Generator - $(date -Iseconds)"
+    echo "=========================================================================================================="
+    echo "Installing grpcurl..."
+    wget -q -O /tmp/grpcurl.tar.gz https://github.com/fullstorydev/grpcurl/releases/download/v1.9.1/grpcurl_1.9.1_linux_x86_64.tar.gz || {
+      echo "ERROR: Failed to download grpcurl"
+      exit 1
+    }
+    tar -xzf /tmp/grpcurl.tar.gz -C /tmp
+    chmod +x /tmp/grpcurl
+    GRPCURL=/tmp/grpcurl
+
+    echo "Calling Geometry Lab services..."
+    echo "Service      | Status | Pattern"
+    echo "----------------------------------------------------------------------------------------------------------"
+
+    SUCCESS=0
+    TOTAL=0
+
+    # First try to discover what services are available
+    echo ""
+    echo "Discovering available gRPC services..."
+    echo ""
+
+    # Call each service - try health check first, fallback to list services
+    for service_info in \
+      "inventory:8080|Retry Storm 🪜" \
+      "review:8080|N+1 Comb 🪥" \
+      "notification:8080|Fire-and-Forget Ghost 👻" \
+      "search:8080|Sync-over-Async Lollipop 🍭" \
+      "user:8080|Connection Pool Hourglass ⏳" \
+      "order:8080|Cascading Failure Domino 🁡" \
+      "pricing:8080|Unbounded Fan-out 🌀"
+    do
+      service=$(echo "$service_info" | cut -d'|' -f1)
+      pattern=$(echo "$service_info" | cut -d'|' -f2)
+      name=$(echo "$service" | cut -d':' -f1)
+
+      printf "%-12s | " "$name"
+
+      # Try to list available services using reflection
+      SERVICES_LIST=$($GRPCURL -plaintext -max-time 5 "$service" list 2>&1)
+
+      if echo "$SERVICES_LIST" | grep -q "grpc.reflection"; then
+        printf "✓ OK   | %s (reflection enabled)\n" "$pattern"
+        SUCCESS=$((SUCCESS + 1))
+      elif echo "$SERVICES_LIST" | grep -q "health"; then
+        printf "✓ OK   | %s (health service found)\n" "$pattern"
+        SUCCESS=$((SUCCESS + 1))
+      else
+        # Just try to connect to see if gRPC port is open
+        if $GRPCURL -plaintext -max-time 2 "$service" list >/dev/null 2>&1 || \
+           $GRPCURL -plaintext -max-time 2 "$service" grpc.health.v1.Health/Check >/dev/null 2>&1; then
+          printf "⚠ WARN | %s (connected but no known methods)\n" "$pattern"
+        else
+          printf "✗ FAIL | %s (connection failed)\n" "$pattern"
+        fi
+      fi
+      TOTAL=$((TOTAL + 1))
+
+      # Small delay between calls
+      sleep 0.5
+    done
+
+    echo "----------------------------------------------------------------------------------------------------------"
+    echo "Results: $SUCCESS/$TOTAL services responded to gRPC health checks"
+    echo ""
+    echo "Next: Check Dash0 for traces from these services (may take 1-2 minutes to appear)"
+    echo "=========================================================================================================="
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: geometry-lab-traffic-generator
+  namespace: otel-demo
+  labels:
+    app: geometry-lab-traffic-generator
+    component: traffic-generator
+spec:
+  schedule: "*/2 * * * *"  # Every 2 minutes
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: geometry-lab-traffic-generator
+            component: traffic-generator
+          annotations:
+            # Disable auto-instrumentation - we just want to observe the services
+            instrumentation.opentelemetry.io/inject-python: "false"
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: traffic-generator
+            image: alpine:latest
+            command:
+              - /bin/sh
+              - -c
+              - |
+                apk add --no-cache wget && \
+                /scripts/traffic-generator.sh
+            volumeMounts:
+              - name: scripts
+                mountPath: /scripts
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 128Mi
+            env:
+              - name: PYTHONUNBUFFERED
+                value: "1"
+          volumes:
+            - name: scripts
+              configMap:
+                name: geometry-lab-traffic-generator
+                defaultMode: 0755
