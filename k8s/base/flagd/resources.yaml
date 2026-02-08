@@ -171,8 +171,8 @@ data:
           },
           "defaultVariant": "off"
         },
-        "orderServiceCascadingFailure": {
-          "description": "Inject cascading failure anti-pattern in order service - continue orchestration after payment failure",
+        "pricingServiceUnboundedFanOut": {
+          "description": "Inject unbounded concurrency anti-pattern in pricing service - spawn unlimited goroutines for bulk price requests",
           "state": "ENABLED",
           "variants": {
             "on": true,
