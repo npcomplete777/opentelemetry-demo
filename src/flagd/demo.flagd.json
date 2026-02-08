@@ -156,8 +156,8 @@
       },
       "defaultVariant": "off"
     },
-    "reviewServiceNPlusOne": {
-      "description": "Review service N+1 anti-pattern - fetches user profiles individually instead of batch (Comb geometry)",
+    "notificationServiceFireAndForget": {
+      "description": "Notification service fire-and-forget anti-pattern - dispatches notifications asynchronously without awaiting completion (Ghost geometry)",
       "state": "ENABLED",
       "variants": {
         "on": true,

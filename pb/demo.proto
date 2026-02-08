@@ -353,60 +353,55 @@ message DeleteFlagRequest {
 
 message DeleteFlagResponse {}
 
-// ------------Review service------------------
+// ------------Notification service------------------
 
-service ReviewService {
-    // Submit a new review
-    rpc SubmitReview(SubmitReviewRequest) returns (SubmitReviewResponse) {}
+service NotificationService {
+    // Send a notification across configured channels
+    rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse) {}
 
-    // List reviews for a product
-    rpc ListProductReviews(ListProductReviewsRequest) returns (ListProductReviewsResponse) {}
-
-    // Get average rating for a product
-    rpc GetRating(GetRatingRequest) returns (GetRatingResponse) {}
+    // Check delivery status of a notification
+    rpc GetNotificationStatus(GetNotificationStatusRequest) returns (GetNotificationStatusResponse) {}
 }
 
-message SubmitReviewRequest {
-    string product_id = 1;
-    string user_id = 2;
-    int32 rating = 3;        // 1-5 stars
-    string title = 4;
+enum NotificationType {
+    ORDER_CONFIRMATION = 0;
+    SHIPPING_UPDATE = 1;
+    PROMOTIONAL = 2;
+    REVIEW_REQUEST = 3;
+}
+
+enum NotificationChannel {
+    EMAIL = 0;
+    SMS = 1;
+    WEBHOOK = 2;
+    PUSH = 3;
+}
+
+message SendNotificationRequest {
+    string user_id = 1;
+    string order_id = 2;
+    NotificationType type = 3;
+    string subject = 4;
     string body = 5;
+    repeated NotificationChannel channels = 6;
 }
 
-message SubmitReviewResponse {
-    string review_id = 1;
-    bool success = 2;
+message SendNotificationResponse {
+    string notification_id = 1;
+    bool accepted = 2;  // NOT "delivered" — just "accepted for dispatch"
 }
 
-message ListProductReviewsRequest {
-    string product_id = 1;
-    int32 limit = 2;          // max reviews to return, default 10
+message GetNotificationStatusRequest {
+    string notification_id = 1;
 }
 
-message ReviewItem {
-    string review_id = 1;
-    string product_id = 2;
-    string user_id = 3;
-    string user_display_name = 4;
-    int32 rating = 5;
-    string title = 6;
-    string body = 7;
-    int64 created_at = 8;
+message NotificationChannelStatus {
+    NotificationChannel channel = 1;
+    string status = 2;  // "pending", "delivered", "failed"
+    string error_message = 3;
 }
 
-message ListProductReviewsResponse {
-    repeated ReviewItem reviews = 1;
-    double average_rating = 2;
-    int32 total_count = 3;
-}
-
-message GetRatingRequest {
-    string product_id = 1;
-}
-
-message GetRatingResponse {
-    string product_id = 1;
-    double average_rating = 2;
-    int32 review_count = 3;
+message GetNotificationStatusResponse {
+    string notification_id = 1;
+    repeated NotificationChannelStatus channel_statuses = 2;
 }

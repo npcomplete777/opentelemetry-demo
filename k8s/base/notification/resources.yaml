@@ -1,0 +1,89 @@
+# Source: opentelemetry-demo/templates/component.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+  labels:
+    helm.sh/chart: opentelemetry-demo-0.40.2
+
+    opentelemetry.io/name: notification
+
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/component: notification
+    app.kubernetes.io/name: notification
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: grpc
+      targetPort: 8080
+  selector:
+
+    opentelemetry.io/name: notification
+---
+# Source: opentelemetry-demo/templates/component.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  labels:
+    helm.sh/chart: opentelemetry-demo-0.40.2
+
+    opentelemetry.io/name: notification
+
+    app.kubernetes.io/version: "2.2.0"
+    app.kubernetes.io/component: notification
+    app.kubernetes.io/name: notification
+    app.kubernetes.io/part-of: opentelemetry-demo
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+
+      opentelemetry.io/name: notification
+  template:
+    metadata:
+      labels:
+
+        opentelemetry.io/name: notification
+
+        app.kubernetes.io/version: "2.2.0"
+        app.kubernetes.io/component: notification
+        app.kubernetes.io/name: notification
+      annotations:
+        resource.opentelemetry.io/service.namespace: otel-demo
+    spec:
+      serviceAccountName: otel-demo
+      containers:
+        - name: notification
+          image: 'otel-demo-notificationservice:geometry-lab'
+          imagePullPolicy: IfNotPresent
+          ports:
+
+            - containerPort: 8080
+              name: grpc
+          env:
+            - name: OTEL_SERVICE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.labels['app.kubernetes.io/component']
+            - name: OTEL_COLLECTOR_NAME
+              value: otel-collector
+            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+              value: cumulative
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://$(OTEL_COLLECTOR_NAME):4318
+            - name: NOTIFICATION_PORT
+              value: "8080"
+            - name: FLAGD_HOST
+              value: flagd
+            - name: FLAGD_PORT
+              value: "8013"
+          resources:
+            limits:
+              memory: 100Mi
