@@ -16,11 +16,11 @@ resources:
   - frontend-proxy
   - grafana
   - image-provider
-  - jaeger
+  # - jaeger  # REMOVED: Using Dash0 for distributed tracing
   - kafka
   - llm
   - load-generator
-  - opensearch
+  # - opensearch  # REMOVED: Using Dash0 for log aggregation
   - otel
   - payment
   - postgresql
