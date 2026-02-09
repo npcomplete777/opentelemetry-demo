@@ -29,15 +29,10 @@ const productCatalogClient = new protoDescriptor.oteldemo.ProductCatalogService(
 );
 
 /**
- * Simulate synchronous blocking - this is the anti-pattern
- * Blocks the Node.js event loop for the specified duration
+ * REMOVED: busyWait() was a sync-over-async anti-pattern that blocked
+ * the Node.js event loop. Replaced with async sleep() for any needed delays.
+ * See: VALIS detection - Lollipop pattern on search.fetch_products_blocking
  */
-function busyWait(ms) {
-  const start = Date.now();
-  while (Date.now() - start < ms) {
-    // Busy wait - blocks event loop
-  }
-}
 
 /**
  * Sleep using async setTimeout (normal async behavior)
@@ -132,21 +127,19 @@ async function fetchProductsAsync(tokens, parentSpan) {
 }
 
 /**
- * Fetch products - SYNC-OVER-ASYNC mode (Lollipop anti-pattern)
- * This creates a single dominant child span that blocks the event loop
+ * Fetch products - Fixed version (was Lollipop anti-pattern)
+ * Now uses proper async fetch without event loop blocking
  */
 async function fetchProductsBlocking(tokens, parentSpan) {
   return tracer.startActiveSpan('search.fetch_products_blocking', async (span) => {
     try {
-      const blockDuration = 2000 + Math.floor(Math.random() * 1000); // 2000-3000ms
       const fetchStart = Date.now();
 
-      span.setAttribute('app.search.fetch_mode', 'sync_over_async');
-      span.setAttribute('app.search.blocking', true);
-      span.setAttribute('app.search.block_reason', 'synchronous_fetch');
-      span.setAttribute('app.search.block_duration_ms', blockDuration);
+      span.setAttribute('app.search.fetch_mode', 'async_fixed');
+      span.setAttribute('app.search.blocking', false);
+      span.setAttribute('app.search.fix_applied', 'lollipop_removed');
 
-      // First, make the actual gRPC call (which will be fast, ~10-20ms, auto-instrumented)
+      // Proper async gRPC call - no event loop blocking
       const products = await new Promise((resolve, reject) => {
         productCatalogClient.ListProducts({}, (err, response) => {
           if (err) {
@@ -158,20 +151,10 @@ async function fetchProductsBlocking(tokens, parentSpan) {
       });
 
       const fetchDuration = Date.now() - fetchStart;
-      logger.info({ fetchDuration }, 'ProductCatalogService.ListProducts completed');
+      logger.info({ fetchDuration }, 'ProductCatalogService.ListProducts completed (async, no blocking)');
 
-      // NOW the anti-pattern: block the event loop to simulate sync-over-async
-      // This makes the span duration match the blocking time, not the actual work
-      const remainingBlock = Math.max(0, blockDuration - fetchDuration);
-      if (remainingBlock > 0) {
-        logger.warn({ remainingBlock }, 'Blocking event loop (sync-over-async anti-pattern)');
-        busyWait(remainingBlock);
-      }
-
-      const totalDuration = Date.now() - fetchStart;
       span.setAttribute('app.search.products_fetched', products.length);
       span.setAttribute('app.search.actual_fetch_ms', fetchDuration);
-      span.setAttribute('app.search.total_blocked_ms', totalDuration);
 
       span.end();
       return products;

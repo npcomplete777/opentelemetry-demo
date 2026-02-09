@@ -199,10 +199,10 @@ data:
           "defaultVariant": "off"
         },
         "searchServiceSyncOverAsync": {
-          "description": "Search service sync-over-async anti-pattern - blocks event loop waiting on async operation (Lollipop geometry)",
-          "state": "ENABLED",
+          "description": "DISABLED: Sync-over-async anti-pattern removed. busyWait() eliminated from search.js.",
+          "state": "DISABLED",
           "variants": {
-            "on": true,
+            "on": false,
             "off": false
           },
           "defaultVariant": "off"
