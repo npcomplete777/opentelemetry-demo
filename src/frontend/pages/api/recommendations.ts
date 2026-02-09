@@ -17,8 +17,15 @@ const handler = async ({ method, query }: NextApiRequest, res: NextApiResponse<T
         sessionId as string,
         productIds as string[]
       );
-      const recommendedProductList = await Promise.all(
-        productList.slice(0, 4).map(id => ProductCatalogService.getProduct(id, currencyCode as string))
+
+      // VALIS fix: Replace N individual GetProduct gRPC calls with a single
+      // batch ListProducts call. Previously this was:
+      //   Promise.all(productList.slice(0, 4).map(id => ProductCatalogService.getProduct(id, ...)))
+      // which generated 4 parallel GetProduct spans, each triggering a DB query.
+      // Now uses getProductsByIds() for 1 gRPC call → 1 DB query.
+      const recommendedProductList = await ProductCatalogService.getProductsByIds(
+        productList.slice(0, 4),
+        currencyCode as string
       );
 
       return res.status(200).json(recommendedProductList);
