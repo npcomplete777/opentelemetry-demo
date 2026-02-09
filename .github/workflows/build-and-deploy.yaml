@@ -1,0 +1,288 @@
+name: Build & Deploy Services
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Comma-separated list of services to build (e.g. frontend,recommendation)'
+        required: false
+        type: string
+      force_all:
+        description: 'Build all services regardless of changes'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/npcomplete777/opentelemetry-demo
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed services
+        id: detect
+        run: |
+          # Service directory to Dockerfile mapping
+          declare -A SERVICE_MAP
+          SERVICE_MAP[ad]="src/ad/Dockerfile"
+          SERVICE_MAP[cart]="src/cart/src/Dockerfile"
+          SERVICE_MAP[checkout]="src/checkout/Dockerfile"
+          SERVICE_MAP[currency]="src/currency/Dockerfile"
+          SERVICE_MAP[email]="src/email/Dockerfile"
+          SERVICE_MAP[frontend]="src/frontend/Dockerfile"
+          SERVICE_MAP[frontend-proxy]="src/frontend-proxy/Dockerfile"
+          SERVICE_MAP[fraud-detection]="src/fraud-detection/Dockerfile"
+          SERVICE_MAP[image-provider]="src/image-provider/Dockerfile"
+          SERVICE_MAP[kafka]="src/kafka/Dockerfile"
+          SERVICE_MAP[llm]="src/llm/Dockerfile"
+          SERVICE_MAP[load-generator]="src/load-generator/Dockerfile"
+          SERVICE_MAP[payment]="src/payment/Dockerfile"
+          SERVICE_MAP[product-catalog]="src/product-catalog/Dockerfile"
+          SERVICE_MAP[product-reviews]="src/product-reviews/Dockerfile"
+          SERVICE_MAP[quote]="src/quote/Dockerfile"
+          SERVICE_MAP[recommendation]="src/recommendation/Dockerfile"
+          SERVICE_MAP[shipping]="src/shipping/Dockerfile"
+          SERVICE_MAP[accounting]="src/accounting/Dockerfile"
+
+          # Manual override
+          if [[ "${{ inputs.force_all }}" == "true" ]]; then
+            CHANGED_SERVICES=$(echo "${!SERVICE_MAP[@]}" | tr ' ' '\n' | sort | jq -R . | jq -s .)
+            echo "services=$CHANGED_SERVICES" >> "$GITHUB_OUTPUT"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Force building all services"
+            exit 0
+          fi
+
+          if [[ -n "${{ inputs.services }}" ]]; then
+            CHANGED_SERVICES=$(echo "${{ inputs.services }}" | tr ',' '\n' | jq -R . | jq -s .)
+            echo "services=$CHANGED_SERVICES" >> "$GITHUB_OUTPUT"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Manual service list: ${{ inputs.services }}"
+            exit 0
+          fi
+
+          # Auto-detect from git diff
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          SERVICES=()
+          for SVC in "${!SERVICE_MAP[@]}"; do
+            # Map service name to source directory
+            SRC_DIR="src/${SVC}"
+            # Special cases
+            [[ "$SVC" == "frontend-proxy" ]] && SRC_DIR="src/frontend-proxy"
+
+            if echo "$CHANGED_FILES" | grep -q "^${SRC_DIR}/"; then
+              SERVICES+=("$SVC")
+              echo "  -> $SVC changed (matched ${SRC_DIR}/)"
+            fi
+          done
+
+          # Also detect proto changes that affect multiple services
+          if echo "$CHANGED_FILES" | grep -q "^pb/"; then
+            echo "  -> Proto files changed, adding proto-dependent services"
+            for SVC in checkout currency product-catalog; do
+              if [[ ! " ${SERVICES[@]} " =~ " ${SVC} " ]]; then
+                SERVICES+=("$SVC")
+              fi
+            done
+          fi
+
+          if [[ ${#SERVICES[@]} -eq 0 ]]; then
+            echo "No service changes detected"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo 'services=[]' >> "$GITHUB_OUTPUT"
+          else
+            JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
+            echo "services=$JSON" >> "$GITHUB_OUTPUT"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Services to build: ${SERVICES[*]}"
+          fi
+
+  build-and-push:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Dockerfile and context
+        id: config
+        run: |
+          SERVICE="${{ matrix.service }}"
+
+          # Map service to Dockerfile
+          declare -A DOCKERFILE_MAP
+          DOCKERFILE_MAP[ad]="src/ad/Dockerfile"
+          DOCKERFILE_MAP[cart]="src/cart/src/Dockerfile"
+          DOCKERFILE_MAP[checkout]="src/checkout/Dockerfile"
+          DOCKERFILE_MAP[currency]="src/currency/Dockerfile"
+          DOCKERFILE_MAP[email]="src/email/Dockerfile"
+          DOCKERFILE_MAP[frontend]="src/frontend/Dockerfile"
+          DOCKERFILE_MAP[frontend-proxy]="src/frontend-proxy/Dockerfile"
+          DOCKERFILE_MAP[fraud-detection]="src/fraud-detection/Dockerfile"
+          DOCKERFILE_MAP[image-provider]="src/image-provider/Dockerfile"
+          DOCKERFILE_MAP[kafka]="src/kafka/Dockerfile"
+          DOCKERFILE_MAP[llm]="src/llm/Dockerfile"
+          DOCKERFILE_MAP[load-generator]="src/load-generator/Dockerfile"
+          DOCKERFILE_MAP[payment]="src/payment/Dockerfile"
+          DOCKERFILE_MAP[product-catalog]="src/product-catalog/Dockerfile"
+          DOCKERFILE_MAP[product-reviews]="src/product-reviews/Dockerfile"
+          DOCKERFILE_MAP[quote]="src/quote/Dockerfile"
+          DOCKERFILE_MAP[recommendation]="src/recommendation/Dockerfile"
+          DOCKERFILE_MAP[shipping]="src/shipping/Dockerfile"
+          DOCKERFILE_MAP[accounting]="src/accounting/Dockerfile"
+
+          DOCKERFILE="${DOCKERFILE_MAP[$SERVICE]}"
+          if [[ -z "$DOCKERFILE" ]]; then
+            echo "Unknown service: $SERVICE"
+            exit 1
+          fi
+
+          # Most services use repo root as context (for proto deps etc.)
+          echo "dockerfile=$DOCKERFILE" >> "$GITHUB_OUTPUT"
+          echo "context=." >> "$GITHUB_OUTPUT"
+
+          # Image tags
+          SHA_SHORT="${GITHUB_SHA::7}"
+          echo "sha_short=$SHA_SHORT" >> "$GITHUB_OUTPUT"
+          echo "image=${{ env.IMAGE_PREFIX }}/${SERVICE}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ steps.config.outputs.context }}
+          file: ${{ steps.config.outputs.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.config.outputs.image }}:${{ steps.config.outputs.sha_short }}
+            ${{ steps.config.outputs.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/npcomplete777/opentelemetry-demo
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Output image ref
+        run: |
+          echo "::notice::Built ${{ steps.config.outputs.image }}:${{ steps.config.outputs.sha_short }}"
+
+  update-manifests:
+    needs: [detect-changes, build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update kustomization image overrides
+        run: |
+          SHA_SHORT="${GITHUB_SHA::7}"
+          SERVICES='${{ needs.detect-changes.outputs.services }}'
+          KUSTOMIZE_FILE="k8s/overlays/demo/kustomization.yaml"
+
+          # Install yq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+          echo "Updating image overrides for: $SERVICES"
+
+          # Map service names to their base image references in k8s manifests
+          declare -A BASE_IMAGE_MAP
+          BASE_IMAGE_MAP[ad]="ghcr.io/open-telemetry/demo:2.2.0-ad"
+          BASE_IMAGE_MAP[cart]="ghcr.io/open-telemetry/demo:2.2.0-cart"
+          BASE_IMAGE_MAP[checkout]="ghcr.io/open-telemetry/demo:2.2.0-checkout"
+          BASE_IMAGE_MAP[currency]="ghcr.io/open-telemetry/demo:2.2.0-currency"
+          BASE_IMAGE_MAP[email]="ghcr.io/open-telemetry/demo:2.2.0-email"
+          BASE_IMAGE_MAP[frontend]="ghcr.io/open-telemetry/demo:2.2.0-frontend"
+          BASE_IMAGE_MAP[frontend-proxy]="ghcr.io/open-telemetry/demo:2.2.0-frontend-proxy"
+          BASE_IMAGE_MAP[fraud-detection]="ghcr.io/open-telemetry/demo:2.2.0-fraud-detection"
+          BASE_IMAGE_MAP[image-provider]="ghcr.io/open-telemetry/demo:2.2.0-image-provider"
+          BASE_IMAGE_MAP[kafka]="ghcr.io/open-telemetry/demo:2.2.0-kafka"
+          BASE_IMAGE_MAP[llm]="ghcr.io/open-telemetry/demo:2.2.0-llm"
+          BASE_IMAGE_MAP[load-generator]="ghcr.io/open-telemetry/demo:2.2.0-load-generator"
+          BASE_IMAGE_MAP[payment]="ghcr.io/open-telemetry/demo:2.2.0-payment"
+          BASE_IMAGE_MAP[product-catalog]="ghcr.io/open-telemetry/demo:2.2.0-product-catalog"
+          BASE_IMAGE_MAP[product-reviews]="ghcr.io/open-telemetry/demo:2.2.0-product-reviews"
+          BASE_IMAGE_MAP[quote]="ghcr.io/open-telemetry/demo:2.2.0-quote"
+          BASE_IMAGE_MAP[recommendation]="ghcr.io/open-telemetry/demo:2.2.0-recommendation"
+          BASE_IMAGE_MAP[shipping]="ghcr.io/open-telemetry/demo:2.2.0-shipping"
+          BASE_IMAGE_MAP[accounting]="ghcr.io/open-telemetry/demo:2.2.0-accounting"
+
+          # Read current images array (or initialize empty)
+          CURRENT_IMAGES=$(yq '.images // []' "$KUSTOMIZE_FILE")
+
+          for SERVICE in $(echo "$SERVICES" | jq -r '.[]'); do
+            OLD_IMAGE="${BASE_IMAGE_MAP[$SERVICE]}"
+            if [[ -z "$OLD_IMAGE" ]]; then
+              echo "Skipping unknown service: $SERVICE"
+              continue
+            fi
+
+            # Extract name (without tag) from old image
+            OLD_NAME=$(echo "$OLD_IMAGE" | cut -d: -f1)
+            NEW_IMAGE="${IMAGE_PREFIX}/${SERVICE}"
+            NEW_TAG="${SHA_SHORT}"
+
+            echo "  $SERVICE: $OLD_NAME -> $NEW_IMAGE:$NEW_TAG"
+
+            # Remove existing override for this service if present
+            yq -i "(.images // []) |= [.[] | select(.name != \"$OLD_NAME\")]" "$KUSTOMIZE_FILE"
+
+            # Add new override
+            yq -i ".images += [{\"name\": \"$OLD_NAME\", \"newName\": \"$NEW_IMAGE\", \"newTag\": \"$NEW_TAG\"}]" "$KUSTOMIZE_FILE"
+          done
+
+          echo ""
+          echo "Updated $KUSTOMIZE_FILE:"
+          cat "$KUSTOMIZE_FILE"
+
+      - name: Commit and push manifest update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "No manifest changes to commit"
+            exit 0
+          fi
+
+          SHA_SHORT="${GITHUB_SHA::7}"
+          git add k8s/overlays/demo/kustomization.yaml
+          git commit -m "ci: update image tags to ${SHA_SHORT} [skip ci]
+
+          Auto-generated by build-and-deploy workflow.
+          Source commit: ${GITHUB_SHA}"
+          git push
