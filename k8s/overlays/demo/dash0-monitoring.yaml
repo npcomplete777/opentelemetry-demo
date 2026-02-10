@@ -6,7 +6,13 @@ metadata:
 spec:
   instrumentWorkloads:
     mode: none
+    labelSelector: "dash0.com/enable!=false"
+    traceContext: {}
   logCollection:
     enabled: true
   prometheusScraping:
     enabled: true
+  eventCollection:
+    enabled: true
+  synchronizePersesDashboards: true
+  synchronizePrometheusRules: true
