@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://helm.dash0.com
+    repoURL: https://dash0hq.github.io/dash0-operator
     chart: dash0-operator
     targetRevision: 0.100.0
     helm:
