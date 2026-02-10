@@ -5,6 +5,7 @@ namespace: otel-demo
 
 resources:
   - ../../base
+  - dash0-monitoring.yaml
 
 patches:
   - path: patches/collector-dash0-export.yaml

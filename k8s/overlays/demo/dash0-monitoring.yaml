@@ -1,0 +1,12 @@
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0Monitoring
+metadata:
+  name: dash0-monitoring
+  namespace: otel-demo
+spec:
+  instrumentWorkloads:
+    mode: none
+  logCollection:
+    enabled: true
+  prometheusScraping:
+    enabled: true
