@@ -22,6 +22,13 @@ spec:
             secretRef:
               name: dash0-authorization-secret
               key: token
+          collectors:
+            daemonSetProbes:
+              startup:
+                initialDelaySeconds: 0
+                periodSeconds: 2
+                timeoutSeconds: 3
+                failureThreshold: 120
   destination:
     server: https://kubernetes.default.svc
     namespace: dash0-system
