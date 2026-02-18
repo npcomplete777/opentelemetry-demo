@@ -8,9 +8,6 @@ data:
       worker_connections 64;
     }
     http {
-      # DNS resolver for dynamic upstream (required for variable proxy_pass)
-      resolver 10.43.0.10 valid=30s;
-
       server {
         listen 8090;
 
@@ -22,10 +19,7 @@ data:
 
         # Proxy /v1/traces and /v1/logs to Dash0 ingress
         location /v1/ {
-          # Use variable to force DNS resolution at runtime
-          set $dash0_upstream https://ingress.us-west-2.aws.dash0.com;
-
-          proxy_pass $dash0_upstream/v1/;
+          proxy_pass https://ingress.us-west-2.aws.dash0.com;
           proxy_http_version 1.1;
           proxy_ssl_server_name on;
           proxy_ssl_protocols TLSv1.2 TLSv1.3;
@@ -33,21 +27,8 @@ data:
           proxy_set_header Authorization "Bearer auth_uG2giIHVL1Xf0fW8CRx8NLlJJS1s0uA1";
           proxy_set_header Content-Type $http_content_type;
           proxy_set_header Connection "";
-
-          # Forward client IP for geo resolution
           proxy_set_header X-Forwarded-For $remote_addr;
-
-          # Support large batched payloads from the SDK
           client_max_body_size 1m;
-
-          # Handle CORS preflight (not needed for same-origin, but just in case)
-          if ($request_method = 'OPTIONS') {
-            add_header 'Access-Control-Allow-Origin' '*';
-            add_header 'Access-Control-Allow-Methods' 'POST, OPTIONS';
-            add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, Dash0-Dataset';
-            add_header 'Access-Control-Max-Age' 86400;
-            return 204;
-          }
         }
       }
     }
