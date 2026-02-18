@@ -7,7 +7,6 @@ resources:
   - ../../base
   - dash0-monitoring.yaml
   - dash0-web-proxy.yaml
-  - synthetic-checks.yaml
 
 patches:
   - path: patches/collector-dash0-export.yaml
