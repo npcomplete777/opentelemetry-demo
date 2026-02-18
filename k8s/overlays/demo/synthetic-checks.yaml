@@ -1,0 +1,833 @@
+---
+# Synthetic checks for the OpenTelemetry Demo application.
+# These are managed by the Dash0 Operator (Dash0SyntheticCheck CRD).
+# URLs use in-cluster DNS — the operator runs inside the cluster.
+# The frontend-proxy is also reachable externally via NodePort 30080.
+
+# ── 1. Frontend (user-facing storefront) ────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: frontend-homepage
+  namespace: otel-demo
+spec:
+  display:
+    name: "Frontend – Homepage"
+  enabled: true
+  labels:
+    service: frontend
+    tier: user-facing
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://frontend.otel-demo.svc.cluster.local:8080/"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is
+              value: "200"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "2000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 2. Frontend Proxy (envoy, primary ingress point) ────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: frontend-proxy-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Frontend Proxy – Storefront"
+  enabled: true
+  labels:
+    service: frontend-proxy
+    tier: user-facing
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://frontend-proxy.otel-demo.svc.cluster.local:8080/"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is
+              value: "200"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "3000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 3. Product Catalog – list products ──────────────────────────────────────
+# gRPC service but also exposes HTTP via the frontend API route
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: product-catalog-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Product Catalog – Health"
+  enabled: true
+  labels:
+    service: product-catalog
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://frontend-proxy.otel-demo.svc.cluster.local:8080/api/products"
+        redirects: follow
+        headers:
+          - name: Accept
+            value: "application/json"
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is
+              value: "200"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1500"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 4. Cart service – health via ASP.NET health endpoint ────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: cart-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Cart – Health"
+  enabled: true
+  labels:
+    service: cart
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://cart.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 5. Checkout – place-order endpoint (smoke test via frontend proxy) ───────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: checkout-api-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Checkout API – Health"
+  enabled: true
+  labels:
+    service: checkout
+    tier: backend
+    criticality: high
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://frontend-proxy.otel-demo.svc.cluster.local:8080/api/cart"
+        redirects: follow
+        headers:
+          - name: Accept
+            value: "application/json"
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "500"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "2000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 6. Payment service – health check ───────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: payment-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Payment – Health"
+  enabled: true
+  labels:
+    service: payment
+    tier: backend
+    criticality: high
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://payment.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 7. Shipping – health check ───────────────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: shipping-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Shipping – Health"
+  enabled: true
+  labels:
+    service: shipping
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://shipping.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 8. Recommendation – health check ────────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: recommendation-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Recommendation – Health"
+  enabled: true
+  labels:
+    service: recommendation
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://recommendation.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1500"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 9. Ad service – health check ─────────────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: ad-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Ad Service – Health"
+  enabled: true
+  labels:
+    service: ad
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://ad.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 10. Quote service – get shipping quote ───────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: quote-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Quote – Health"
+  enabled: true
+  labels:
+    service: quote
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://quote.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 11. Currency service – health check ─────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: currency-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Currency – Health"
+  enabled: true
+  labels:
+    service: currency
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://currency.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 12. Email service – health check ────────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: email-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Email – Health"
+  enabled: true
+  labels:
+    service: email
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://email.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 13. Order service – health check ────────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: order-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Order – Health"
+  enabled: true
+  labels:
+    service: order
+    tier: backend
+    criticality: high
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://order.otel-demo.svc.cluster.local:8080/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 14. Image Provider – health check ───────────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: image-provider-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Image Provider – Health"
+  enabled: true
+  labels:
+    service: image-provider
+    tier: backend
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://image-provider.otel-demo.svc.cluster.local:8081/health"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: true
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is_not
+              value: "503"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 15. Flagd – feature flag UI health check ─────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: flagd-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Flagd – Health"
+  enabled: true
+  labels:
+    service: flagd
+    tier: infrastructure
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://flagd.otel-demo.svc.cluster.local:8016/healthz"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: false
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is
+              value: "200"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "500"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 1m
+    locations:
+      - eu-west-1
+    strategy: all_locations
+---
+# ── 16. Load Generator – Locust web UI health ────────────────────────────────
+apiVersion: operator.dash0.com/v1beta1
+kind: Dash0SyntheticCheck
+metadata:
+  name: load-generator-health
+  namespace: otel-demo
+spec:
+  display:
+    name: "Load Generator – Health"
+  enabled: true
+  labels:
+    service: load-generator
+    tier: tooling
+  notifications:
+    channels: []
+  plugin:
+    kind: http
+    spec:
+      request:
+        method: get
+        url: "http://load-generator.otel-demo.svc.cluster.local:8089/"
+        redirects: follow
+        headers: []
+        queryParameters: []
+        tls:
+          allowInsecure: false
+        tracing:
+          addTracingHeaders: false
+      assertions:
+        criticalAssertions:
+          - kind: status_code
+            spec:
+              operator: is
+              value: "200"
+        degradedAssertions:
+          - kind: timing
+            spec:
+              type: total
+              operator: gt
+              value: "1000"
+  retries:
+    kind: fixed
+    spec:
+      attempts: 2
+      delay: 5s
+  schedule:
+    interval: 5m
+    locations:
+      - eu-west-1
+    strategy: all_locations
