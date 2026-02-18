@@ -5,7 +5,7 @@
 # The frontend-proxy is also reachable externally via NodePort 30080.
 
 # ── 1. Frontend (user-facing storefront) ────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: frontend-homepage
@@ -56,7 +56,7 @@ spec:
     strategy: all_locations
 ---
 # ── 2. Frontend Proxy (envoy, primary ingress point) ────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: frontend-proxy-health
@@ -108,7 +108,7 @@ spec:
 ---
 # ── 3. Product Catalog – list products ──────────────────────────────────────
 # gRPC service but also exposes HTTP via the frontend API route
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: product-catalog-health
@@ -161,7 +161,7 @@ spec:
     strategy: all_locations
 ---
 # ── 4. Cart service – health via ASP.NET health endpoint ────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: cart-health
@@ -212,7 +212,7 @@ spec:
     strategy: all_locations
 ---
 # ── 5. Checkout – place-order endpoint (smoke test via frontend proxy) ───────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: checkout-api-health
@@ -270,7 +270,7 @@ spec:
     strategy: all_locations
 ---
 # ── 6. Payment service – health check ───────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: payment-health
@@ -322,7 +322,7 @@ spec:
     strategy: all_locations
 ---
 # ── 7. Shipping – health check ───────────────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: shipping-health
@@ -373,7 +373,7 @@ spec:
     strategy: all_locations
 ---
 # ── 8. Recommendation – health check ────────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: recommendation-health
@@ -424,7 +424,7 @@ spec:
     strategy: all_locations
 ---
 # ── 9. Ad service – health check ─────────────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: ad-health
@@ -475,7 +475,7 @@ spec:
     strategy: all_locations
 ---
 # ── 10. Quote service – get shipping quote ───────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: quote-health
@@ -526,7 +526,7 @@ spec:
     strategy: all_locations
 ---
 # ── 11. Currency service – health check ─────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: currency-health
@@ -577,7 +577,7 @@ spec:
     strategy: all_locations
 ---
 # ── 12. Email service – health check ────────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: email-health
@@ -628,7 +628,7 @@ spec:
     strategy: all_locations
 ---
 # ── 13. Order service – health check ────────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: order-health
@@ -680,7 +680,7 @@ spec:
     strategy: all_locations
 ---
 # ── 14. Image Provider – health check ───────────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: image-provider-health
@@ -731,7 +731,7 @@ spec:
     strategy: all_locations
 ---
 # ── 15. Flagd – feature flag UI health check ─────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: flagd-health
@@ -782,7 +782,7 @@ spec:
     strategy: all_locations
 ---
 # ── 16. Load Generator – Locust web UI health ────────────────────────────────
-apiVersion: operator.dash0.com/v1beta1
+apiVersion: operator.dash0.com/v1alpha1
 kind: Dash0SyntheticCheck
 metadata:
   name: load-generator-health
