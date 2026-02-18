@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-proxy
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend-proxy
+          image: ghcr.io/npcomplete777/opentelemetry-demo/frontend-proxy:dash0-web
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DASH0_WEB_PROXY_HOST
+              value: dash0-web-proxy
+            - name: DASH0_WEB_PROXY_PORT
+              value: "8090"

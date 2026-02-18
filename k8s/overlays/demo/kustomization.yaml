@@ -6,6 +6,7 @@ namespace: otel-demo
 resources:
   - ../../base
   - dash0-monitoring.yaml
+  - dash0-web-proxy.yaml
 
 patches:
   - path: patches/collector-dash0-export.yaml
@@ -13,6 +14,7 @@ patches:
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
   - path: patches/frontend-dash0-web-sdk.yaml
+  - path: patches/frontend-proxy-dash0-web.yaml
   # Scale down redundant backends - using Dash0 instead
   - path: patches/scale-down-prometheus.yaml
   # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base

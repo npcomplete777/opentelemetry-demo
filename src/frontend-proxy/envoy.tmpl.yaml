@@ -61,6 +61,8 @@ static_resources:
                             prefix_rewrite: "/"
                             upgrade_configs:
                               - upgrade_type: websocket
+                        - match: { prefix: "/dash0-ingest/" }
+                          route: { cluster: dash0_web_proxy, prefix_rewrite: "/" }
                         - match: { prefix: "/" }  # Default/catch-all route - keep last since prefix:"/" matches everything
                           route: { cluster: frontend }
                 http_filters:
@@ -206,6 +208,18 @@ static_resources:
                     socket_address:
                       address: ${FLAGD_UI_HOST}
                       port_value: ${FLAGD_UI_PORT}
+    - name: dash0_web_proxy
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: dash0_web_proxy
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ${DASH0_WEB_PROXY_HOST}
+                      port_value: ${DASH0_WEB_PROXY_PORT}
     - name: loadgen
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
