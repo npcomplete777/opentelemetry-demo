@@ -12,6 +12,7 @@ patches:
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
+  - path: patches/frontend-dash0-web-sdk.yaml
   # Scale down redundant backends - using Dash0 instead
   - path: patches/scale-down-prometheus.yaml
   # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
