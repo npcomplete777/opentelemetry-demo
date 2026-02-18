@@ -7,33 +7,16 @@ import { init, sendEvent, reportError, addSignalAttribute } from '@dash0/sdk-web
 
 const {
   NEXT_PUBLIC_OTEL_SERVICE_NAME = '',
-  NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = '',
 } = typeof window !== 'undefined' ? window.ENV : {};
 
 const Dash0Init = () => {
   if (typeof window === 'undefined') return;
 
-  // Derive same-origin base URL for the Dash0 ingest proxy
-  // e.g. "http://localhost:8080/otlp-http/v1/traces" → "http://localhost:8080"
-  const tracesEndpoint = NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
-  if (!tracesEndpoint) {
-    console.warn('[Dash0 Web SDK] No OTLP endpoint configured — skipping initialization');
-    return;
-  }
-
-  // Extract origin (scheme + host + port) from the existing OTLP endpoint
-  let origin: string;
-  try {
-    const url = new URL(tracesEndpoint);
-    origin = url.origin;
-  } catch {
-    // Fallback for relative URLs
-    origin = window.location.origin;
-  }
-
-  // The SDK sends to {url}/v1/traces and {url}/v1/logs
-  // Our proxy route /dash0-ingest/ forwards to Dash0 ingress with auth injected server-side
-  const proxyEndpoint = `${origin}/dash0-ingest`;
+  // Use the browser's current origin for the same-origin proxy route.
+  // The SDK sends to {url}/v1/traces and {url}/v1/logs.
+  // Our Envoy route /dash0-ingest/ forwards to the Nginx proxy which adds auth
+  // and proxies to Dash0 ingress (ingress.us-west-2.aws.dash0.com).
+  const proxyEndpoint = `${window.location.origin}/dash0-ingest`;
 
   init({
     serviceName: NEXT_PUBLIC_OTEL_SERVICE_NAME || 'frontend-web',
