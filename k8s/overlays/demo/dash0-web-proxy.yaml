@@ -8,6 +8,9 @@ data:
       worker_connections 64;
     }
     http {
+      # DNS resolver for dynamic upstream (required for variable proxy_pass)
+      resolver 10.43.0.10 valid=30s;
+
       server {
         listen 8090;
 
@@ -19,12 +22,17 @@ data:
 
         # Proxy /v1/traces and /v1/logs to Dash0 ingress
         location /v1/ {
-          # Pass the request body through unchanged
-          proxy_pass https://ingress.us-west-2.aws.dash0.com/v1/;
+          # Use variable to force DNS resolution at runtime
+          set $dash0_upstream https://ingress.us-west-2.aws.dash0.com;
+
+          proxy_pass $dash0_upstream/v1/;
+          proxy_http_version 1.1;
           proxy_ssl_server_name on;
+          proxy_ssl_protocols TLSv1.2 TLSv1.3;
           proxy_set_header Host ingress.us-west-2.aws.dash0.com;
           proxy_set_header Authorization "Bearer auth_uG2giIHVL1Xf0fW8CRx8NLlJJS1s0uA1";
           proxy_set_header Content-Type $http_content_type;
+          proxy_set_header Connection "";
 
           # Forward client IP for geo resolution
           proxy_set_header X-Forwarded-For $remote_addr;
