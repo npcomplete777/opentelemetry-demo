@@ -9,8 +9,3 @@ spec:
         - name: frontend
           image: ghcr.io/npcomplete777/opentelemetry-demo/frontend:dash0-web
           imagePullPolicy: IfNotPresent
-          env:
-            - name: DASH0_WEB_ENDPOINT_URL
-              value: "https://ingress.us-west-2.aws.dash0.com:4318"
-            - name: DASH0_WEB_AUTH_TOKEN
-              value: "auth_uG2giIHVL1Xf0fW8CRx8NLlJJS1s0uA1"

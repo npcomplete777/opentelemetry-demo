@@ -21,8 +21,6 @@ declare global {
       NEXT_PUBLIC_OTEL_SERVICE_NAME?: string;
       NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?: string;
       IS_SYNTHETIC_REQUEST?: string;
-      DASH0_WEB_ENDPOINT_URL?: string;
-      DASH0_WEB_AUTH_TOKEN?: string;
     };
   }
 }

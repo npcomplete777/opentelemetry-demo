@@ -1,26 +1,34 @@
 // Dash0 Web SDK initialization for website monitoring (RUM, sessions, web vitals)
-// Runs alongside the existing OTel browser tracer — sends directly to Dash0's OTLP endpoint
+// Routes through the frontend-proxy → OTel collector → Dash0 (avoids browser CORS issues)
+// Only enables instrumentations NOT covered by the existing OTel FrontendTracer
 
 import { init } from '@dash0/sdk-web';
 
 const {
-  DASH0_WEB_ENDPOINT_URL = '',
-  DASH0_WEB_AUTH_TOKEN = '',
   NEXT_PUBLIC_OTEL_SERVICE_NAME = '',
+  NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = '',
 } = typeof window !== 'undefined' ? window.ENV : {};
 
 const Dash0Init = () => {
-  if (!DASH0_WEB_ENDPOINT_URL || !DASH0_WEB_AUTH_TOKEN) {
-    console.warn('[Dash0 Web SDK] Missing endpoint URL or auth token — skipping initialization');
+  const tracesEndpoint = NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+  if (!tracesEndpoint) {
+    console.warn('[Dash0 Web SDK] No OTLP endpoint configured — skipping initialization');
     return;
   }
+
+  // Strip /v1/traces to get base OTLP endpoint
+  // e.g. "http://localhost:8080/otlp-http/v1/traces" → "http://localhost:8080/otlp-http"
+  const baseEndpoint = tracesEndpoint.replace(/\/v1\/traces$/, '');
 
   init({
     serviceName: NEXT_PUBLIC_OTEL_SERVICE_NAME || 'frontend-web',
     endpoint: {
-      url: DASH0_WEB_ENDPOINT_URL,
-      authToken: DASH0_WEB_AUTH_TOKEN,
+      url: baseEndpoint,
+      // Placeholder — collector handles Dash0 auth server-side
+      authToken: 'web-sdk',
     },
+    // Only enable Dash0-specific instrumentations; fetch is already covered by OTel FrontendTracer
+    enabledInstrumentations: ['@dash0/navigation', '@dash0/web-vitals', '@dash0/error'],
   });
 };
 
