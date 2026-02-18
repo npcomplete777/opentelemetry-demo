@@ -99,10 +99,12 @@ spec:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://$(OTEL_COLLECTOR_NAME):4317
             - name: GOMEMLIMIT
-              value: 16MiB
+              value: 128MiB
           resources:
+            requests:
+              memory: 160Mi
             limits:
-              memory: 20Mi
+              memory: 160Mi
           volumeMounts:
       initContainers:
         - command:
