@@ -7,6 +7,7 @@ resources:
   - ../../base
   - dash0-monitoring.yaml
   - dash0-web-proxy.yaml
+  - cross-cluster-services.yaml
 
 patches:
   - path: patches/collector-dash0-export.yaml
