@@ -14,7 +14,7 @@ resources:
   - fraud-detection
   - frontend
   - frontend-proxy
-  # - grafana  # REMOVED: Using Dash0 for visualization
+  - grafana
   - image-provider
   - jaeger
   - kafka
