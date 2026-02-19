@@ -1,0 +1,64 @@
+---
+# ClickHouse cross-cluster access
+# Provides clickhouse-external.otel-demo.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse-external
+  namespace: otel-demo
+spec:
+  ports:
+    - name: native
+      port: 9000
+      targetPort: 30900
+    - name: http
+      port: 8123
+      targetPort: 30123
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: clickhouse-external-1
+  namespace: otel-demo
+  labels:
+    kubernetes.io/service-name: clickhouse-external
+addressType: IPv4
+ports:
+  - name: native
+    port: 30900
+    protocol: TCP
+  - name: http
+    port: 30123
+    protocol: TCP
+endpoints:
+  - addresses:
+      - "192.168.97.8"
+---
+# Elasticsearch cross-cluster access
+# Provides elasticsearch-external.otel-demo.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-external
+  namespace: otel-demo
+spec:
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 30920
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: elasticsearch-external-1
+  namespace: otel-demo
+  labels:
+    kubernetes.io/service-name: elasticsearch-external
+addressType: IPv4
+ports:
+  - name: http
+    port: 30920
+    protocol: TCP
+endpoints:
+  - addresses:
+      - "192.168.97.7"
