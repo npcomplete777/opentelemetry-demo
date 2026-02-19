@@ -62,7 +62,7 @@ data:
         headers:
           Authorization: "Bearer auth_weI4rzoX0bfwy2eKvpjtBTZAhQAcw11j"
       clickhouse:
-        endpoint: tcp://clickhouse-mcp:9000
+        endpoint: tcp://k3d-clickhouse-server-0:30900
         database: otel
         ttl: 72h
         create_schema: false
