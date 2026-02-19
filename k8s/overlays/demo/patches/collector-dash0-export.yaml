@@ -84,6 +84,8 @@ data:
           - http://k3d-elasticsearch-server-0:30920
         logs_index: otel-logs
         traces_index: otel-traces
+        mapping:
+          mode: ecs
         sending_queue:
           enabled: true
           num_consumers: 4
@@ -92,8 +94,6 @@ data:
           enabled: true
           initial_interval: 5s
           max_interval: 30s
-        flush:
-          bytes: 5000000
       debug:
         verbosity: basic
 
