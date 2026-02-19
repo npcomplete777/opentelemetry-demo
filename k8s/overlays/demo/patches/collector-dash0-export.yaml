@@ -79,6 +79,23 @@ data:
           num_consumers: 4
           queue_size: 1000
         timeout: 15s
+      elasticsearch:
+        endpoints:
+          - http://k3d-elasticsearch-server-0:30920
+        logs_index: otel-logs
+        traces_index: otel-traces
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        timeout: 30s
+        flush:
+          bytes: 5000000
       debug:
         verbosity: basic
 
@@ -88,7 +105,7 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, debug]
+          exporters: [otlphttp/dash0, clickhouse, elasticsearch, debug]
         metrics:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
@@ -96,4 +113,4 @@ data:
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, debug]
+          exporters: [otlphttp/dash0, clickhouse, elasticsearch, debug]
