@@ -92,7 +92,6 @@ data:
           enabled: true
           initial_interval: 5s
           max_interval: 30s
-          max_elapsed_time: 300s
         flush:
           bytes: 5000000
       debug:
