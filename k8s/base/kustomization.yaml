@@ -5,7 +5,7 @@ resources:
   - ad
   # - admin-secret  # REMOVED: Only contained grafana admin password
   - agent-collector
-  # - all-in-one  # REMOVED: Only contained jaeger resources
+  - all-in-one
   - cart
   - checkout
   - currency
@@ -16,13 +16,13 @@ resources:
   - frontend-proxy
   # - grafana  # REMOVED: Using Dash0 for visualization
   - image-provider
-  # - jaeger  # REMOVED: Using Dash0 for distributed tracing
+  - jaeger
   - kafka
   - llm
   - load-generator
   # Geometry Lab services
   - notification
-  # - opensearch  # REMOVED: Using Dash0 for log aggregation
+  - opensearch
   - otel
   - payment
   - postgresql
