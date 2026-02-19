@@ -62,7 +62,7 @@ data:
         headers:
           Authorization: "Bearer auth_weI4rzoX0bfwy2eKvpjtBTZAhQAcw11j"
       clickhouse:
-        endpoint: tcp://k3d-clickhouse-server-0:30900
+        endpoint: tcp://clickhouse-external:9000
         database: otel
         ttl: 72h
         create_schema: false
@@ -81,7 +81,7 @@ data:
         timeout: 15s
       elasticsearch:
         endpoints:
-          - http://k3d-elasticsearch-server-0:30920
+          - http://elasticsearch-external:9200
         logs_index: otel-logs
         traces_index: otel-traces
         mapping:
