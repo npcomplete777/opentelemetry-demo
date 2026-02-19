@@ -88,12 +88,11 @@ data:
           enabled: true
           num_consumers: 4
           queue_size: 1000
-        retry_on_failure:
+        retry:
           enabled: true
           initial_interval: 5s
           max_interval: 30s
           max_elapsed_time: 300s
-        timeout: 30s
         flush:
           bytes: 5000000
       debug:
