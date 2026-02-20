@@ -129,10 +129,6 @@ data:
           initial_interval: 5s
           max_interval: 30s
           max_elapsed_time: 300s
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
       # Grafana Stack: Loki for logs
       loki/grafana:
         endpoint: http://loki-external:3100/loki/api/v1/push
