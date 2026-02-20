@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: accounting
-  namespace: otel-demo
 spec:
   template:
     spec:
