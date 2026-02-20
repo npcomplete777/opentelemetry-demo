@@ -129,14 +129,9 @@ data:
           initial_interval: 5s
           max_interval: 30s
           max_elapsed_time: 300s
-      # Grafana Stack: Loki for logs
-      loki/grafana:
-        endpoint: http://loki-external:3100/loki/api/v1/push
-        default_labels_enabled:
-          exporter: true
-          job: true
-          instance: true
-          level: true
+      # Grafana Stack: Loki for logs (OTLP HTTP - Loki 3.x supports native OTLP)
+      otlphttp/loki:
+        endpoint: http://loki-external:3100/otlp
         retry_on_failure:
           enabled: true
           initial_interval: 5s
@@ -163,4 +158,4 @@ data:
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, elasticsearch, opensearch, loki/grafana, debug]
+          exporters: [otlphttp/dash0, clickhouse, elasticsearch, opensearch, otlphttp/loki, debug]
