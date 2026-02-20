@@ -107,6 +107,49 @@ data:
             insecure: true
         logs_index: otel-logs
         logs_index_time_format: yyyy-MM-dd
+      # Grafana Stack: Tempo for traces (OTLP HTTP)
+      otlphttp/tempo:
+        endpoint: http://tempo-external:4318
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
+      # Grafana Stack: Mimir for metrics (Prometheus Remote Write)
+      prometheusremotewrite/mimir:
+        endpoint: http://mimir-external:9009/api/v1/push
+        resource_to_telemetry_conversion:
+          enabled: true
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
+      # Grafana Stack: Loki for logs
+      loki/grafana:
+        endpoint: http://loki-external:3100/loki/api/v1/push
+        default_labels_enabled:
+          exporter: true
+          job: true
+          instance: true
+          level: true
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
       debug:
         verbosity: basic
 
@@ -116,12 +159,12 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, elasticsearch, otlp/jaeger, debug]
+          exporters: [otlphttp/dash0, clickhouse, elasticsearch, otlp/jaeger, otlphttp/tempo, debug]
         metrics:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, debug]
+          exporters: [otlphttp/dash0, clickhouse, prometheusremotewrite/mimir, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, elasticsearch, opensearch, debug]
+          exporters: [otlphttp/dash0, clickhouse, elasticsearch, opensearch, loki/grafana, debug]
