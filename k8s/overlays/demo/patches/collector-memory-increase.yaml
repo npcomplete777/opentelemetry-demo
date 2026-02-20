@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-agent
+spec:
+  template:
+    spec:
+      containers:
+        - name: opentelemetry-collector
+          env:
+            - name: GOMEMLIMIT
+              value: "400MiB"
+          resources:
+            limits:
+              memory: 512Mi
