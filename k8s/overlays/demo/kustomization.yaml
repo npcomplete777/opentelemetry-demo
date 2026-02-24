@@ -9,6 +9,10 @@ resources:
   - dash0-web-proxy.yaml
   - cross-cluster-services.yaml
   - grafana-secret.yaml
+  # NodePort services - expose observability UIs via k3d node IP
+  - patches/grafana-nodeport.yaml
+  - patches/jaeger-nodeport.yaml
+  - patches/prometheus-nodeport.yaml
 
 patches:
   - path: patches/collector-dash0-export.yaml
@@ -20,7 +24,7 @@ patches:
   - path: patches/collector-memory-increase.yaml
   - path: patches/accounting-memory-increase.yaml
   # Scale down redundant backends - using Dash0 instead
-  - path: patches/scale-down-prometheus.yaml
+  # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
   # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
   # - path: patches/scale-down-grafana.yaml  # REMOVED: grafana removed from base
   # - path: patches/scale-down-opensearch.yaml  # REMOVED: opensearch removed from base
