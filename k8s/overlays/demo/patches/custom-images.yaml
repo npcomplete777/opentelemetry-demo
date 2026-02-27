@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
         - name: accounting
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/accounting:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/accounting:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: cart
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/cart:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/cart:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: checkout
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/checkout:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/checkout:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: email
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/email:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/email:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
         - name: image-provider
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -62,7 +62,7 @@ spec:
     spec:
       containers:
         - name: llm
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/llm:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/llm:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -73,7 +73,7 @@ spec:
     spec:
       containers:
         - name: load-generator
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/load-generator:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/load-generator:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
         - name: payment
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/payment:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/payment:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -95,7 +95,7 @@ spec:
     spec:
       containers:
         - name: product-catalog
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-catalog:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-catalog:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -106,7 +106,7 @@ spec:
     spec:
       containers:
         - name: product-reviews
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-reviews:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-reviews:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -117,7 +117,7 @@ spec:
     spec:
       containers:
         - name: quote
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/quote:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/quote:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -128,7 +128,7 @@ spec:
     spec:
       containers:
         - name: recommendation
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/recommendation:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/recommendation:latest'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -139,4 +139,4 @@ spec:
     spec:
       containers:
         - name: shipping
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/shipping:e5050de'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/shipping:latest'
