@@ -7,8 +7,7 @@ spec:
     spec:
       containers:
         - name: frontend-proxy
-          image: ghcr.io/npcomplete777/opentelemetry-demo/frontend-proxy:dash0-web
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/npcomplete777/opentelemetry-demo/frontend-proxy:latest
           env:
             - name: DASH0_WEB_PROXY_HOST
               value: dash0-web-proxy

@@ -7,5 +7,4 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/npcomplete777/opentelemetry-demo/frontend:dash0-web
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/npcomplete777/opentelemetry-demo/frontend:latest
