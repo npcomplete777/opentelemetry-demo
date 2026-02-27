@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting
+spec:
+  template:
+    spec:
+      containers:
+        - name: accounting
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/accounting:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+spec:
+  template:
+    spec:
+      containers:
+        - name: cart
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/cart:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+spec:
+  template:
+    spec:
+      containers:
+        - name: checkout
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/checkout:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email
+spec:
+  template:
+    spec:
+      containers:
+        - name: email
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/email:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-provider
+spec:
+  template:
+    spec:
+      containers:
+        - name: image-provider
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm
+spec:
+  template:
+    spec:
+      containers:
+        - name: llm
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/llm:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-generator
+spec:
+  template:
+    spec:
+      containers:
+        - name: load-generator
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/load-generator:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment
+spec:
+  template:
+    spec:
+      containers:
+        - name: payment
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/payment:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-catalog
+spec:
+  template:
+    spec:
+      containers:
+        - name: product-catalog
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-catalog:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-reviews
+spec:
+  template:
+    spec:
+      containers:
+        - name: product-reviews
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-reviews:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quote
+spec:
+  template:
+    spec:
+      containers:
+        - name: quote
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/quote:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation
+spec:
+  template:
+    spec:
+      containers:
+        - name: recommendation
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/recommendation:e5050de'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+spec:
+  template:
+    spec:
+      containers:
+        - name: shipping
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/shipping:e5050de'

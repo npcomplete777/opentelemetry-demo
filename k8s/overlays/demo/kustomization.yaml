@@ -24,6 +24,8 @@ patches:
   - path: patches/collector-memory-increase.yaml
   - path: patches/collector-dynatrace-env.yaml
   - path: patches/accounting-memory-increase.yaml
+  # Custom images for WillfulWaste retheme
+  - path: patches/custom-images.yaml
   # Scale down redundant backends - using Dash0 instead
   # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
   # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
