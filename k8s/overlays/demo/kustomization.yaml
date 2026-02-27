@@ -22,6 +22,7 @@ patches:
   - path: patches/frontend-dash0-web-sdk.yaml
   - path: patches/frontend-proxy-dash0-web.yaml
   - path: patches/collector-memory-increase.yaml
+  - path: patches/collector-dynatrace-env.yaml
   - path: patches/accounting-memory-increase.yaml
   # Scale down redundant backends - using Dash0 instead
   # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying

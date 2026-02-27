@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-agent
+  namespace: otel-demo
+spec:
+  template:
+    spec:
+      containers:
+        - name: opentelemetry-collector
+          env:
+            - name: DT_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dynatrace-otel-secret
+                  key: DT_API_TOKEN

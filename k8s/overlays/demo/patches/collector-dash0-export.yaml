@@ -142,6 +142,11 @@ data:
           enabled: true
           num_consumers: 4
           queue_size: 1000
+      # Dynatrace: all signals via generic OTLP HTTP exporter
+      otlphttp/dynatrace:
+        endpoint: https://nxy41179.live.dynatrace.com/api/v2/otlp
+        headers:
+          Authorization: "Api-Token ${env:DT_API_TOKEN}"
       debug:
         verbosity: basic
 
@@ -151,12 +156,12 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, elasticsearch, otlp/jaeger, otlphttp/tempo, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, otlp/jaeger, otlphttp/tempo, debug]
         metrics:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, elasticsearch, prometheusremotewrite/mimir, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, prometheusremotewrite/mimir, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, clickhouse, elasticsearch, opensearch, otlphttp/loki, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, opensearch, otlphttp/loki, debug]
