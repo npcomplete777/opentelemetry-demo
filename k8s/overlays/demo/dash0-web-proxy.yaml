@@ -24,7 +24,7 @@ data:
           proxy_ssl_server_name on;
           proxy_ssl_protocols TLSv1.2 TLSv1.3;
           proxy_set_header Host ingress.us-west-2.aws.dash0.com;
-          proxy_set_header Authorization "Bearer auth_uG2giIHVL1Xf0fW8CRx8NLlJJS1s0uA1";
+          proxy_set_header Authorization "Bearer auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ";
           proxy_set_header Content-Type $http_content_type;
           proxy_set_header Connection "";
           proxy_set_header X-Forwarded-For $remote_addr;

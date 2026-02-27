@@ -24,7 +24,7 @@ const Dash0Init = () => {
       url: proxyEndpoint,
       // Auth token for Website Monitoring — with Ingesting permissions only
       // The Nginx proxy also injects this server-side, but the SDK requires it
-      authToken: 'auth_uG2giIHVL1Xf0fW8CRx8NLlJJS1s0uA1',
+      authToken: 'auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ',
     },
     // Enable all instrumentations for full Website Monitoring coverage
     // Navigation: page views, route transitions

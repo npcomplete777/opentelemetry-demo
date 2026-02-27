@@ -18,6 +18,7 @@ spec:
             enabled: true
             endpoint: ingress.us-west-2.aws.dash0.com:4317
             apiEndpoint: https://api.us-west-2.aws.dash0.com
+            dataset: astronomy-demo
             disableSecretValidation: true
             secretRef:
               name: dash0-authorization-secret

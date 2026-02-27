@@ -24,7 +24,7 @@ data:
       resource:
         attributes:
           - key: dash0.dataset
-            value: default
+            value: astronomy-demo
             action: upsert
       k8sattributes:
         auth_type: "serviceAccount"
@@ -60,7 +60,7 @@ data:
       otlphttp/dash0:
         endpoint: https://ingress.us-west-2.aws.dash0.com
         headers:
-          Authorization: "Bearer auth_weI4rzoX0bfwy2eKvpjtBTZAhQAcw11j"
+          Authorization: "Bearer auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ"
       clickhouse:
         endpoint: tcp://clickhouse-external:9000
         database: otel
