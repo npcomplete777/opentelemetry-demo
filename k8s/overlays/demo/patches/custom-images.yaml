@@ -51,7 +51,8 @@ spec:
     spec:
       containers:
         - name: image-provider
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:latest'
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:willfulwaste'
+          imagePullPolicy: Always
 ---
 apiVersion: apps/v1
 kind: Deployment
