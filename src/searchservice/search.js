@@ -303,11 +303,11 @@ module.exports.getSuggestions = async (request) => {
 
     // Simple stub - return static suggestions
     const suggestions = [
-      'telescope',
-      'solar system',
-      'constellation map',
-      'space poster',
-      'astronomy book'
+      'batteries',
+      'cleaning supplies',
+      'duct tape',
+      'flashlight',
+      'kitchen gadgets'
     ].filter(s => s.startsWith(request.partial_query.toLowerCase()))
      .slice(0, request.max_suggestions || 5);
 

@@ -85,12 +85,12 @@ def get_flagd_value(FlagName):
     return client.get_integer_value(FlagName, 0)
 
 categories = [
-    "binoculars",
-    "telescopes",
-    "accessories",
-    "assembly",
-    "travel",
-    "books",
+    "household",
+    "electronics",
+    "kitchen",
+    "tools",
+    "cleaning",
+    "mystery",
     None,
 ]
 
@@ -266,7 +266,7 @@ if browser_traffic_enabled:
                     page.on("console", lambda msg: print(msg.text))
                     await page.route('**/*', add_baggage_header)
                     await page.goto("/", wait_until="domcontentloaded")
-                    await page.click('p:has-text("Roof Binoculars")')
+                    await page.click('p:has-text("Microfiber Cleaning Cloths")')
                     await page.wait_for_load_state("domcontentloaded")
                     await page.click('button:has-text("Add To Cart")')
                     await page.wait_for_load_state("domcontentloaded")

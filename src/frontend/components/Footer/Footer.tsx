@@ -21,13 +21,13 @@ const Footer = () => {
   return (
     <S.Footer>
       <div>
-        <p>This website is hosted for demo purpose only. It is not an actual shop.</p>
+        <p>This website is hosted for demo purposes only. WillfulWaste Inc. is not a real company.</p>
         <p>
           <span data-cy={CypressFields.SessionId}>session-id: {sessionId}</span>
         </p>
       </div>
       <p>
-        @ {currentYear} OpenTelemetry (<a href="https://github.com/open-telemetry/opentelemetry-demo">Source Code</a>)
+        @ {currentYear} WillfulWaste Inc. (<a href="https://github.com/npcomplete777/opentelemetry-demo">Source Code</a>)
       </p>
       <PlatformFlag />
     </S.Footer>

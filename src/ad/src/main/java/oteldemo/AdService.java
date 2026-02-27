@@ -271,49 +271,49 @@ public final class AdService {
   }
 
   private static ImmutableListMultimap<String, Ad> createAdsMap() {
-    Ad binoculars =
+    Ad cloths =
         Ad.newBuilder()
             .setRedirectUrl("/product/2ZYFJ3GM2N")
-            .setText("Roof Binoculars for sale. 50% off.")
+            .setText("Microfiber Cleaning Cloths 12-Pack. 50% off!")
             .build();
-    Ad explorerTelescope =
+    Ad charger =
         Ad.newBuilder()
             .setRedirectUrl("/product/66VCHSJNUP")
-            .setText("Starsense Explorer Refractor Telescope for sale. 20% off.")
+            .setText("Off-Brand Phone Charger on sale. 20% off!")
             .build();
-    Ad colorImager =
+    Ad timer =
         Ad.newBuilder()
             .setRedirectUrl("/product/0PUK6V6EV0")
-            .setText("Solar System Color Imager for sale. 30% off.")
+            .setText("Kitchen Timer (Digital) for sale. 30% off!")
             .build();
-    Ad opticalTube =
+    Ad tape =
         Ad.newBuilder()
             .setRedirectUrl("/product/9SIQT8TOJO")
-            .setText("Optical Tube Assembly for sale. 10% off.")
+            .setText("Duct Tape Roll (Silver) for sale. 10% off!")
             .build();
-    Ad travelTelescope =
+    Ad towels =
         Ad.newBuilder()
             .setRedirectUrl("/product/1YMWWN1N4O")
             .setText(
-                "Eclipsmart Travel Refractor Telescope for sale. Buy one, get second kit for free")
+                "Bulk Paper Towels 8-Pack for sale. Buy one, get second pack for free!")
             .build();
-    Ad solarFilter =
+    Ad batteries =
         Ad.newBuilder()
             .setRedirectUrl("/product/6E92ZMYYFZ")
-            .setText("Solar Filter for sale. Buy two, get third one for free")
+            .setText("AA Batteries 24-Pack for sale. Buy two, get third one for free!")
             .build();
-    Ad cleaningKit =
+    Ad flashlight =
         Ad.newBuilder()
             .setRedirectUrl("/product/L9ECAV7KIM")
-            .setText("Lens Cleaning Kit for sale. Buy one, get second one for free")
+            .setText("LED Flashlight for sale. Buy one, get second one for free!")
             .build();
     return ImmutableListMultimap.<String, Ad>builder()
-        .putAll("binoculars", binoculars)
-        .putAll("telescopes", explorerTelescope)
-        .putAll("accessories", colorImager, solarFilter, cleaningKit)
-        .putAll("assembly", opticalTube)
-        .putAll("travel", travelTelescope)
-        // Keep the books category free of ads to ensure the random code branch is tested
+        .putAll("household", cloths)
+        .putAll("electronics", charger)
+        .putAll("kitchen", timer, flashlight)
+        .putAll("tools", tape)
+        .putAll("cleaning", towels)
+        // Keep the mystery category free of ads to ensure the random code branch is tested
         .build();
   }
 

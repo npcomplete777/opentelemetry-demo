@@ -62,15 +62,15 @@ REVIEW_TITLES = [
 ]
 
 REVIEW_BODIES = [
-    "This product has been fantastic for stargazing. Highly recommended!",
-    "Excellent build quality and very easy to use.",
-    "Perfect for beginners and enthusiasts alike.",
-    "The optics are crystal clear and the setup was straightforward.",
-    "A bit pricey but worth every penny for the quality.",
-    "Good product overall, though the instructions could be clearer.",
+    "This product has been fantastic for everyday use. Highly recommended!",
+    "Excellent quality and very easy to use.",
+    "Perfect for the price. Great value.",
+    "Works exactly as described and arrived quickly.",
+    "A steal at this price. Worth every penny for the quality.",
+    "Good product overall, though the packaging could be better.",
     "Works well but I've seen better alternatives.",
     "Adequate for the price point, nothing exceptional.",
-    "Had some issues with assembly but customer service helped.",
+    "Had some issues with the order but customer service helped.",
     "Not as advertised, expected better quality for this price."
 ]
 
