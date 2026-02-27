@@ -29,8 +29,6 @@ patches:
 # - path: patches/scale-down-grafana.yaml  # REMOVED: grafana removed from base
 # - path: patches/scale-down-opensearch.yaml  # REMOVED: opensearch removed from base
 
-# Image overrides - GitHub Actions will update tags here
-images:
-  - name: ghcr.io/open-telemetry/demo
-    newName: ghcr.io/npcomplete777/opentelemetry-demo/image-provider
-    newTag: d7ad29d
+# Image overrides - DO NOT USE: all services share the same base image name
+# so kustomize images[] replaces ALL of them with one image. Use patches instead.
+images: []

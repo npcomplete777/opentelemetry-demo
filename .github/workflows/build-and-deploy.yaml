@@ -204,6 +204,9 @@ jobs:
           echo "::notice::Built ${{ steps.config.outputs.image }}:${{ steps.config.outputs.sha_short }}"
 
   update-manifests:
+    # DISABLED: kustomize images[] is broken - all services share ghcr.io/open-telemetry/demo
+    # base name, so a single images[] entry replaces ALL containers. Using patches instead.
+    if: false
     needs: [detect-changes, build-and-push]
     runs-on: ubuntu-latest
     steps:
