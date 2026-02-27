@@ -63,7 +63,7 @@ jobs:
 
           # Manual override
           if [[ "${{ inputs.force_all }}" == "true" ]]; then
-            CHANGED_SERVICES=$(echo "${!SERVICE_MAP[@]}" | tr ' ' '\n' | sort | jq -R . | jq -s .)
+            CHANGED_SERVICES=$(echo "${!SERVICE_MAP[@]}" | tr ' ' '\n' | sort | jq -R . | jq -sc .)
             echo "services=$CHANGED_SERVICES" >> "$GITHUB_OUTPUT"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "Force building all services"
@@ -71,7 +71,7 @@ jobs:
           fi
 
           if [[ -n "${{ inputs.services }}" ]]; then
-            CHANGED_SERVICES=$(echo "${{ inputs.services }}" | tr ',' '\n' | jq -R . | jq -s .)
+            CHANGED_SERVICES=$(echo "${{ inputs.services }}" | tr ',' '\n' | jq -R . | jq -sc .)
             echo "services=$CHANGED_SERVICES" >> "$GITHUB_OUTPUT"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "Manual service list: ${{ inputs.services }}"
@@ -111,7 +111,7 @@ jobs:
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
             echo 'services=[]' >> "$GITHUB_OUTPUT"
           else
-            JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s .)
+            JSON=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -sc .)
             echo "services=$JSON" >> "$GITHUB_OUTPUT"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "Services to build: ${SERVICES[*]}"
