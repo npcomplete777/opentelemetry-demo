@@ -1,8 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: otel-demo
-
 resources:
   - ../../base
   - dash0-monitoring.yaml
@@ -13,7 +11,6 @@ resources:
   - patches/grafana-nodeport.yaml
   - patches/jaeger-nodeport.yaml
   - patches/prometheus-nodeport.yaml
-
 patches:
   - path: patches/collector-dash0-export.yaml
   - path: patches/enable-ad-high-cpu-flag.yaml
@@ -26,11 +23,14 @@ patches:
   - path: patches/accounting-memory-increase.yaml
   # Custom images for WillfulWaste retheme
   - path: patches/custom-images.yaml
-  # Scale down redundant backends - using Dash0 instead
-  # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
-  # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
-  # - path: patches/scale-down-grafana.yaml  # REMOVED: grafana removed from base
-  # - path: patches/scale-down-opensearch.yaml  # REMOVED: opensearch removed from base
+# Scale down redundant backends - using Dash0 instead
+# - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
+# - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
+# - path: patches/scale-down-grafana.yaml  # REMOVED: grafana removed from base
+# - path: patches/scale-down-opensearch.yaml  # REMOVED: opensearch removed from base
 
 # Image overrides - GitHub Actions will update tags here
-images: []
+images:
+  - name: ghcr.io/open-telemetry/demo
+    newName: ghcr.io/npcomplete777/opentelemetry-demo/image-provider
+    newTag: d7ad29d
