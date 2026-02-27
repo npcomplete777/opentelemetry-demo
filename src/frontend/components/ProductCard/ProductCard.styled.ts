@@ -27,6 +27,8 @@ export const ProductName = styled.p`
   margin: 0;
   margin-top: 10px;
   font-size: ${({ theme }) => theme.sizes.dSmall};
+  font-weight: ${({ theme }) => theme.fonts.semiBold};
+  letter-spacing: -0.01em;
 `;
 
 export const ProductPrice = styled.p`

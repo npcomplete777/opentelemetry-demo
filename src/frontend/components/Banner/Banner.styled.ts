@@ -44,6 +44,9 @@ export const TextContainer = styled.div`
 export const Title = styled.h1`
   font-size: ${({ theme }) => theme.sizes.mxLarge};
   font-weight: ${({ theme }) => theme.fonts.bold};
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 
   ${({ theme }) => theme.breakpoints.desktop} {
     font-size: ${({ theme }) => theme.sizes.dxLarge};

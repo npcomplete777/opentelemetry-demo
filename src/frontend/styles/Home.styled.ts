@@ -36,6 +36,8 @@ export const HotProducts = styled.div`
 export const HotProductsTitle = styled.h1`
   font-size: ${({ theme }) => theme.sizes.mLarge};
   font-weight: ${({ theme }) => theme.fonts.bold};
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
 
   ${({ theme }) => theme.breakpoints.desktop} {
     font-size: ${({ theme }) => theme.sizes.dxLarge};
