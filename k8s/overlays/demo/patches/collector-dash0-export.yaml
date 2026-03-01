@@ -16,6 +16,25 @@ data:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
+      # Kafka cluster metrics: brokers, topics, partitions, consumer groups
+      kafkametrics:
+        brokers:
+          - kafka:9092
+        protocol_version: "3.0.0"
+        collection_interval: 30s
+        scrapers:
+          - brokers
+          - topics
+          - consumers
+      # Kafka receiver: consume order messages from the demo's orders topic as logs
+      kafka/orders:
+        brokers:
+          - kafka:9092
+        protocol_version: "3.0.0"
+        topic: orders
+        encoding: raw
+        group_id: otel-kafka-receiver
+        initial_offset: latest
 
     processors:
       batch:
@@ -165,3 +184,13 @@ data:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
           exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, opensearch, otlphttp/loki, debug]
+        # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
+        metrics/kafka:
+          receivers: [kafkametrics]
+          processors: [batch, resource]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, debug]
+        # Kafka order messages consumed as logs
+        logs/kafka:
+          receivers: [kafka/orders]
+          processors: [batch, resource]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, debug]
