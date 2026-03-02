@@ -193,3 +193,86 @@ spec:
     renderers:
     - traces-explorer/*/red
     yAxisScale: linear
+---
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-jvm-performance
+spec:
+  display:
+    description: "RED metrics for JVM-based services (ad, fraud-detection, inventory) — Java and Kotlin runtimes"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - JVM Performance"
+  filter:
+  - key: service.name
+    operator: is_one_of
+    values:
+    - ad
+    - fraud-detection
+    - inventory
+  groupBy:
+  - service.name
+  table:
+    columns:
+    - key: service.name
+      label: Service
+    - key: spans_rate
+      label: Request Rate
+    - key: spans_errors_rate
+      label: Error Rate
+    - key: spans_duration_p99
+      label: P99 Latency
+    sort:
+    - direction: descending
+      key: spans_errors_rate
+  type: resources
+  visualizations:
+  - metric: spans_rate
+    renderers:
+    - resources/services/red
+    yAxisScale: linear
+---
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-kafka-performance
+spec:
+  display:
+    description: "Kafka messaging pipeline: checkout (producer), fraud-detection and accounting (consumers), plus broker metrics from the kafkametrics OTel receiver"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - Kafka Performance"
+  filter:
+  - key: service.name
+    operator: is_one_of
+    values:
+    - kafka
+    - checkout
+    - fraud-detection
+    - accounting
+    - otel-demo-otel-collector-agent
+  groupBy:
+  - service.name
+  - span.name
+  table:
+    columns:
+    - key: timestamp
+      label: Time
+    - key: service.name
+      label: Service
+    - key: span.name
+      label: Operation
+    - key: duration
+      label: Duration
+    - key: status
+      label: Status
+    sort:
+    - direction: descending
+      key: duration
+  type: spans
+  visualizations:
+  - metric: spans_duration_p99
+    renderers:
+    - traces-explorer/*/red
+    yAxisScale: linear
