@@ -1,0 +1,195 @@
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-services-overview
+spec:
+  display:
+    description: "High-level RED metrics for all services in the OpenTelemetry demo application"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - Services Overview"
+  filter:
+  - key: k8s.namespace.name
+    operator: is
+    value: otel-demo
+  groupBy:
+  - service.name
+  table:
+    columns:
+    - key: service.name
+      label: Service
+    - key: spans_rate
+      label: Request Rate
+    - key: spans_errors_rate
+      label: Error Rate
+    - key: spans_duration_p99
+      label: P99 Latency
+    sort:
+    - direction: descending
+      key: spans_errors_rate
+  type: resources
+  visualizations:
+  - metric: spans_rate
+    renderers:
+    - resources/services/red
+    yAxisScale: linear
+---
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-k8s-pods
+spec:
+  display:
+    description: "CPU and memory utilization for all pods in the OTel demo namespace"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - Pod Health"
+  filter:
+  - key: k8s.namespace.name
+    operator: is
+    value: otel-demo
+  groupBy:
+  - k8s.pod.name
+  table:
+    columns:
+    - key: k8s.pod.name
+      label: Pod
+    - key: k8s.node.name
+      label: Node
+    - key: status
+      label: Status
+    sort:
+    - direction: ascending
+      key: k8s.pod.name
+  type: resources
+  visualizations:
+  - renderers:
+    - resources/k8s-pods/cpu-memory
+    - resources/k8s-pods/status
+    yAxisScale: linear
+---
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-error-logs
+spec:
+  display:
+    description: "All WARN and ERROR level logs across the OTel demo services"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - Error & Warning Logs"
+  filter:
+  - key: k8s.namespace.name
+    operator: is
+    value: otel-demo
+  - key: severity
+    operator: is_one_of
+    values:
+    - WARN
+    - ERROR
+    - FATAL
+  groupBy:
+  - service.name
+  - severity
+  table:
+    columns:
+    - key: timestamp
+      label: Time
+    - key: severity
+      label: Severity
+    - key: service.name
+      label: Service
+    - key: body
+      label: Message
+    sort:
+    - direction: descending
+      key: timestamp
+  type: logs
+  visualizations:
+  - metric: logs_rate
+    renderers:
+    - logging/*/stacked_bar
+    yAxisScale: linear
+---
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-error-traces
+spec:
+  display:
+    description: "All error spans across the OTel demo, sorted by duration to find the slowest failures"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - Error Traces"
+  filter:
+  - key: status
+    operator: is
+    value: ERROR
+  groupBy:
+  - service.name
+  - span.name
+  table:
+    columns:
+    - key: timestamp
+      label: Time
+    - key: service.name
+      label: Service
+    - key: span.name
+      label: Operation
+    - key: duration
+      label: Duration
+    - key: status
+      label: Status
+    sort:
+    - direction: descending
+      key: duration
+  type: spans
+  visualizations:
+  - metric: spans_errors_rate
+    renderers:
+    - traces-explorer/*/outliers
+    yAxisScale: linear
+---
+apiVersion: operator.dash0.com/v1alpha1
+kind: Dash0View
+metadata:
+  name: otel-demo-checkout-flow
+spec:
+  display:
+    description: "Traces for the checkout pipeline: cart, checkout, payment, shipping, and order services"
+    folder:
+    - OTel Demo
+    name: "OTel Demo - Checkout Flow"
+  filter:
+  - key: service.name
+    operator: is_one_of
+    values:
+    - cart
+    - checkout
+    - payment
+    - shipping
+    - order
+    - currency
+  groupBy:
+  - service.name
+  table:
+    columns:
+    - key: timestamp
+      label: Time
+    - key: service.name
+      label: Service
+    - key: span.name
+      label: Operation
+    - key: duration
+      label: Duration
+    - key: status
+      label: Status
+    sort:
+    - direction: descending
+      key: timestamp
+  type: spans
+  visualizations:
+  - metric: spans_duration_p99
+    renderers:
+    - traces-explorer/*/red
+    yAxisScale: linear

@@ -4,6 +4,7 @@ namespace: otel-demo
 resources:
   - ../../base
   - dash0-monitoring.yaml
+  - dash0-views.yaml
   - dash0-web-proxy.yaml
   - cross-cluster-services.yaml
   - grafana-secret.yaml
