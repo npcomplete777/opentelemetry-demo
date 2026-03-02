@@ -82,24 +82,6 @@ data:
         endpoint: https://ingress.us-west-2.aws.dash0.com
         headers:
           Authorization: "Bearer auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ"
-      clickhouse:
-        endpoint: tcp://clickhouse-external:9000
-        database: otel
-        ttl: 72h
-        create_schema: false
-        traces_table_name: otel_traces_v2
-        logs_table_name: otel_logs
-        metrics_table_name: otel_metrics
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 300s
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
-        timeout: 15s
       elasticsearch:
         endpoints:
           - http://elasticsearch-external:9200
@@ -177,22 +159,22 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, otlp/jaeger, otlphttp/tempo, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, elasticsearch, otlp/jaeger, otlphttp/tempo, debug]
         metrics:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, prometheusremotewrite/mimir, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, elasticsearch, prometheusremotewrite/mimir, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, elasticsearch, opensearch, otlphttp/loki, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, elasticsearch, opensearch, otlphttp/loki, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, clickhouse, debug]
+          exporters: [otlphttp/dash0, otlphttp/dynatrace, debug]
