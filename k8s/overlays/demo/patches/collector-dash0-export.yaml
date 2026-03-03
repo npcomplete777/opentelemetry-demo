@@ -111,28 +111,6 @@ data:
             insecure: true
         logs_index: otel-logs
         logs_index_time_format: yyyy-MM-dd
-      # Grafana Stack: Tempo for traces (OTLP HTTP)
-      otlphttp/tempo:
-        endpoint: http://tempo-external:4318
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 300s
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
-      # Grafana Stack: Mimir for metrics (Prometheus Remote Write)
-      prometheusremotewrite/mimir:
-        endpoint: http://mimir-external:9009/api/v1/push
-        resource_to_telemetry_conversion:
-          enabled: true
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 300s
       # Grafana Stack: Loki for logs (OTLP HTTP - Loki 3.x supports native OTLP)
       otlphttp/loki:
         endpoint: http://loki-external:3100/otlp
@@ -145,11 +123,6 @@ data:
           enabled: true
           num_consumers: 4
           queue_size: 1000
-      # Dynatrace: all signals via generic OTLP HTTP exporter
-      otlphttp/dynatrace:
-        endpoint: https://nxy41179.live.dynatrace.com/api/v2/otlp
-        headers:
-          Authorization: "Api-Token ${env:DT_API_TOKEN}"
       debug:
         verbosity: basic
 
@@ -159,22 +132,22 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, elasticsearch, otlp/jaeger, otlphttp/tempo, debug]
+          exporters: [otlphttp/dash0, elasticsearch, otlp/jaeger, debug]
         metrics:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, elasticsearch, prometheusremotewrite/mimir, debug]
+          exporters: [otlphttp/dash0, elasticsearch, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, elasticsearch, opensearch, otlphttp/loki, debug]
+          exporters: [otlphttp/dash0, elasticsearch, opensearch, otlphttp/loki, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, debug]
+          exporters: [otlphttp/dash0, elasticsearch, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/dynatrace, debug]
+          exporters: [otlphttp/dash0, elasticsearch, debug]
