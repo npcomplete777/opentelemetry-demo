@@ -21,6 +21,8 @@ patches:
   - path: patches/frontend-proxy-dash0-web.yaml
   - path: patches/collector-memory-increase.yaml
   - path: patches/accounting-memory-increase.yaml
+  - path: patches/grafana-resources.yaml
+  - path: patches/grafana-config.yaml
   # Custom images for WillfulWaste retheme
   - path: patches/custom-images.yaml
 # Scale down redundant backends - using Dash0 instead
