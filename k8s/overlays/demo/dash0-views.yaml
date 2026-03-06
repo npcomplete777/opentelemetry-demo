@@ -83,19 +83,6 @@ spec:
   groupBy:
   - service.name
   - severity
-  table:
-    columns:
-    - key: time
-      label: Time
-    - key: severity
-      label: Severity
-    - key: service.name
-      label: Service
-    - key: body
-      label: Message
-    sort:
-    - direction: descending
-      key: time
   type: logs
   visualizations:
   - metric: logs_rate
@@ -120,21 +107,6 @@ spec:
   groupBy:
   - service.name
   - span.name
-  table:
-    columns:
-    - key: start_time
-      label: Time
-    - key: service.name
-      label: Service
-    - key: span.name
-      label: Operation
-    - key: duration
-      label: Duration
-    - key: status
-      label: Status
-    sort:
-    - direction: descending
-      key: duration
   type: spans
   visualizations:
   - metric: spans_errors_rate
@@ -164,21 +136,6 @@ spec:
     - currency
   groupBy:
   - service.name
-  table:
-    columns:
-    - key: start_time
-      label: Time
-    - key: service.name
-      label: Service
-    - key: span.name
-      label: Operation
-    - key: duration
-      label: Duration
-    - key: status
-      label: Status
-    sort:
-    - direction: descending
-      key: start_time
   type: spans
   visualizations:
   - metric: spans_duration_p99
@@ -241,21 +198,6 @@ spec:
   groupBy:
   - service.name
   - span.name
-  table:
-    columns:
-    - key: start_time
-      label: Time
-    - key: service.name
-      label: Service
-    - key: span.name
-      label: Operation
-    - key: duration
-      label: Duration
-    - key: status
-      label: Status
-    sort:
-    - direction: descending
-      key: duration
   type: spans
   visualizations:
   - metric: spans_duration_p99
