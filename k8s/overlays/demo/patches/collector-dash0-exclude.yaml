@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-agent
+  namespace: otel-demo
+  labels:
+    dash0.com/enable: "false"
+spec:
+  template:
+    metadata:
+      labels:
+        dash0.com/enable: "false"

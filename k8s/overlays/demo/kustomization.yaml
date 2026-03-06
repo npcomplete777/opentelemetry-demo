@@ -15,6 +15,7 @@ resources:
   - patches/load-generator-nodeport.yaml
   - patches/flagd-ui-nodeport.yaml
 patches:
+  - path: patches/collector-dash0-exclude.yaml
   - path: patches/collector-dash0-export.yaml
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
