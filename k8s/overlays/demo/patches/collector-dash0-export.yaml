@@ -111,18 +111,6 @@ data:
             insecure: true
         logs_index: otel-logs
         logs_index_time_format: yyyy-MM-dd
-      # Grafana Stack: Loki for logs (OTLP HTTP - Loki 3.x supports native OTLP)
-      otlphttp/loki:
-        endpoint: http://loki-external:3100/otlp
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 300s
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
       debug:
         verbosity: basic
 
@@ -140,7 +128,7 @@ data:
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, opensearch, otlphttp/loki, debug]
+          exporters: [otlphttp/dash0, elasticsearch, opensearch, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
