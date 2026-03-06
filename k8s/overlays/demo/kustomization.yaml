@@ -12,6 +12,8 @@ resources:
   - patches/grafana-nodeport.yaml
   - patches/jaeger-nodeport.yaml
   - patches/prometheus-nodeport.yaml
+  - patches/load-generator-nodeport.yaml
+  - patches/flagd-ui-nodeport.yaml
 patches:
   - path: patches/collector-dash0-export.yaml
   - path: patches/enable-ad-high-cpu-flag.yaml
