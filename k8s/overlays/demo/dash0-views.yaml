@@ -18,15 +18,9 @@ spec:
     columns:
     - key: service.name
       label: Service
-    - key: spans_rate
-      label: Request Rate
-    - key: spans_errors_rate
-      label: Error Rate
-    - key: spans_duration_p99
-      label: P99 Latency
     sort:
-    - direction: descending
-      key: spans_errors_rate
+    - direction: ascending
+      key: service.name
   type: resources
   visualizations:
   - metric: spans_rate
@@ -56,8 +50,6 @@ spec:
       label: Pod
     - key: k8s.node.name
       label: Node
-    - key: status
-      label: Status
     sort:
     - direction: ascending
       key: k8s.pod.name
@@ -93,7 +85,7 @@ spec:
   - severity
   table:
     columns:
-    - key: timestamp
+    - key: time
       label: Time
     - key: severity
       label: Severity
@@ -103,7 +95,7 @@ spec:
       label: Message
     sort:
     - direction: descending
-      key: timestamp
+      key: time
   type: logs
   visualizations:
   - metric: logs_rate
@@ -130,7 +122,7 @@ spec:
   - span.name
   table:
     columns:
-    - key: timestamp
+    - key: start_time
       label: Time
     - key: service.name
       label: Service
@@ -174,7 +166,7 @@ spec:
   - service.name
   table:
     columns:
-    - key: timestamp
+    - key: start_time
       label: Time
     - key: service.name
       label: Service
@@ -186,7 +178,7 @@ spec:
       label: Status
     sort:
     - direction: descending
-      key: timestamp
+      key: start_time
   type: spans
   visualizations:
   - metric: spans_duration_p99
@@ -217,15 +209,9 @@ spec:
     columns:
     - key: service.name
       label: Service
-    - key: spans_rate
-      label: Request Rate
-    - key: spans_errors_rate
-      label: Error Rate
-    - key: spans_duration_p99
-      label: P99 Latency
     sort:
-    - direction: descending
-      key: spans_errors_rate
+    - direction: ascending
+      key: service.name
   type: resources
   visualizations:
   - metric: spans_rate
@@ -257,7 +243,7 @@ spec:
   - span.name
   table:
     columns:
-    - key: timestamp
+    - key: start_time
       label: Time
     - key: service.name
       label: Service
