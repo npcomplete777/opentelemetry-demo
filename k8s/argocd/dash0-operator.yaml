@@ -6,6 +6,12 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      name: dash0-operator-injector
+      jsonPointers:
+        - /webhooks/0/objectSelector
   project: default
   source:
     repoURL: https://dash0hq.github.io/dash0-operator
