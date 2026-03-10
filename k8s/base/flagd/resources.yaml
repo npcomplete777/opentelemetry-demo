@@ -337,10 +337,12 @@ spec:
             - name: FLAGD_OTEL_COLLECTOR_URI
               value: $(OTEL_COLLECTOR_NAME):4317
             - name: GOMEMLIMIT
-              value: 60MiB
+              value: 160MiB
           resources:
             limits:
-              memory: 75Mi
+              memory: 200Mi
+            requests:
+              memory: 200Mi
           volumeMounts:
             - name: config-rw
               mountPath: /etc/flagd
