@@ -77,11 +77,31 @@ data:
           - sources:
               - from: connection
 
+    connectors:
+      spanmetrics:
+        histogram:
+          explicit:
+            buckets: [2ms, 4ms, 6ms, 8ms, 10ms, 50ms, 100ms, 200ms, 400ms, 800ms, 1s, 1400ms, 2s, 5s, 10s, 15s]
+        dimensions:
+          - name: http.request.method
+          - name: http.response.status_code
+          - name: http.route
+          - name: rpc.method
+          - name: rpc.service
+          - name: rpc.grpc.status_code
+        dimensions_cache_size: 1000
+        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
+        metrics_flush_interval: 15s
+
     exporters:
       otlphttp/dash0:
         endpoint: https://ingress.us-west-2.aws.dash0.com
         headers:
           Authorization: "Bearer auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ"
+      otlphttp/prometheus:
+        endpoint: http://prometheus:9090/api/v1/otlp
+        tls:
+          insecure: true
       elasticsearch:
         endpoints:
           - http://elasticsearch-external:9200
@@ -120,11 +140,11 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, otlp/jaeger, debug]
+          exporters: [otlphttp/dash0, elasticsearch, otlp/jaeger, spanmetrics, debug]
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, spanmetrics]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, debug]
+          exporters: [otlphttp/dash0, otlphttp/prometheus, elasticsearch, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
@@ -133,7 +153,7 @@ data:
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, debug]
+          exporters: [otlphttp/dash0, otlphttp/prometheus, elasticsearch, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
