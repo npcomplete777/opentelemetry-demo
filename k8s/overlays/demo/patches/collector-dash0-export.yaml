@@ -97,7 +97,7 @@ data:
       otlphttp/dash0:
         endpoint: https://ingress.us-west-2.aws.dash0.com
         headers:
-          Authorization: "Bearer auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ"
+          Authorization: "Bearer auth_V7XBUd6oRe4vBkZP0Wv4KVo7LPlFAfyZ"
       otlphttp/prometheus:
         endpoint: http://prometheus:9090/api/v1/otlp
         tls:
