@@ -50,23 +50,30 @@ spec:
       labels:
         app.kubernetes.io/name: dash0-web-proxy
     spec:
-      containers:
-        - name: nginx
+      initContainers:
+        - name: envsubst
           image: nginx:1-alpine
-          ports:
-            - containerPort: 8090
+          command: ["sh", "-c", "envsubst '${DASH0_AUTH_TOKEN}' < /templates/nginx.conf.template > /etc/nginx/nginx.conf"]
           env:
             - name: DASH0_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: dash0-auth-secret
                   key: token
-            - name: NGINX_ENVSUBST_FILTER
-              value: DASH0_AUTH_TOKEN
+          volumeMounts:
+            - name: template
+              mountPath: /templates
+            - name: config
+              mountPath: /etc/nginx
+      containers:
+        - name: nginx
+          image: nginx:1-alpine
+          ports:
+            - containerPort: 8090
           volumeMounts:
             - name: config
-              mountPath: /etc/nginx/templates/nginx.conf.template
-              subPath: nginx.conf.template
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
           resources:
             limits:
               memory: 32Mi
@@ -78,9 +85,11 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
-        - name: config
+        - name: template
           configMap:
             name: dash0-web-proxy-config
+        - name: config
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
