@@ -102,22 +102,6 @@ data:
         endpoint: http://prometheus:9090/api/v1/otlp
         tls:
           insecure: true
-      elasticsearch:
-        endpoints:
-          - http://elasticsearch-external:9200
-        logs_index: otel-logs
-        traces_index: otel-traces
-        metrics_index: otel-metrics
-        mapping:
-          mode: ecs
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
-        retry:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
       # Vanilla: traces only, OTLP gRPC
       otlp/jaeger:
         endpoint: jaeger:4317
@@ -140,22 +124,22 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, otlp/jaeger, spanmetrics, debug]
+          exporters: [otlphttp/dash0, otlp/jaeger, spanmetrics, debug]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/prometheus, elasticsearch, debug]
+          exporters: [otlphttp/dash0, otlphttp/prometheus, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, opensearch, debug]
+          exporters: [otlphttp/dash0, opensearch, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, otlphttp/prometheus, elasticsearch, debug]
+          exporters: [otlphttp/dash0, otlphttp/prometheus, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
           processors: [batch, resource]
-          exporters: [otlphttp/dash0, elasticsearch, debug]
+          exporters: [otlphttp/dash0, debug]
