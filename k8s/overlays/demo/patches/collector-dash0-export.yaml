@@ -45,7 +45,7 @@ data:
       resource:
         attributes:
           - key: dash0.dataset
-            value: astronomy-demo
+            value: default
             action: upsert
       k8sattributes:
         auth_type: "serviceAccount"
