@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-agent
+  namespace: otel-demo
+spec:
+  template:
+    spec:
+      containers:
+        - name: opentelemetry-collector
+          env:
+            - name: DASH0_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dash0-auth-secret
+                  key: token

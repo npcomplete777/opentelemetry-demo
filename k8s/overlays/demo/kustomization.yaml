@@ -5,6 +5,7 @@ resources:
   - ../../base
   # dash0-monitoring.yaml and dash0-views.yaml moved to observability-as-code repo
   # https://github.com/npcomplete777/observability-as-code
+  - dash0-secret.yaml
   - dash0-web-proxy.yaml
   - cross-cluster-services.yaml
   - grafana-secret.yaml
@@ -22,6 +23,7 @@ patches:
   - path: patches/resource-limits.yaml
   - path: patches/frontend-dash0-web-sdk.yaml
   - path: patches/frontend-proxy-dash0-web.yaml
+  - path: patches/collector-dash0-env.yaml
   - path: patches/collector-memory-increase.yaml
   - path: patches/accounting-memory-increase.yaml
   - path: patches/grafana-resources.yaml
