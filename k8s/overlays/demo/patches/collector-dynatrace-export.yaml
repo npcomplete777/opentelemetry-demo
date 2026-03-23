@@ -99,15 +99,42 @@ data:
         endpoint: https://nxy41179.live.dynatrace.com/api/v2/otlp
         headers:
           Authorization: "Api-Token ${env:DT_API_TOKEN}"
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+        sending_queue:
+          enabled: true
+          num_consumers: 10
+          queue_size: 5000
       otlphttp/prometheus:
         endpoint: http://prometheus:9090/api/v1/otlp
         tls:
           insecure: true
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 120s
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
       # Vanilla: traces only, OTLP gRPC
       otlp/jaeger:
         endpoint: jaeger:4317
         tls:
           insecure: true
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 120s
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
       # Vanilla: logs only, native opensearch exporter format
       opensearch:
         http:
@@ -116,6 +143,15 @@ data:
             insecure: true
         logs_index: otel-logs
         logs_index_time_format: yyyy-MM-dd
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 120s
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 1000
       debug:
         verbosity: basic
 

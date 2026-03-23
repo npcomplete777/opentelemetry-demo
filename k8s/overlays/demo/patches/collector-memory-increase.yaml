@@ -10,7 +10,10 @@ spec:
         - name: opentelemetry-collector
           env:
             - name: GOMEMLIMIT
-              value: "400MiB"
+              value: "800MiB"
           resources:
-            limits:
+            requests:
+              cpu: 100m
               memory: 512Mi
+            limits:
+              memory: 1Gi
