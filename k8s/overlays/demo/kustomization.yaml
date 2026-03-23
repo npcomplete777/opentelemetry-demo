@@ -9,6 +9,7 @@ resources:
   - dash0-web-proxy.yaml
   - cross-cluster-services.yaml
   - grafana-secret.yaml
+  # dynatrace-otel-secret already exists in cluster (created manually to avoid committing tokens)
   # NodePort services - expose observability UIs via k3d node IP
   - patches/grafana-nodeport.yaml
   - patches/jaeger-nodeport.yaml
@@ -17,13 +18,13 @@ resources:
   - patches/flagd-ui-nodeport.yaml
 patches:
   - path: patches/collector-dash0-exclude.yaml
-  - path: patches/collector-dash0-export.yaml
+  - path: patches/collector-dynatrace-export.yaml
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
   - path: patches/frontend-dash0-web-sdk.yaml
   - path: patches/frontend-proxy-dash0-web.yaml
-  - path: patches/collector-dash0-env.yaml
+  - path: patches/collector-dynatrace-env.yaml
   - path: patches/collector-memory-increase.yaml
   - path: patches/accounting-memory-increase.yaml
   - path: patches/grafana-resources.yaml
