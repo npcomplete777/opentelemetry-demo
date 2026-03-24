@@ -26,7 +26,7 @@ patches:
   - path: patches/frontend-proxy-dash0-web.yaml
   - path: patches/collector-dynatrace-env.yaml
   - path: patches/collector-memory-increase.yaml
-  - path: patches/accounting-memory-increase.yaml
+  # accounting-memory-increase.yaml consolidated into resource-limits.yaml
   - path: patches/grafana-resources.yaml
   - path: patches/grafana-config.yaml
   # Custom images for WillfulWaste retheme
