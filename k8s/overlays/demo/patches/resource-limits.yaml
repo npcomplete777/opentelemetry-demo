@@ -39,26 +39,14 @@ spec:
 ---
 # grafana resources managed by grafana-resources.yaml (includes sidecars)
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: jaeger
-spec:
-  template:
-    spec:
-      containers:
-        - name: jaeger
-          resources:
-            requests:
-              memory: 256Mi
-              cpu: 50m
-            limits:
-              memory: 512Mi
+# jaeger Deployment removed from base; only a leftover ConfigMap remains, so
+# there's nothing left here to patch.
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus
+  namespace: otel-demo
 spec:
   template:
     spec:
@@ -71,21 +59,8 @@ spec:
             limits:
               memory: 512Mi
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: inventory
-spec:
-  template:
-    spec:
-      containers:
-        - name: inventory
-          resources:
-            requests:
-              memory: 200Mi
-              cpu: 50m
-            limits:
-              memory: 384Mi
+# inventory (Geometry Lab service) is not enabled in k8s/base's kustomization
+# yet, so there's nothing here to patch.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -324,21 +299,8 @@ spec:
             limits:
               memory: 96Mi
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: review
-spec:
-  template:
-    spec:
-      containers:
-        - name: review
-          resources:
-            requests:
-              memory: 48Mi
-              cpu: 25m
-            limits:
-              memory: 96Mi
+# review (Geometry Lab service) is not enabled in k8s/base's kustomization
+# yet, so there's nothing here to patch.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -372,21 +334,8 @@ spec:
             limits:
               memory: 64Mi
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: order
-spec:
-  template:
-    spec:
-      containers:
-        - name: order
-          resources:
-            requests:
-              memory: 32Mi
-              cpu: 25m
-            limits:
-              memory: 64Mi
+# order (Geometry Lab service) is not enabled in k8s/base's kustomization
+# yet, so there's nothing here to patch.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -420,21 +369,8 @@ spec:
             limits:
               memory: 48Mi
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: pricing
-spec:
-  template:
-    spec:
-      containers:
-        - name: pricing
-          resources:
-            requests:
-              memory: 16Mi
-              cpu: 25m
-            limits:
-              memory: 48Mi
+# pricing (Geometry Lab service) is not enabled in k8s/base's kustomization
+# yet, so there's nothing here to patch.
 ---
 apiVersion: apps/v1
 kind: Deployment
