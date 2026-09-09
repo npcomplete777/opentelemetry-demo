@@ -11,6 +11,11 @@
 env:
   OTEL_EXPORTER_OTLP_ENDPOINT: "https://nxy41179.live.dynatrace.com/api/v2/otlp"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+  # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright;
+  # request delta temporality (same fix the app-side collector already
+  # applies via its cumulativetodelta processor).
+  OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
+  OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
 
 envValueFrom:
   OTEL_EXPORTER_OTLP_HEADERS:
