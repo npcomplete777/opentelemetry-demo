@@ -1,0 +1,33 @@
+# OBI (OpenTelemetry eBPF Instrumentation) values for the NIQ OBI-vs-SDK
+# evaluation. Deployed as its own DaemonSet in the `obi` namespace,
+# instrumenting workloads in the `otel-demo` namespace via eBPF (no code or
+# container changes to the app itself), exporting OTLP directly to the
+# Dynatrace demo tenant (nxy41179).
+#
+# Real credentials come from a Secret created out-of-band (see
+# k8s/obi/README.md) — never commit them here.
+# https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes-helm/
+
+env:
+  OTEL_EXPORTER_OTLP_ENDPOINT: "https://nxy41179.live.dynatrace.com/api/v2/otlp"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+
+envValueFrom:
+  OTEL_EXPORTER_OTLP_HEADERS:
+    secretKeyRef:
+      name: obi-dynatrace-secret
+      key: otlp-headers
+
+config:
+  data:
+    # OBI's own YAML-config exporter is unused in favor of the standard
+    # OTEL_EXPORTER_OTLP_* env vars above; null these out so it doesn't also
+    # try (and fail) to reach a local collector at ${HOST_IP}:4317/4318.
+    otel_traces_export: null
+    otel_metrics_export: null
+    discovery:
+      instrument:
+        - k8s_namespace: otel-demo
+    attributes:
+      kubernetes:
+        enable: true
