@@ -7,5 +7,5 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/npcomplete777/opentelemetry-demo/frontend:willfulwaste
-          imagePullPolicy: Always
+          image: 'ghcr.io/open-telemetry/demo:2.2.0-frontend'
+          imagePullPolicy: IfNotPresent

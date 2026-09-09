@@ -1,0 +1,28 @@
+# notification/search/user use Geometry Lab-only images
+# (otel-demo-*service:geometry-lab) that were only ever built locally and
+# never pushed to a registry, so they can't be pulled on a fresh cluster.
+# Not needed for the NIQ OBI-vs-SDK evaluation; scaled to 0 rather than
+# removed so they're easy to re-enable if the images get published later.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  namespace: otel-demo
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search
+  namespace: otel-demo
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user
+  namespace: otel-demo
+spec:
+  replicas: 0
