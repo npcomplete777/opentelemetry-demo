@@ -101,10 +101,16 @@ data:
         metrics_flush_interval: 15s
 
     exporters:
-      otlphttp/coralogix:
-        endpoint: https://ingress.eu2.coralogix.com:443
-        headers:
-          Authorization: "Bearer ${env:CX_API_KEY}"
+      coralogix:
+        domain: "eu2.coralogix.com"
+        private_key: "${env:CX_API_KEY}"
+        application_name: "astronomy-shop"
+        application_name_attributes:
+          - "cx.application.name"
+        subsystem_name: "unmapped"
+        subsystem_name_attributes:
+          - "cx.subsystem.name"
+        timeout: 30s
         retry_on_failure:
           enabled: true
           initial_interval: 5s
@@ -167,22 +173,22 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/coralogix, otlp/jaeger, spanmetrics, debug]
+          exporters: [coralogix, otlp/jaeger, spanmetrics, debug]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [k8sattributes, cumulativetodelta, batch, resource]
-          exporters: [otlphttp/coralogix, otlphttp/prometheus, debug]
+          exporters: [coralogix, otlphttp/prometheus, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/coralogix, opensearch, debug]
+          exporters: [coralogix, opensearch, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [cumulativetodelta, batch, resource]
-          exporters: [otlphttp/coralogix, otlphttp/prometheus, debug]
+          exporters: [coralogix, otlphttp/prometheus, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
           processors: [batch, resource]
-          exporters: [otlphttp/coralogix, debug]
+          exporters: [coralogix, debug]
