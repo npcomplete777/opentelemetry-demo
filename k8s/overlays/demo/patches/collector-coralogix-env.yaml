@@ -9,8 +9,8 @@ spec:
       containers:
         - name: opentelemetry-collector
           env:
-            - name: DT_API_TOKEN
+            - name: CX_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: dynatrace-otel-secret
-                  key: DT_API_TOKEN
+                  name: coralogix-otel-secret
+                  key: CX_API_KEY

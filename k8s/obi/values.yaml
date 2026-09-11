@@ -2,25 +2,23 @@
 # evaluation. Deployed as its own DaemonSet in the `obi` namespace,
 # instrumenting workloads in the `otel-demo` namespace via eBPF (no code or
 # container changes to the app itself), exporting OTLP directly to the
-# Dynatrace demo tenant (nxy41179).
+# Coralogix `ebpf-demo` tenant (eu2 region).
 #
 # Real credentials come from a Secret created out-of-band (see
 # k8s/obi/README.md) — never commit them here.
 # https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes-helm/
 
 env:
-  OTEL_EXPORTER_OTLP_ENDPOINT: "https://nxy41179.live.dynatrace.com/api/v2/otlp"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "https://ingress.eu2.coralogix.com:443"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
-  # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright;
-  # request delta temporality (same fix the app-side collector already
-  # applies via its cumulativetodelta processor).
-  OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
   OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
+  # Coralogix routes/labels data by these two resource attributes.
+  OTEL_RESOURCE_ATTRIBUTES: "cx.application.name=astronomy-shop,cx.subsystem.name=obi-ebpf"
 
 envValueFrom:
   OTEL_EXPORTER_OTLP_HEADERS:
     secretKeyRef:
-      name: obi-dynatrace-secret
+      name: obi-coralogix-secret
       key: otlp-headers
 
 config:

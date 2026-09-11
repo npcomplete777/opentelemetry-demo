@@ -48,6 +48,12 @@ data:
           - key: dash0.dataset
             value: default
             action: upsert
+          - key: cx.application.name
+            value: astronomy-shop
+            action: upsert
+          - key: cx.subsystem.name
+            from_attribute: service.name
+            action: upsert
       k8sattributes:
         auth_type: "serviceAccount"
         passthrough: false
@@ -95,10 +101,10 @@ data:
         metrics_flush_interval: 15s
 
     exporters:
-      otlphttp/dynatrace:
-        endpoint: https://nxy41179.live.dynatrace.com/api/v2/otlp
+      otlphttp/coralogix:
+        endpoint: https://ingress.eu2.coralogix.com:443
         headers:
-          Authorization: "Api-Token ${env:DT_API_TOKEN}"
+          Authorization: "Bearer ${env:CX_API_KEY}"
         retry_on_failure:
           enabled: true
           initial_interval: 5s
@@ -161,22 +167,22 @@ data:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dynatrace, otlp/jaeger, spanmetrics, debug]
+          exporters: [otlphttp/coralogix, otlp/jaeger, spanmetrics, debug]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [k8sattributes, cumulativetodelta, batch, resource]
-          exporters: [otlphttp/dynatrace, otlphttp/prometheus, debug]
+          exporters: [otlphttp/coralogix, otlphttp/prometheus, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dynatrace, opensearch, debug]
+          exporters: [otlphttp/coralogix, opensearch, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [cumulativetodelta, batch, resource]
-          exporters: [otlphttp/dynatrace, otlphttp/prometheus, debug]
+          exporters: [otlphttp/coralogix, otlphttp/prometheus, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
           processors: [batch, resource]
-          exporters: [otlphttp/dynatrace, debug]
+          exporters: [otlphttp/coralogix, debug]
