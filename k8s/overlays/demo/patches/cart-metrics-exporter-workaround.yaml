@@ -1,0 +1,21 @@
+# cart (.NET) crashes on startup with a NullReferenceException inside the
+# SDK's own OpenTelemetryMetricsListener whenever OTEL_METRICS_EXPORTER=none
+# is set (also crashed identically under OTEL_SDK_DISABLED=true) — a real
+# bug in this SDK version's metrics-disabled code path, not something fixable
+# from the k8s side. Re-enable just cart's metrics export (traces/logs stay
+# disabled per disable-app-sdk.yaml) so it doesn't crash-loop. Relies on
+# "last duplicate env var wins" (confirmed empirically against a running
+# pod), and kustomize applying patches in the order listed in
+# kustomization.yaml — this file must come after disable-app-sdk.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart
+spec:
+  template:
+    spec:
+      containers:
+        - name: cart
+          env:
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"

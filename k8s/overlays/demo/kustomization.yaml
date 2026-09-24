@@ -36,6 +36,7 @@ patches:
     target:
       kind: Deployment
       labelSelector: "app.kubernetes.io/part-of=opentelemetry-demo"
+  - path: patches/cart-metrics-exporter-workaround.yaml
 # Scale down redundant backends - using Dash0 instead
 # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
 # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
