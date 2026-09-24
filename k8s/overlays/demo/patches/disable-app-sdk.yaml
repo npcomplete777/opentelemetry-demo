@@ -1,10 +1,24 @@
-# Negative-control variant for the OBI-vs-SDK evaluation: disable every
-# app-side OTel SDK (auto-instrumentation AND manually-coded tracer calls)
-# across all Astronomy Shop services, via the standard OTel spec kill switch
-# OTEL_SDK_DISABLED. This turns every tracer into a no-op (spans/metrics/logs
-# stop being created, not just stop being exported) without touching app
-# business logic. OBI is unaffected — it observes raw kernel/socket traffic
-# independently of whether the app's own SDK is active.
+# Negative-control variant for the OBI-vs-SDK evaluation: silence every
+# app-side OTel SDK's *output* (auto-instrumentation AND manually-coded
+# tracer/meter calls) across all Astronomy Shop services, while OBI keeps
+# running unaffected (it observes raw kernel/socket traffic independently of
+# the app's own SDK state).
+#
+# Tried OTEL_SDK_DISABLED=true first (the OTel spec's blanket kill switch) —
+# it replaces the SDK with an inert stub object, and two services crashed
+# outright on it: `email` (Ruby) calls `OpenTelemetry.meter_provider
+# .add_metric_reader(...)` directly at startup, which the stub doesn't
+# implement (NoMethodError); `cart` (.NET) hit a NullReferenceException
+# inside the .NET SDK's own OpenTelemetryMetricsListener when combined with
+# ASP.NET Core's OTel DI registration — a known immaturity in how some SDKs
+# handle full-disable. Both are real app/SDK-version-specific incompatibilities
+# with the aggressive flag, not something fixable from the k8s side.
+#
+# This is the safer, broadly-compatible alternative: keep each SDK's object
+# graph fully real (so app startup code that calls SDK APIs directly still
+# works), but point every exporter at "none" so nothing actually leaves the
+# process. Net effect on Dynatrace-visible data is identical to a full
+# disable — zero app-SDK spans/metrics/logs — without the crash risk.
 #
 # Applied via a JSON6902 patch (see kustomization.yaml `target`) so one file
 # covers all ~25 Deployments labeled app.kubernetes.io/part-of=opentelemetry-demo,
@@ -12,5 +26,15 @@
 - op: add
   path: /spec/template/spec/containers/0/env/-
   value:
-    name: OTEL_SDK_DISABLED
-    value: "true"
+    name: OTEL_TRACES_EXPORTER
+    value: "none"
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: OTEL_METRICS_EXPORTER
+    value: "none"
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: OTEL_LOGS_EXPORTER
+    value: "none"
