@@ -27,14 +27,18 @@ resources:
   # No default limits are set upstream. Observed in practice: OBI ballooned to
   # ~3GB RSS / 270% CPU with no ceiling (attaching uprobes across ~30 processes
   # in otel-demo), which combined with the OrbStack VM's own memory ballooning
-  # exhausted host RAM. Cap it so a runaway here OOM-kills/restarts just this
-  # pod instead of threatening the whole VM/host.
+  # exhausted host RAM. Cap it so a runaway PAST its normal working set
+  # OOM-kills/restarts just this pod instead of threatening the whole VM/host.
+  #
+  # IMPORTANT: the limit must sit ABOVE the ~3GB organic peak, not below it —
+  # a first attempt at 2Gi guaranteed an OOM-kill loop since that's less than
+  # OBI actually needs to run. 4Gi gives ~1GB headroom over observed peak.
   requests:
-    memory: 512Mi
+    memory: 1Gi
     cpu: 250m
   limits:
-    memory: 2Gi
-    cpu: 2000m
+    memory: 4Gi
+    cpu: 2500m
 
 config:
   data:
