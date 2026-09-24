@@ -20,6 +20,10 @@ spec:
               cpu: 200m
             limits:
               memory: 1536Mi
+              # No CPU limit previously — observed bursting to 365% (3.65 cores),
+              # a big contributor to host load/heat. Capped to 1 core; still
+              # plenty for synthetic demo traffic.
+              cpu: 1000m
 ---
 apiVersion: apps/v1
 kind: Deployment

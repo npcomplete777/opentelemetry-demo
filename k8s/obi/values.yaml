@@ -23,6 +23,19 @@ envValueFrom:
       name: obi-dynatrace-secret
       key: otlp-headers
 
+resources:
+  # No default limits are set upstream. Observed in practice: OBI ballooned to
+  # ~3GB RSS / 270% CPU with no ceiling (attaching uprobes across ~30 processes
+  # in otel-demo), which combined with the OrbStack VM's own memory ballooning
+  # exhausted host RAM. Cap it so a runaway here OOM-kills/restarts just this
+  # pod instead of threatening the whole VM/host.
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 2Gi
+    cpu: 2000m
+
 config:
   data:
     # OBI's own YAML-config exporter is unused in favor of the standard
