@@ -1,0 +1,16 @@
+# Negative-control variant for the OBI-vs-SDK evaluation: disable every
+# app-side OTel SDK (auto-instrumentation AND manually-coded tracer calls)
+# across all Astronomy Shop services, via the standard OTel spec kill switch
+# OTEL_SDK_DISABLED. This turns every tracer into a no-op (spans/metrics/logs
+# stop being created, not just stop being exported) without touching app
+# business logic. OBI is unaffected — it observes raw kernel/socket traffic
+# independently of whether the app's own SDK is active.
+#
+# Applied via a JSON6902 patch (see kustomization.yaml `target`) so one file
+# covers all ~25 Deployments labeled app.kubernetes.io/part-of=opentelemetry-demo,
+# rather than hand-editing each service's env block individually.
+- op: add
+  path: /spec/template/spec/containers/0/env/-
+  value:
+    name: OTEL_SDK_DISABLED
+    value: "true"

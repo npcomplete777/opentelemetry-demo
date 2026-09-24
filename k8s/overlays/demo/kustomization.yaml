@@ -32,6 +32,10 @@ patches:
   # Custom images for WillfulWaste retheme
   - path: patches/custom-images.yaml
   - path: patches/scale-down-geometry-lab-broken-images.yaml
+  - path: patches/disable-app-sdk.yaml
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/part-of=opentelemetry-demo"
 # Scale down redundant backends - using Dash0 instead
 # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
 # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
