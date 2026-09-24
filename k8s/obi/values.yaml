@@ -58,3 +58,13 @@ config:
     attributes:
       kubernetes:
         enable: true
+    # L3/L4 network flow metrics (obi.network.flow.bytes) — separate pipeline
+    # from the L7 protocol-decode traces/RED-metrics above; doesn't need to
+    # understand any application protocol, just counts bytes/packets between
+    # endpoints. Confirmed via the actual chart (0.13.0) this needs no NEW
+    # privilege escalation: hostNetwork/privileged are already active in this
+    # deployment via the chart's default contextPropagation.enabled=true.
+    # Chart-confirmed syntax only exposes this one toggle at this version —
+    # no separate flow-packets/inter-zone sub-keys in 0.13.0's schema.
+    network:
+      enable: true
