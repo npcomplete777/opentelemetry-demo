@@ -32,12 +32,17 @@ resources:
   #
   # IMPORTANT: the limit must sit ABOVE the ~3GB organic peak, not below it —
   # a first attempt at 2Gi guaranteed an OOM-kill loop since that's less than
-  # OBI actually needs to run. 4Gi gives ~1GB headroom over observed peak.
+  # OBI actually needs to run. 4Gi also proved too tight: a mass pod-churn
+  # event (rolling all ~25 app deployments at once for the SDK-disable
+  # variant) spiked OBI's memory past 4Gi while it re-discovered/re-attached
+  # to every freshly-restarted process simultaneously, and it OOM-killed
+  # repeatedly until the churn settled. Bumped to 6Gi for headroom during
+  # discovery storms, not just steady-state.
   requests:
     memory: 1Gi
     cpu: 250m
   limits:
-    memory: 4Gi
+    memory: 6Gi
     cpu: 2500m
 
 config:
