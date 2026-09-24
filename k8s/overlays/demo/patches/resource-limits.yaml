@@ -116,10 +116,12 @@ spec:
         - name: flagd-ui
           resources:
             requests:
-              memory: 64Mi
+              memory: 128Mi
               cpu: 25m
             limits:
-              memory: 128Mi
+              # 128Mi was too tight for this Next.js UI — it was OOMKilled
+              # (exit 137) on a restart loop, 651 restarts accumulated.
+              memory: 384Mi
 
 # --- Medium services (50-200Mi) ---
 
@@ -455,3 +457,22 @@ spec:
               cpu: 25m
             limits:
               memory: 32Mi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: opensearch
+spec:
+  template:
+    spec:
+      containers:
+        - name: opensearch
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              # 1100Mi observed running at ~950Mi steady-state (86% utilization)
+              # against a fixed 400m JVM heap — too little off-heap/GC headroom,
+              # caused at least one real OOMKill. Bumped for margin.
+              memory: 1536Mi
