@@ -73,6 +73,16 @@ config:
     attributes:
       kubernetes:
         enable: true
+    # OBI-only mode: the in-process app SDKs still try to export OTLP to the
+    # collector (now refused - its OTLP receiver is removed). OBI would otherwise
+    # record those retries as CONNECT/Export client spans and service-graph
+    # edges, i.e. the apps' own telemetry traffic showing up as "OBI data".
+    # Drop anything addressed to the collector. (Filter keys are per-attribute
+    # maps; the chart's default filter.network is merged, not replaced.)
+    filter:
+      application:
+        server.address:
+          not_match: 'otel-collector*'
     # L3/L4 network flow metrics (obi.network.flow.bytes) — separate pipeline
     # from the L7 protocol-decode traces/RED-metrics above; doesn't need to
     # understand any application protocol, just counts bytes/packets between
