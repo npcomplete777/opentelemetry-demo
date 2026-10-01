@@ -1,32 +1,45 @@
-# OBI (OpenTelemetry eBPF Instrumentation) values for the NIQ OBI-vs-SDK
+# OBI (OpenTelemetry eBPF Instrumentation) values for the OBI-vs-SDK
 # evaluation. Deployed as its own DaemonSet in the `obi` namespace,
 # instrumenting workloads in the `otel-demo` namespace via eBPF (no code or
-# container changes to the app itself), exporting OTLP directly to the
-# Dynatrace demo tenant (nxy41179).
+# container changes to the app itself), exporting OTLP directly to Dynatrace.
 #
-# Real credentials come from a Secret created out-of-band (see
-# k8s/obi/README.md) — never commit them here.
+# The OTLP endpoint (tenant URL) and credentials come from a Secret created
+# out-of-band (see k8s/obi/README.md) — never commit them here.
 # https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes-helm/
 
 env:
-  OTEL_EXPORTER_OTLP_ENDPOINT: "https://nxy41179.live.dynatrace.com/api/v2/otlp"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
   # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright;
   # request delta temporality (same fix the app-side collector already
   # applies via its cumulativetodelta processor).
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
   OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
+  # Distributed-trace context propagation. OBI v0.12.2 defaults to "disabled"
+  # (pkg/config/ebpf_tracer.go); the chart's contextPropagation.enabled=true
+  # only grants the privileges (hostNetwork, NET_ADMIN, mounts) — it does NOT
+  # turn the feature on. "all" = HTTP header injection + TCP-option
+  # propagation, and also enables parsing of incoming traceparent headers for
+  # non-Go services. Fall back to "headers" if TCP-option injection misbehaves.
+  OTEL_EBPF_BPF_CONTEXT_PROPAGATION: "all"
   # Beyond the default "application" (RED metrics): host/runtime/infra signals
-  # that show OBI's full reach without any agent or SDK in the workloads.
+  # that show OBI's full reach without any SDK in the workloads.
   #   application_host          host-level app metrics
-  #   application_runtime       Go/JVM/Node.js runtime (GC, heap, event loop)
+  #   application_runtime       Go/JVM/Node.js runtime metrics (v0.12.2 has
+  #                             none for .NET or Python)
   #   application_service_graph service-to-service topology metrics
   #   network, network_flow_packets   L3/L4 flow bytes + packets
   #   stats                     TCP RTT, retransmits, failed connections, I/O
-  #   ebpf                      OBI's own probe/map health
-  OTEL_EBPF_METRICS_FEATURES: "application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats,ebpf"
+  #                             (stats_tcp_io fires on every tcp_sendmsg; the
+  #                             costliest of the group, fine at demo scale)
+  # "ebpf" (OBI's own probe health) is Prometheus-exporter-only in v0.12.2,
+  # and prometheus_export is disabled below, so it's not listed.
+  OTEL_EBPF_METRICS_FEATURES: "application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats"
 
 envValueFrom:
+  OTEL_EXPORTER_OTLP_ENDPOINT:
+    secretKeyRef:
+      name: obi-dynatrace-secret
+      key: otlp-endpoint
   OTEL_EXPORTER_OTLP_HEADERS:
     secretKeyRef:
       name: obi-dynatrace-secret
@@ -47,6 +60,10 @@ resources:
   # to every freshly-restarted process simultaneously, and it OOM-killed
   # repeatedly until the churn settled. Bumped to 6Gi for headroom during
   # discovery storms, not just steady-state.
+  #
+  # Note (2026-10-01): steady state is ~370MiB, the OrbStack VM has 11264MiB
+  # and node memory limits are ~150% overcommitted, so a spike to 6Gi would
+  # pressure the node before this limit is reached. Fine for a single-node demo.
   requests:
     memory: 1Gi
     cpu: 250m
@@ -61,35 +78,99 @@ config:
     # try (and fail) to reach a local collector at ${HOST_IP}:4317/4318.
     otel_traces_export: null
     otel_metrics_export: null
+    # The chart enables a Prometheus /metrics endpoint on :9090 by default,
+    # which with hostNetwork is exposed on the node. Dynatrace (OTLP) is the
+    # only intended destination, so turn it off.
+    prometheus_export: null
     discovery:
       instrument:
         - k8s_namespace: otel-demo
-      # The load-generator's Playwright/Chromium spawns and kills dozens of
-      # short-lived renderer processes; OBI was attaching/detaching to every one
-      # and OOM-killing at the memory limit (9 restarts in ~50 min, 2026-10-01).
-      # Browser internals aren't a workload we want to trace, so skip them.
+      # OBI's built-in default exclusions (its own binary, otelcol*, alloy,
+      # beyla, kube-system...) are a separate setting and still apply.
       exclude_instrument:
+        # The load-generator's Playwright/Chromium spawns and kills dozens of
+        # short-lived renderer processes; OBI was attaching/detaching to every
+        # one and OOM-killing at the memory limit (9 restarts in ~50 min,
+        # 2026-10-01). Browser internals aren't a workload we want to trace.
         - exe_path: '*chrome*'
+        # The demo's bundled observability backends are idle in OBI-only mode
+        # (nothing is exported to them); tracing them only produced
+        # health-probe spans (~5.5k/30min) reported as service "otel-demo",
+        # skewing per-trace statistics.
+        - k8s_deployment_name: '{prometheus,grafana,jaeger}'
+        - k8s_statefulset_name: 'opensearch'
     attributes:
       kubernetes:
         enable: true
-    # OBI-only mode: the in-process app SDKs still try to export OTLP to the
-    # collector (now refused - its OTLP receiver is removed). OBI would otherwise
-    # record those retries as CONNECT/Export client spans and service-graph
-    # edges, i.e. the apps' own telemetry traffic showing up as "OBI data".
-    # Drop anything addressed to the collector. (Filter keys are per-attribute
-    # maps; the chart's default filter.network is merged, not replaced.)
+      # L3/L4 detail for network flows. OBI v0.12.2's flow defaults are only
+      # k8s owner/namespace/type + direction; IPs, ports and transport are
+      # opt-in (pkg/export/attributes/attr_defs.go). Cardinality goes up with
+      # addresses/ports — acceptable for a ~25-service demo.
+      select:
+        obi_network_flow_bytes:
+          include: &flow_attrs
+            - direction
+            - transport
+            - src.address
+            - dst.address
+            - src.port
+            - dst.port
+            - src.cidr
+            - dst.cidr
+            - k8s.src.namespace
+            - k8s.dst.namespace
+            - k8s.src.owner.name
+            - k8s.dst.owner.name
+            - k8s.src.owner.type
+            - k8s.dst.owner.type
+            - k8s.src.name
+            - k8s.dst.name
+            - k8s.cluster.name
+        obi_network_flow_packets:
+          include: *flow_attrs
+    # OBI-only mode: some components still try to send OTLP to the collector
+    # (now refused - its OTLP receiver is removed): Envoy's built-in tracer,
+    # cart's metrics exporter (re-enabled to avoid a .NET SDK crash), and the
+    # Go/Rust SDKs that ignore OTEL_SDK_DISABLED. Without filters, OBI records
+    # those attempts as spans, service-graph edges, flows and TCP
+    # failed-connection stats - the apps' own telemetry traffic showing up as
+    # "OBI data". The three filter families are independent in v0.12.2
+    # (pkg/filter/attribute.go): application, network and stats.
+    # Per-attribute keys are merged with the chart defaults, so the network
+    # keys below restate the chart's default patterns plus the collector.
     filter:
       application:
         server.address:
           not_match: 'otel-collector*'
-    # L3/L4 network flow metrics (obi.network.flow.bytes) — separate pipeline
-    # from the L7 protocol-decode traces/RED-metrics above; doesn't need to
-    # understand any application protocol, just counts bytes/packets between
-    # endpoints. Confirmed via the actual chart (0.13.0) this needs no NEW
-    # privilege escalation: hostNetwork/privileged are already active in this
-    # deployment via the chart's default contextPropagation.enabled=true.
-    # Chart-confirmed syntax only exposes this one toggle at this version —
-    # no separate flow-packets/inter-zone sub-keys in 0.13.0's schema.
+      network:
+        k8s_src_owner_name:
+          not_match: '{kube*,*jaeger-agent*,*prometheus*,*promtail*,*grafana-agent*,otel-collector*}'
+        k8s_dst_owner_name:
+          not_match: '{kube*,*jaeger-agent*,*prometheus*,*promtail*,*grafana-agent*,otel-collector*}'
+      stats:
+        k8s_src_owner_name:
+          not_match: 'otel-collector*'
+        k8s_dst_owner_name:
+          not_match: 'otel-collector*'
+    # L3/L4 network flow metrics (obi.network.flow.bytes/packets) — separate
+    # pipeline from the L7 protocol-decode traces/RED metrics above; doesn't
+    # need to understand any application protocol, just counts bytes/packets
+    # between endpoints. In v0.12.2 the "network" entry in
+    # OTEL_EBPF_METRICS_FEATURES is what turns this on (network.enable is a
+    # deprecated alias); this block is kept for the CIDR labels and because
+    # chart 0.13.0 keys its hostNetwork/cgroup mounts off config.data.network.
+    # Capture source is the default socket filter (not TC).
     network:
       enable: true
+      # Narrowest match wins; 0.0.0.0/0 catches everything else.
+      cidrs: &cidrs
+        - cidr: 192.168.194.0/25
+          name: pods
+        - cidr: 192.168.194.128/25
+          name: services
+        - cidr: 192.168.139.0/24
+          name: node
+        - cidr: 0.0.0.0/0
+          name: external
+    stats:
+      cidrs: *cidrs
