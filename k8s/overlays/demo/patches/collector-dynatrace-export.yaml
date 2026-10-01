@@ -155,28 +155,34 @@ data:
       debug:
         verbosity: basic
 
+    # OBI-only mode (2026-10-01): otlphttp/dynatrace is intentionally NOT in any
+    # pipeline below, so nothing app-side (SDK spans/metrics/logs, Envoy tracing,
+    # Kafka scrapes) reaches Dynatrace; OBI exports to Dynatrace directly and
+    # bypasses this collector. OTEL_*_EXPORTER=none can't achieve this - the Go,
+    # C++, Rust, .NET services and Envoy build their exporters in code. To go
+    # back to SDK+OBI comparison, re-add otlphttp/dynatrace to these exporters.
     service:
       extensions: [health_check]
       pipelines:
         traces:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dynatrace, otlp/jaeger, spanmetrics, debug]
+          exporters: [otlp/jaeger, spanmetrics, debug]
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [k8sattributes, cumulativetodelta, batch, resource]
-          exporters: [otlphttp/dynatrace, otlphttp/prometheus, debug]
+          exporters: [otlphttp/prometheus, debug]
         logs:
           receivers: [otlp]
           processors: [k8sattributes, batch, resource]
-          exporters: [otlphttp/dynatrace, opensearch, debug]
+          exporters: [opensearch, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
           processors: [cumulativetodelta, batch, resource]
-          exporters: [otlphttp/dynatrace, otlphttp/prometheus, debug]
+          exporters: [otlphttp/prometheus, debug]
         # Kafka order messages consumed as logs
         logs/kafka:
           receivers: [kafka/orders]
           processors: [batch, resource]
-          exporters: [otlphttp/dynatrace, debug]
+          exporters: [debug]
