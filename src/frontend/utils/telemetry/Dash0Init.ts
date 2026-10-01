@@ -7,10 +7,14 @@ import { init, sendEvent, reportError, addSignalAttribute } from '@dash0/sdk-web
 
 const {
   NEXT_PUBLIC_OTEL_SERVICE_NAME = '',
+  NEXT_PUBLIC_DASH0_AUTH_TOKEN = '',
 } = typeof window !== 'undefined' ? window.ENV : {};
 
 const Dash0Init = () => {
   if (typeof window === 'undefined') return;
+  // Token is injected at runtime from the DASH0_WEB_AUTH_TOKEN env var (see
+  // pages/_document.tsx); never hardcode it. No token -> Dash0 RUM stays off.
+  if (!NEXT_PUBLIC_DASH0_AUTH_TOKEN) return;
 
   // Use the browser's current origin for the same-origin proxy route.
   // The SDK sends to {url}/v1/traces and {url}/v1/logs.
@@ -23,8 +27,8 @@ const Dash0Init = () => {
     endpoint: {
       url: proxyEndpoint,
       // Auth token for Website Monitoring — with Ingesting permissions only
-      // The Nginx proxy also injects this server-side, but the SDK requires it
-      authToken: 'auth_NmEsw27nOxBxAhBdcPVdXdtkw0hspeeJ',
+      // The Nginx proxy also injects this server-side, but the SDK requires it.
+      authToken: NEXT_PUBLIC_DASH0_AUTH_TOKEN,
     },
     // Enable all instrumentations for full Website Monitoring coverage
     // Navigation: page views, route transitions
