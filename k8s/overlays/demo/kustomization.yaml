@@ -5,11 +5,8 @@ resources:
   - ../../base
   # dash0-monitoring.yaml and dash0-views.yaml moved to observability-as-code repo
   # https://github.com/npcomplete777/observability-as-code
-  - dash0-secret.yaml
-  - dash0-web-proxy.yaml
   - cross-cluster-services.yaml
   - grafana-secret.yaml
-  # dynatrace-otel-secret already exists in cluster (created manually to avoid committing tokens)
   # NodePort services - expose observability UIs via k3d node IP
   - patches/grafana-nodeport.yaml
   - patches/jaeger-nodeport.yaml
@@ -24,7 +21,6 @@ patches:
   - path: patches/resource-limits.yaml
   - path: patches/frontend-dash0-web-sdk.yaml
   - path: patches/frontend-proxy-dash0-web.yaml
-  - path: patches/collector-dynatrace-env.yaml
   - path: patches/collector-memory-increase.yaml
   # accounting-memory-increase.yaml consolidated into resource-limits.yaml
   - path: patches/grafana-resources.yaml
@@ -36,6 +32,10 @@ patches:
     target:
       kind: Deployment
       labelSelector: "app.kubernetes.io/part-of=opentelemetry-demo"
+  - path: patches/sdk-disabled.yaml
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/part-of=opentelemetry-demo,app.kubernetes.io/name notin (email,cart,ad)"
   - path: patches/cart-metrics-exporter-workaround.yaml
 # Scale down redundant backends - using Dash0 instead
 # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying

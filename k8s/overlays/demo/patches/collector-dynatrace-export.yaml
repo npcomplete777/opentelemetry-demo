@@ -11,8 +11,8 @@ data:
 
     receivers:
       # OBI-only mode: the OTLP receiver (4317/4318) is intentionally removed so
-      # in-process SDKs (Go/C++/Rust/.NET/Envoy/browser) get connection-refused
-      # instead of a successful export. Merely dropping the Dynatrace exporter
+      # any in-process SDK or Envoy tracer that still exports gets
+      # connection-refused instead of a successful export. Merely dropping the Dynatrace exporter
       # left OBI tracing those export calls (collector-bound gRPC/HTTP spans).
       # Kafka cluster metrics: brokers, topics, partitions, consumer groups
       kafkametrics:
@@ -46,66 +46,7 @@ data:
           - key: dash0.dataset
             value: default
             action: upsert
-      k8sattributes:
-        auth_type: "serviceAccount"
-        passthrough: false
-        filter:
-          node_from_env_var: K8S_NODE_NAME
-        extract:
-          metadata:
-            - k8s.namespace.name
-            - k8s.pod.name
-            - k8s.pod.uid
-            - k8s.deployment.name
-            - k8s.replicaset.name
-            - k8s.daemonset.name
-            - k8s.statefulset.name
-            - k8s.job.name
-            - k8s.node.name
-            - k8s.container.name
-            - container.id
-            - container.image.name
-            - container.image.tag
-        pod_association:
-          - sources:
-              - from: resource_attribute
-                name: k8s.pod.ip
-          - sources:
-              - from: resource_attribute
-                name: k8s.pod.uid
-          - sources:
-              - from: connection
-
-    connectors:
-      spanmetrics:
-        histogram:
-          explicit:
-            buckets: [2ms, 4ms, 6ms, 8ms, 10ms, 50ms, 100ms, 200ms, 400ms, 800ms, 1s, 1400ms, 2s, 5s, 10s, 15s]
-        dimensions:
-          - name: http.request.method
-          - name: http.response.status_code
-          - name: http.route
-          - name: rpc.method
-          - name: rpc.service
-          - name: rpc.grpc.status_code
-        dimensions_cache_size: 1000
-        aggregation_temporality: "AGGREGATION_TEMPORALITY_DELTA"
-        metrics_flush_interval: 15s
-
     exporters:
-      otlphttp/dynatrace:
-        endpoint: https://nxy41179.live.dynatrace.com/api/v2/otlp
-        headers:
-          Authorization: "Api-Token ${env:DT_API_TOKEN}"
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 300s
-        sending_queue:
-          enabled: true
-          num_consumers: 10
-          queue_size: 5000
       otlphttp/prometheus:
         endpoint: http://prometheus:9090/api/v1/otlp
         tls:
@@ -119,46 +60,17 @@ data:
           enabled: true
           num_consumers: 4
           queue_size: 1000
-      # Vanilla: traces only, OTLP gRPC
-      otlp/jaeger:
-        endpoint: jaeger:4317
-        tls:
-          insecure: true
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 120s
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
-      # Vanilla: logs only, native opensearch exporter format
-      opensearch:
-        http:
-          endpoint: http://opensearch:9200
-          tls:
-            insecure: true
-        logs_index: otel-logs
-        logs_index_time_format: yyyy-MM-dd
-        retry_on_failure:
-          enabled: true
-          initial_interval: 5s
-          max_interval: 30s
-          max_elapsed_time: 120s
-        sending_queue:
-          enabled: true
-          num_consumers: 4
-          queue_size: 1000
       debug:
         verbosity: basic
 
-    # OBI-only mode (2026-10-01): otlphttp/dynatrace is intentionally NOT in any
-    # pipeline below, so nothing app-side (SDK spans/metrics/logs, Envoy tracing,
-    # Kafka scrapes) reaches Dynatrace; OBI exports to Dynatrace directly and
-    # bypasses this collector. OTEL_*_EXPORTER=none can't achieve this - the Go,
-    # C++, Rust, .NET services and Envoy build their exporters in code. To go
-    # back to SDK+OBI comparison, re-add otlphttp/dynatrace to these exporters.
+    # OBI-only mode (2026-10-01): nothing app-side (SDK spans/metrics/logs,
+    # Envoy tracing, Kafka scrapes) is forwarded to Dynatrace; OBI exports to
+    # Dynatrace directly and bypasses this collector. The Dynatrace exporter,
+    # its API-token env var, and the unused Jaeger/OpenSearch exporters,
+    # spanmetrics connector and k8sattributes processor were removed. To go
+    # back to an SDK+OBI comparison, restore the otlp receiver and an
+    # otlphttp exporter (see git history before this change) and point it at
+    # your tenant via a Secret, not a committed URL.
     service:
       extensions: [health_check]
       pipelines:
