@@ -47,8 +47,8 @@ kubectl rollout restart daemonset -n obi -l app.kubernetes.io/name=opentelemetry
 | `config.data.prometheus_export` | `null` | Turn off the chart's default `/metrics` on :9090 (exposed on the node via hostNetwork) |
 | `config.data.discovery.exclude_instrument` | `exe_path: '*chrome*'`; `prometheus`/`grafana`/`jaeger` Deployments, `opensearch` StatefulSet | Skip headless-browser churn (see Troubleshooting) and the idle observability backends |
 | `config.data.attributes.kubernetes.enable` | `true` | Add `k8s.*` metadata |
-| `config.data.attributes.select.obi_network_flow_*` | IPs, ports, transport, pod names, CIDR names | L4 detail on flows (off by default) |
-| `config.data.filter.application` / `.network` / `.stats` | drop `otel-collector*` | Don't record apps' own (refused) OTLP exports as spans, flows or TCP stats; the three families are independent |
+| `config.data.attributes.select.obi_network_flow_*` | IPs, `dst.port`, transport, pod names, CIDR names | L4 detail on flows (off by default). Not `src.port`: ephemeral ports blew past Dynatrace's 4 MiB OTLP request limit (HTTP 413) |
+| `config.data.filter.application` / `.network` / `.stats` | drop `otel-collector*` (spans also by `rpc.method` `/opentelemetry.proto.collector.*`) | Don't record apps' own (refused) OTLP exports as spans, flows or TCP stats; the three families are independent |
 | `config.data.network.enable`, `network.cidrs`, `stats.cidrs` | `true`; pods / services / node / external | `enable` is a deprecated alias; the CIDR list names address ranges |
 | `resources` | requests `1Gi`/`250m`, limits `6Gi`/`2500m` | See sizing note |
 

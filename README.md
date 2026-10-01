@@ -103,7 +103,7 @@ the data in Dynatrace **purely OBI-produced**, four controls are applied:
 | App-side collector no longer forwards to Dynatrace and **no longer listens for OTLP** | `k8s/overlays/demo/patches/collector-dynatrace-export.yaml` | Any SDK export is refused at connect; nothing app-side is delivered |
 | `OTEL_*_EXPORTER=none` on every service | `k8s/overlays/demo/patches/disable-app-sdk.yaml` | Silences SDKs that honour the standard env vars |
 | `OTEL_SDK_DISABLED=true` on every service except `email`, `cart`, `ad` | `k8s/overlays/demo/patches/sdk-disabled.yaml` | Turns off SDKs that honour the flag (`email`/Ruby and `cart`/.NET crash with it) |
-| OBI filters drop traffic to/from the collector | `k8s/obi/values.yaml` (`filter.application`, `filter.network`, `filter.stats`) | Stops OBI recording the remaining export attempts as spans, flows or TCP failed-connection stats |
+| OBI filters drop traffic to/from the collector | `k8s/obi/values.yaml` (`filter.application`, `filter.network`, `filter.stats`) | Stops OBI recording the remaining export attempts as spans, flows or TCP failed-connection stats. Spans are matched on `server.address` **and** the OTLP gRPC method, because a refused connection has an empty `server.address` |
 
 > **Honest note:** the env vars alone are *not* enough. [observed] Even with both
 > set, `frontend-proxy` (Envoy's built-in tracer), `shipping` (Rust),
@@ -180,8 +180,8 @@ config:
     attributes:
       select:
         obi_network_flow_bytes:
-          include: [direction, transport, src.address, dst.address, src.port,
-                    dst.port, src.cidr, dst.cidr, k8s.src.name, k8s.dst.name, …]
+          include: [direction, transport, src.address, dst.address, dst.port,
+                    src.cidr, dst.cidr, k8s.src.name, k8s.dst.name, …]
     network:
       cidrs:            # narrowest match wins
         - {cidr: 192.168.194.0/25,   name: pods}
@@ -233,12 +233,23 @@ Things to know before enabling it elsewhere:
 
 Measured on this deployment (single node, 2026-10-01); treat as indicative.
 
-- **Trace stitching was measured with context propagation off.** ~81% of traces
-  contained a single service, ~16% two, ~3% three, but that run had OBI's
-  context propagation at its v0.12.2 default (**disabled**; the chart's
-  `contextPropagation.enabled` only grants privileges), and the numbers also
-  included single-service health-probe traces. Propagation is now set to `all`
-  (`OTEL_EBPF_BPF_CONTEXT_PROPAGATION`); re-measure before quoting a figure.
+- **Trace stitching is partial, and depends on context propagation.** OBI's
+  v0.12.2 default is propagation **disabled** (the chart's
+  `contextPropagation.enabled` only grants privileges). [observed] Excluding
+  health-probe traces:
+
+  | Services per trace | Propagation off (30 min) | `all` (9 min) |
+  |---|---|---|
+  | 1 | 82% | 78% |
+  | 2–3 | 11% | 9% |
+  | 4–6 | 7% | 12% |
+  | 10–11 (full checkout path) | 0 | 1.1% |
+
+  Turning it on produced complete 10–11-service checkout traces that never
+  appeared before, but most traces are still single-service. The first
+  (pre-correction) measurement, ~81/16/3%, also counted health probes. The span
+  error rate did not change because of it (all errors were refused OTLP-export
+  spans, since filtered).
 - **No business context.** OBI cannot attach application-level attributes (for
   example the currency codes in a conversion call). Custom spans need an SDK.
 - **gRPC method names can be lost** for some native services (`currency`: ~99% of

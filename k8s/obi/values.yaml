@@ -106,6 +106,10 @@ config:
       # k8s owner/namespace/type + direction; IPs, ports and transport are
       # opt-in (pkg/export/attributes/attr_defs.go). Cardinality goes up with
       # addresses/ports — acceptable for a ~25-service demo.
+      # NOT src.port: client ports are ephemeral, so it creates a series per
+      # connection. With it, every flow export exceeded Dynatrace's 4 MiB
+      # OTLP request limit (413 Payload Too Large) and no flows arrived at
+      # all (2026-10-01). dst.port carries the meaningful L4 (server) port.
       select:
         obi_network_flow_bytes:
           include: &flow_attrs
@@ -113,7 +117,6 @@ config:
             - transport
             - src.address
             - dst.address
-            - src.port
             - dst.port
             - src.cidr
             - dst.cidr
@@ -142,6 +145,13 @@ config:
       application:
         server.address:
           not_match: 'otel-collector*'
+        # A refused connection never gets a peer, so those export spans carry
+        # an empty server.address and slip past the rule above (~600 Go
+        # LogsService/TraceService/MetricsService "Export" error spans per
+        # 10 min, 2026-10-01). Match the OTLP gRPC method instead; rpc.method
+        # resolves to the request path. Rules within a family are AND-ed.
+        rpc.method:
+          not_match: '/opentelemetry.proto.collector.*'
       network:
         k8s_src_owner_name:
           not_match: '{kube*,*jaeger-agent*,*prometheus*,*promtail*,*grafana-agent*,otel-collector*}'

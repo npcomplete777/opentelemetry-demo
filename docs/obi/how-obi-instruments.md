@@ -128,11 +128,14 @@ the next service's incoming request.
 - [docs] Limits: L7 proxies and load balancers disrupt the TCP-level propagation;
   encrypted traffic can only carry context between two OBI-instrumented services;
   non-gRPC HTTP/2 propagation is Go-only.
-- [observed] With propagation **disabled** (the v0.12.2 default, which this
-  deployment ran with until 2026-10-01), about 81% of traces held a single
-  service, ~16% two, ~3% three. That figure also included single-service
-  health-probe traces from the bundled backends, now excluded. It measures the
-  default configuration, not OBI's limit; re-measure with propagation on.
+- [observed] Services per trace, excluding health-probe traces (2026-10-01):
+  with propagation **disabled** (v0.12.2 default; 30 min) 82% single-service,
+  11% two–three, 7% four–six, none larger. With `all` (9 min): 78% single,
+  9% two–three, 12% four–six, and 1.1% of traces spanning **10–11 services**
+  (the full checkout path), which never appeared before. Linking improved
+  clearly but remains partial. (An earlier ~81/16/3% figure also counted
+  health-probe traces.) Go services show multi-service traces even with
+  propagation off, consistent with Go's library-level propagation.
 
 ## 5. Per-language behaviour (as seen here)
 
@@ -196,8 +199,10 @@ statistics.
   `dst.address`, `src.port`, `dst.port`, `transport`, `k8s.src.name`,
   `k8s.dst.name`, node attributes and more. `network.cidrs` (and `stats.cidrs`)
   add `src.cidr`/`dst.cidr` names. `iface`/`iface.direction` additionally need
-  `network.deduper: none`. This deployment enables addresses, ports, transport,
-  pod names and CIDR names. (The public docs page mentions
+  `network.deduper: none`. This deployment enables addresses, destination port,
+  transport, pod names and CIDR names. [observed] Adding `src.port` (ephemeral
+  client ports) made every flow export exceed Dynatrace's 4 MiB OTLP request
+  limit (HTTP 413) and no flows arrived, so it is left out. (The public docs page mentions
   `network.allowed_attributes`, which does not exist in v0.12.2.)
 - [docs] `direction` is `request`/`response` based on the observed TCP
   connection initiator, and `unknown` when OBI did not see the handshake.
@@ -233,7 +238,7 @@ statistics.
 6. **Already-instrumented services are skipped by default**
    (`discovery.exclude_otel_instrumented_services`, default `true`) [docs] — it
    matters in estates that mix SDKs and OBI.
-7. **Trace stitching was measured with propagation off** (§4); re-measure.
+7. **Trace stitching is partial** even with propagation on (§4).
 8. **Process churn is the cost driver.** Headless Chromium in the load generator
    spawned many short-lived processes; OBI attached and detached to each and was
    OOM-killed repeatedly at a 6 GiB limit. Adding
@@ -244,8 +249,10 @@ statistics.
    export, OBI records those attempts as spans, flows and TCP failed-connection
    stats. [observed] `filter.application` alone removed the spans but not the
    stats: ~3,800 refused collector connections per 30 min (mostly Envoy) still
-   dominated `obi.stat.tcp.failed.connections`. Here all three families are
-   filtered on `otel-collector*`.
+   dominated `obi.stat.tcp.failed.connections`. It also missed ~600 Go
+   `…/Export` error spans per 10 min: a refused connection has an empty
+   `server.address`. Here all three families are filtered on `otel-collector*`,
+   and spans additionally on `rpc.method` `/opentelemetry.proto.collector.*`.
 
 ## 10. Reproducing the measurements
 
