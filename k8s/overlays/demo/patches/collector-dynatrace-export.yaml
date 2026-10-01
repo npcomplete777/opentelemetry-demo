@@ -10,12 +10,10 @@ data:
         endpoint: 0.0.0.0:13133
 
     receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: 0.0.0.0:4317
-          http:
-            endpoint: 0.0.0.0:4318
+      # OBI-only mode: the OTLP receiver (4317/4318) is intentionally removed so
+      # in-process SDKs (Go/C++/Rust/.NET/Envoy/browser) get connection-refused
+      # instead of a successful export. Merely dropping the Dynatrace exporter
+      # left OBI tracing those export calls (collector-bound gRPC/HTTP spans).
       # Kafka cluster metrics: brokers, topics, partitions, consumer groups
       kafkametrics:
         brokers:
@@ -164,18 +162,6 @@ data:
     service:
       extensions: [health_check]
       pipelines:
-        traces:
-          receivers: [otlp]
-          processors: [k8sattributes, batch, resource]
-          exporters: [otlp/jaeger, spanmetrics, debug]
-        metrics:
-          receivers: [otlp, spanmetrics]
-          processors: [k8sattributes, cumulativetodelta, batch, resource]
-          exporters: [otlphttp/prometheus, debug]
-        logs:
-          receivers: [otlp]
-          processors: [k8sattributes, batch, resource]
-          exporters: [opensearch, debug]
         # Kafka cluster metrics (brokers, topics, partitions, consumer groups)
         metrics/kafka:
           receivers: [kafkametrics]
