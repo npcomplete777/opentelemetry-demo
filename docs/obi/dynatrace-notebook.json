@@ -1,0 +1,811 @@
+{
+ "version": "7",
+ "defaultSegments": [],
+ "sections": [
+  {
+   "id": "intro",
+   "type": "markdown",
+   "markdown": "# How OBI (eBPF) instruments each language in the Astronomy Shop\n\n**What this is:** a live walkthrough of what OpenTelemetry eBPF Instrumentation (OBI) sees in a polyglot app *without any SDK, agent, sidecar or code change*. Every number below is queried live from this tenant; nothing is pasted in.\n\n**Setup:** OBI runs as one privileged DaemonSet (`obi` namespace) on the node and instruments the `otel-demo` namespace. It exports OTLP **directly** to this tenant. Since 2026-10-01 the app-side collector no longer forwards *any* SDK telemetry here, so everything in `otel-demo` below is OBI-produced. The tile directly under this text proves that claim instead of asking you to trust it.\n\n**How OBI-sourced data is identified:** spans carry `telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\"`; metrics carry instrumentation scope `go.opentelemetry.io/obi` (app metrics) or `network_ebpf_events` / `stats_ebpf_events` (infra metrics). Note `telemetry.distro.name` is *not* OBI-exclusive in general (other auto-instrumentation agents set their own), which is why the check below uses equality, not `isNotNull`."
+  },
+  {
+   "id": "q-proof",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 200,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-15m",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 15m\n| filter k8s.namespace.name == \"otel-demo\"\n| summarize spans = count(),\n    by:{source = if(telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\", \"OBI (eBPF)\", else: \"anything else\")}"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "proof-note",
+   "type": "markdown",
+   "markdown": "*If a row for `anything else` ever appears, someone re-enabled SDK export; OBI-only mode is a deliberate configuration (collector pipelines in `k8s/overlays/demo/patches/collector-dynatrace-export.yaml`), not a property of OBI.*"
+  },
+  {
+   "id": "how",
+   "type": "markdown",
+   "markdown": "## 1. How OBI works (and what it needs)\n\n- **eBPF in the kernel, not in your process.** OBI loads small verified programs into the Linux kernel. It attaches *probes* to kernel events (syscalls/sockets), to functions inside application binaries and runtimes (uprobes), and to the network path (Linux traffic control) for flow data. The app is never restarted, rebuilt or reconfigured.\n- **Discovery.** OBI watches the node's processes, selects the ones matching its rules (here: namespace `otel-demo`, excluding `*chrome*`), and classifies each by runtime. Its own startup logs show the classification (`type=go|java|dotnet|python|nodejs|php|cpp|generic`); the `telemetry.sdk.language` column below is that classification, **not** a statement about what the app was built with.\n- **Protocol decoding.** From what the probes see, OBI parses protocols itself: HTTP/1.1, HTTP/2, gRPC, Kafka, Redis, PostgreSQL and more (full list in the OBI docs). This is why spans exist for a database or message broker you never instrumented.\n- **Trace context.** OBI reads incoming W3C `traceparent` and can inject it on the way out. Per the OBI docs: Go uses library-level uprobes; Node.js uses async hooks (8.0+); Python asyncio needs `uvloop`; Java thread pools (JDK 8+) and Ruby Puma (5.0+) are supported; network-level injection works for any language but not through L7 proxies/load balancers.\n- **Requirements.** Linux 5.8+ with BTF, root/capabilities, and for the Kubernetes DaemonSet: `hostPID`, `hostNetwork`, and `/sys/fs/cgroup` mounted. This cluster's kernel is 7.0.x.\n\n**What it is not:** OBI \"does not replace language-level instrumentation\" for custom spans or business logic, and \"cannot always recover application-specific details\" invisible at the syscall/protocol level (OBI docs). Section 8 shows concrete examples from this demo."
+  },
+  {
+   "id": "q-scope",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 160,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\"\n| summarize spans = count(), traces = countDistinct(trace.id),\n    services = countDistinct(service.name), languages = countDistinct(telemetry.sdk.language),\n    namespaces = countDistinct(k8s.namespace.name)"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "lang-intro",
+   "type": "markdown",
+   "markdown": "## 2. What OBI classified, per language\nOne row per runtime OBI detected, with the services it attributed to that runtime."
+  },
+  {
+   "id": "q-langs",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 300,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\"\n| summarize spans = count(), services = collectDistinct(service.name), by:{language = telemetry.sdk.language}\n| sort spans desc"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "lang-caveat",
+   "type": "markdown",
+   "markdown": "**Read this table with care.**\n- `otel-demo` as a service name is OBI's *fallback* when it cannot derive a better one from the process/pod; it shows up under Go, Python and Java. It is a naming limitation, not a real service.\n- `cart` appears under `cpp` although it is a .NET app: it is published self-contained and launched as `./cart` (no `dotnet` host process), so OBI sees a native executable. `postgresql` (C) and `currency` (C++) are genuinely native.\n- `generic` means OBI recognised the process but no language-specific logic applies (Redis, nginx/Envoy-style proxies); protocol decoding still works."
+  },
+  {
+   "id": "go",
+   "type": "markdown",
+   "markdown": "## 3. Go \u2014 `product-catalog`, `checkout`, `flagd`\nGo is OBI's best-supported runtime: because Go binaries carry rich symbol information and a predictable runtime, OBI can attach uprobes to library functions inside the process (HTTP, gRPC, \u2026) and track goroutines, and per the docs Go is the only runtime with **library-level** context propagation (Go 1.18+, via `bpf_probe_write_user`, up to 6 nested goroutine levels). Expect complete client + server span pairs with parent/child links."
+  },
+  {
+   "id": "q-go",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"go\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "java",
+   "type": "markdown",
+   "markdown": "## 4. Java \u2014 `ad`, `fraud-detection`, `kafka`\nOBI supports JDK 8+. Spans are derived from the traffic OBI observes; thread-pool context propagation is supported per the docs. With the `application_runtime` metric group enabled, OBI also reports **JVM memory** (below) \u2014 runtime health with no JMX agent or `-javaagent` flag."
+  },
+  {
+   "id": "q-java",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"java\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-jvm",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 300,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries used = avg(jvm.memory.used), from: now() - 1h, by:{service.name, jvm.memory.type}\n| fieldsAdd latest = arrayLast(used)\n| sort latest desc"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "lineChart"
+   }
+  },
+  {
+   "id": "dotnet",
+   "type": "markdown",
+   "markdown": "## 5. .NET \u2014 `accounting`\nA JIT-compiled .NET service looks like any other process to OBI: no runtime-specific uprobes are needed, protocol decoding does the work (here: Kafka consumption and PostgreSQL writes). Note the contrast with `cart`, also .NET but published self-contained and launched as `./cart`, which OBI classifies as C/C++ (section 2)."
+  },
+  {
+   "id": "q-dotnet",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"dotnet\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "nodejs",
+   "type": "markdown",
+   "markdown": "## 6. Node.js \u2014 `frontend` (Next.js), `payment`\nPer the docs, Node.js context propagation uses async hooks (Node 8.0+; custom `SIGUSR1` handlers can interfere). With `application_runtime` enabled OBI also exports **event-loop** metrics (delay percentiles, utilization) \u2014 below, for every Node process it found, including the load-generator's Playwright driver."
+  },
+  {
+   "id": "q-node",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"nodejs\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-eventloop",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 300,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries util = avg(nodejs.eventloop.utilization), delay_p99 = avg(nodejs.eventloop.delay.p99), from: now() - 1h, by:{service.name}\n| fieldsAdd latest_util = arrayLast(util)\n| sort latest_util desc"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "lineChart"
+   }
+  },
+  {
+   "id": "python",
+   "type": "markdown",
+   "markdown": "## 7. Python \u2014 `recommendation`, `product-reviews`, `llm`, `load-generator` (Locust)\nPython is traced at the protocol level; per the docs, asyncio context propagation additionally requires the `uvloop` event loop. Four unrelated Python workloads show how OBI separates services in the same language."
+  },
+  {
+   "id": "q-python",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"python\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "php-ruby-rust",
+   "type": "markdown",
+   "markdown": "## 8. PHP (`quote`), Ruby (`email`), Rust (`shipping`)\nOBI classifies these runtimes and decodes their traffic at the protocol level; nothing language-specific beyond the classification is visible in the data. Ruby/Puma 5.0+ has documented propagation support. **Volume is low** for `shipping` (Rust) \u2014 the OBI service graph shows `checkout` as its only caller; whether OBI missed any calls cannot be checked now that the SDK comparison is off (the earlier *Nuances* notebook holds the historical comparison)."
+  },
+  {
+   "id": "q-php",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 240,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"php\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-ruby",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 240,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"ruby\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-rust",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 240,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and telemetry.sdk.language == \"rust\"\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "native",
+   "type": "markdown",
+   "markdown": "## 9. Native & \"generic\" workloads \u2014 `currency` (C++), `cart` (self-contained .NET), `postgresql`, `valkey-cart` (Redis), proxies\nNo language runtime to hook, so everything is derived from sockets and protocol parsing. This is where OBI's limits are most visible: for `currency`, ~99% of spans have `rpc.method = *` (597 of 601 in the last hour when checked): the gRPC method could not be recovered, so operations are indistinguishable by name."
+  },
+  {
+   "id": "q-native",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 360,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 1h\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\" and in(telemetry.sdk.language, array(\"cpp\", \"generic\"))\n| summarize spans = count(), p50 = percentile(duration, 50), p95 = percentile(duration, 95),\n    by:{service.name, span.kind, span.name}\n| sort spans desc\n| limit 15"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "proto",
+   "type": "markdown",
+   "markdown": "## 10. Protocol decoding: what OBI extracts with zero instrumentation\nThe same span schema carries database, cache, queue and RPC semantics. Below, raw OBI spans for each. **PostgreSQL:** operation and table are captured (`SELECT` on `accounting.order`); the SQL statement text is *not* in these spans. **Redis:** the command (`HGET`, \u2026). **Kafka:** topic, partition, offset, client id \u2014 including the producer-side span in `checkout`."
+  },
+  {
+   "id": "q-db",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 320,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and isNotNull(db.system.name)\n| summarize spans = count(), p95 = percentile(duration, 95),\n    by:{service.name, db.system.name, db.operation.name, db.collection.name}\n| sort spans desc\n| limit 15"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-kafka",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 320,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and messaging.system == \"kafka\"\n| fields timestamp = start_time, service.name, span.kind, span.name, messaging.destination.name,\n    messaging.destination.partition.id, messaging.kafka.offset, messaging.operation.type, messaging.client.id\n| sort timestamp desc\n| limit 15"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-rpc",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 320,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and isNotNull(rpc.method) and rpc.method != \"*\"\n| summarize spans = count(), p95 = percentile(duration, 95), by:{service.name, rpc.system.name, rpc.method}\n| sort spans desc\n| limit 15"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "trace",
+   "type": "markdown",
+   "markdown": "## 11. Distributed traces without trace libraries\nEach row: how many distinct OBI services appear in a single trace, and how many traces have that shape. Multi-service traces exist only if context was propagated across process boundaries. **Read honestly:** when checked (2026-10-01, 30 min window) ~81% of traces were single-service, ~16% spanned two, ~3% three, and four-service traces were rare. Cross-service stitching works but is partial in this deployment; OBI is not giving full end-to-end traces here."
+  },
+  {
+   "id": "q-trace",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 300,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\"\n| summarize spans = count(), services = countDistinct(service.name), by:{trace.id}\n| summarize traces = count(), avg_spans = avg(spans), by:{services}\n| sort services asc"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "barChart"
+   }
+  },
+  {
+   "id": "infra",
+   "type": "markdown",
+   "markdown": "## 12. Infrastructure data from the same agent\nBeyond request telemetry, OBI is configured (`OTEL_EBPF_METRICS_FEATURES`) to emit: network **flow bytes/packets**, **TCP statistics** (RTT, retransmits, failed connections, I/O), a **service graph**, DNS lookup timing, and **runtime** metrics (JVM, Node.js \u2014 shown above). All of it comes from the kernel; none requires a workload to cooperate.\n\n*Note: flow and TCP data is not limited to `otel-demo` \u2014 the network pipeline sees the whole node (for example `argocd` below).*"
+  },
+  {
+   "id": "q-flows",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries bytes = sum(obi.network.flow.bytes), from: now() - 1h, by:{k8s.src.owner.name, k8s.dst.owner.name}\n| fieldsAdd total = arraySum(bytes)\n| sort total desc\n| limit 12\n| fields k8s.src.owner.name, k8s.dst.owner.name, total"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-packets",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 340,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries packets = sum(obi.network.flow.packets), from: now() - 1h, by:{k8s.src.owner.name, k8s.dst.owner.name}\n| fieldsAdd total = arraySum(packets)\n| sort total desc\n| limit 12\n| fields k8s.src.owner.name, k8s.dst.owner.name, total"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-rtt",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 320,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries rtt = avg(obi.stat.tcp.rtt), from: now() - 1h, by:{k8s.src.owner.name, k8s.dst.owner.name}\n| fieldsAdd latest = arrayLast(rtt)\n| sort latest desc\n| limit 12"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "lineChart"
+   }
+  },
+  {
+   "id": "q-tcp-bad",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 240,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries retransmits = sum(obi.stat.tcp.retransmits), from: now() - 1h, by:{k8s.src.owner.name, k8s.dst.owner.name}\n| fieldsAdd total = arraySum(retransmits)\n| filter total > 0\n| sort total desc\n| limit 12\n| fields k8s.src.owner.name, k8s.dst.owner.name, total"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-failed",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 240,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries failed = sum(obi.stat.tcp.failed.connections), from: now() - 1h, by:{k8s.dst.namespace, k8s.dst.owner.name}\n| fieldsAdd total = arraySum(failed)\n| filter total > 0\n| sort total desc\n| limit 12\n| fields k8s.dst.namespace, k8s.dst.owner.name, total"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-graph",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 380,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries calls = sum(traces_service_graph_request_total), from: now() - 1h, by:{client, server}\n| fieldsAdd total = arraySum(calls)\n| sort total desc\n| limit 20\n| fields client, server, total"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "table"
+   }
+  },
+  {
+   "id": "q-dns",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "previousFilterSegments": [],
+   "height": 260,
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "timeseries dns = avg(dns.lookup.duration), from: now() - 1h, by:{service.name, error.type}\n| fieldsAdd latest = arrayLast(dns)\n| sort latest desc\n| limit 10"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "lineChart"
+   }
+  },
+  {
+   "id": "limits",
+   "type": "markdown",
+   "markdown": "## 13. Honest limits observed in this deployment\n1. **No business attributes.** OBI sees `currency`'s gRPC call but not the `from`/`to` currency codes an SDK could attach; custom spans and business context need language-level instrumentation (the earlier *Nuances* notebook shows a side-by-side).\n2. **Service naming fallbacks.** Several Go/Python/Java processes land under `otel-demo`; `cart` (a self-contained .NET app) is classified C++.\n3. **Runtime metrics are partial.** Of the `application_runtime` group, this deployment received JVM and Node.js metrics only \u2014 none for Go, .NET or Python. OBI's own `ebpf` self-metrics also did not appear.\n4. **OBI skips already-instrumented services by default** (`exclude_otel_instrumented_services: true`). This matters in mixed SDK/OBI estates; it is why SDK-silencing was a prerequisite for this view.\n5. **SQL text is not captured**, only operation + table.\n6. **Resource cost is real and workload-dependent.** After excluding the load generator's headless-Chromium processes (hundreds of short-lived PIDs) OBI steady-states around **300 MiB**; before that it crash-looped at its 6 GiB limit (9 OOM restarts in ~50 minutes on 2026-10-01). Discovery churn, not traffic volume, was the driver.\n7. **Encrypted hops and L7 proxies** limit network-level context propagation (OBI docs)."
+  }
+ ]
+}

@@ -1,160 +1,242 @@
-<!-- markdownlint-disable-next-line -->
-# <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OTel logo" width="45"> OpenTelemetry Demo
+# OBI (eBPF) Zero-Code Observability on the OpenTelemetry Astronomy Shop
 
-[![Slack](https://img.shields.io/badge/slack-@cncf/otel/demo-brightgreen.svg?logo=slack)](https://cloud-native.slack.com/archives/C03B4CWV4DA)
-[![Version](https://img.shields.io/github/v/release/open-telemetry/opentelemetry-demo?color=blueviolet)](https://github.com/open-telemetry/opentelemetry-demo/releases)
-[![Commits](https://img.shields.io/github/commits-since/open-telemetry/opentelemetry-demo/latest?color=ff69b4&include_prereleases)](https://github.com/open-telemetry/opentelemetry-demo/graphs/commit-activity)
-[![Downloads](https://img.shields.io/docker/pulls/otel/demo)](https://hub.docker.com/r/otel/demo)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?color=red)](https://github.com/open-telemetry/opentelemetry-demo/blob/main/LICENSE)
-[![Integration Tests](https://github.com/open-telemetry/opentelemetry-demo/actions/workflows/run-integration-tests.yml/badge.svg)](https://github.com/open-telemetry/opentelemetry-demo/actions/workflows/run-integration-tests.yml)
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/opentelemetry-demo)](https://artifacthub.io/packages/helm/opentelemetry-helm/opentelemetry-demo)
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fopen-telemetry%2Fopentelemetry-demo.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fopen-telemetry%2Fopentelemetry-demo?ref=badge_shield&issueType=license)
-[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B162%2Fgithub.com%2Fopen-telemetry%2Fopentelemetry-demo.svg?type=shield&issueType=security)](https://app.fossa.com/projects/custom%2B162%2Fgithub.com%2Fopen-telemetry%2Fopentelemetry-demo?ref=badge_shield&issueType=security)
-[![OpenSSF Scorecard for opentelemetry-demo](https://api.scorecard.dev/projects/github.com/open-telemetry/opentelemetry-demo/badge)](https://scorecard.dev/viewer/?uri=github.com/open-telemetry/opentelemetry-demo)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9247/badge)](https://www.bestpractices.dev/en/projects/9247)
+A working reference for **OpenTelemetry eBPF Instrumentation (OBI)**: a polyglot,
+20+ service microservice application observed end to end **without adding an SDK,
+agent, sidecar or code change to any service**, with all telemetry exported over
+OTLP to Dynatrace.
 
-## Welcome to the OpenTelemetry Astronomy Shop Demo
+This repository is a fork of the
+[OpenTelemetry Demo](https://github.com/open-telemetry/opentelemetry-demo)
+("Astronomy Shop"), deployed on Kubernetes with Kustomize + Argo CD, plus the
+OBI deployment, the configuration that makes OBI the *only* telemetry source,
+and the material that explains how it works.
 
-This repository contains the OpenTelemetry Astronomy Shop, a microservice-based
-distributed system intended to illustrate the implementation of OpenTelemetry in
-a near real-world environment.
+> The original upstream README is preserved at
+> [`docs/UPSTREAM_README.md`](docs/UPSTREAM_README.md).
 
-Our goals are threefold:
+| I want to… | Go to |
+|---|---|
+| Understand what OBI is and how it instruments code | [What OBI is](#what-obi-is) and [`docs/obi/how-obi-instruments.md`](docs/obi/how-obi-instruments.md) |
+| See what it captured per language | [Results by language](#what-obi-captured-in-this-demo) |
+| Know whether L3/L4 network data is possible | [Network layer (L3/L4)](#network-layer-l3--l4-data) |
+| Deploy or reconfigure it | [`k8s/obi/README.md`](k8s/obi/README.md) |
+| Import the explanatory Dynatrace notebook | [`docs/obi/dynatrace-notebook.json`](docs/obi/dynatrace-notebook.json) |
+| Know what it can't do | [Limits](#honest-limits) |
 
-- Provide a realistic example of a distributed system that can be used to
-  demonstrate OpenTelemetry instrumentation and observability.
-- Build a base for vendors, tooling authors, and others to extend and
-  demonstrate their OpenTelemetry integrations.
-- Create a living example for OpenTelemetry contributors to use for testing new
-  versions of the API, SDK, and other components or enhancements.
+---
 
-We've already made [huge
-progress](https://github.com/open-telemetry/opentelemetry-demo/blob/main/CHANGELOG.md),
-and development is ongoing. We hope to represent the full feature set of
-OpenTelemetry across its languages in the future.
+## What OBI is
 
-If you'd like to help (**which we would love**), check out our [contributing
-guidance](./CONTRIBUTING.md).
+OBI is an OpenTelemetry project that uses **eBPF** — small, kernel-verified
+programs loaded into the Linux kernel — to observe applications from the outside.
+It runs as **one privileged DaemonSet per node**. It watches the processes on
+that node, attaches probes to them, and turns what it sees into standard
+OpenTelemetry **traces, metrics and network-flow data**.
 
-If you'd like to extend this demo or maintain a fork of it, read our
-[fork guidance](https://opentelemetry.io/docs/demo/forking/).
+- **No code changes, no rebuilds, no restarts.** Services run as they were built.
+- **One agent for every language.** The same OBI pod instruments Go, Java, .NET,
+  Node.js, Python, Ruby, PHP, Rust and native C/C++ processes, plus databases and
+  brokers you could never put an SDK into (PostgreSQL, Redis, Kafka).
+- **Standard output.** OTLP, with Kubernetes metadata attached, to any backend.
 
-## Quick start
+### How it instruments (short version)
 
-You can be up and running with the demo in a few minutes. Check out the docs for
-your preferred deployment method:
+```mermaid
+flowchart LR
+  subgraph node["Kubernetes node (Linux kernel)"]
+    direction TB
+    app1["checkout (Go)"] --- k
+    app2["frontend (Node.js)"] --- k
+    app3["ad (Java)"] --- k
+    app4["postgres, redis, kafka…"] --- k
+    k["eBPF probes<br/>socket / syscall hooks · library uprobes · TC network hooks"]
+    k -->|ring buffers| obi["OBI agent<br/>(DaemonSet)"]
+  end
+  obi -->|"decode protocols · build spans, RED metrics,<br/>service graph, flow & TCP stats ·<br/>add Kubernetes metadata"| otlp(("OTLP"))
+  otlp --> dt["Dynatrace"]
+```
 
-- [Docker](https://opentelemetry.io/docs/demo/docker_deployment/)
-- [Kubernetes](https://opentelemetry.io/docs/demo/kubernetes_deployment/)
+1. **Discover.** OBI finds processes on the node and selects the ones matching
+   its rules (here: namespace `otel-demo`). It classifies each by runtime
+   (Go, Java, .NET, Node.js, Python, …) from the executable itself.
+2. **Attach.** It attaches eBPF probes: to the kernel's socket/network paths
+   (works for *every* language), to functions inside the process where that adds
+   precision (for example Go libraries and TLS libraries), and to network
+   interfaces for flow data.
+3. **Decode.** Raw events are reassembled in user space into requests and
+   responses and parsed as HTTP, HTTP/2, gRPC, SQL, Redis, Kafka and more.
+4. **Enrich & export.** Spans and metrics are decorated with `k8s.*` attributes
+   and sent as OTLP.
 
-## Documentation
+Full detail, per-language behaviour and the exact limits we measured are in
+[`docs/obi/how-obi-instruments.md`](docs/obi/how-obi-instruments.md).
 
-For detailed documentation, see [Demo Documentation][docs]. If you're curious
-about a specific feature, the [docs landing page][docs] can point you in the
-right direction.
+---
 
-## Demos featuring the Astronomy Shop
+## Architecture of this deployment
 
-We welcome any vendor to fork the project to demonstrate their services and
-adding a link below. The community is committed to maintaining the project and
-keeping it up to date for you.
+```
+ Astronomy Shop (otel-demo namespace, ~25 workloads, many languages)
+        │   unmodified services — no telemetry leaves them
+        ▼
+   OBI DaemonSet (obi namespace) ── eBPF on the node ──► OTLP/HTTP ──► Dynatrace
+        ▲
+   Argo CD  ◄── k8s/obi/values.yaml  (OBI Helm chart 0.13.0, app v0.12.2)
+```
 
-|                           |                |                                  |
-|---------------------------|----------------|----------------------------------|
-| [AlibabaCloud LogService] | [Google Cloud] | [Parseable]                      |
-| [Apache Doris]            | [Grafana Labs] | [Sentry]                         |
-| [AppDynamics]             | [Guance]       | [ServiceNow Cloud Observability] |
-| [Aspecto]                 | [Honeycomb.io] | [SigNoz]                         |
-| [Axiom]                   | [Instana]      | [Splunk]                         |
-| [Axoflow]                 | [Kloudfuse]    | [Sumo Logic]                     |
-| [Azure Data Explorer]     | [Last9]        | [TelemetryHub]                   |
-| [Causely]                 | [Liatrio]      | [Teletrace]                      |
-| [ClickStack]              | [Logz.io]      | [Tinybird]                       |
-| [Coralogix]               | [New Relic]    | [Tracetest]                      |
-| [Dash0]                   | [Oodle]        | [Uptrace]                        |
-| [Datadog]                 | [OpenObserve]  | [VictoriaMetrics]                |
-| [Dynatrace]               | [OpenSearch]   |                                  |
-| [Elastic]                 | [Oracle]       |                                  |
+- Cluster: single-node Kubernetes (OrbStack on macOS, Linux 7.0 kernel); also
+  suitable for any Linux node ≥ 5.8 with BTF.
+- GitOps: Argo CD applies `k8s/overlays/demo` (the shop) and `k8s/argocd/obi-application.yaml`
+  (OBI, from the official Helm chart + `k8s/obi/values.yaml`).
+- OBI exports **directly** to Dynatrace; credentials live in a Kubernetes Secret
+  created out-of-band (never committed) — see [`k8s/obi/README.md`](k8s/obi/README.md).
 
-## Contributing
+### OBI is the only telemetry source (and how that's enforced)
 
-To get involved with the project see our [CONTRIBUTING](CONTRIBUTING.md)
-documentation. Our [SIG Calls](CONTRIBUTING.md#join-a-sig-call) are every other
-Wednesday at 8:30 AM PST and anyone is welcome.
+The shop's services still contain their original OpenTelemetry SDK code. To make
+the data in Dynatrace **purely OBI-produced**, three controls are applied:
 
-### Maintainers
+| Control | Where | Effect |
+|---|---|---|
+| App-side collector no longer forwards to Dynatrace and **no longer listens for OTLP** | `k8s/overlays/demo/patches/collector-dynatrace-export.yaml` | Any SDK export is refused at connect; nothing app-side is delivered |
+| `OTEL_*_EXPORTER=none` on every service | `k8s/overlays/demo/patches/disable-app-sdk.yaml` | Silences SDKs that honour the standard env vars (Java, Node, Python, Ruby) |
+| OBI filter drops traffic addressed to the collector | `k8s/obi/values.yaml` (`filter.application`) | Stops OBI recording the apps' failed export retries as "telemetry" |
 
-- [Juliano Costa](https://github.com/julianocosta89), Datadog
-- [Mikko Viitanen](https://github.com/mviitane), Dynatrace
-- [Pierre Tessier](https://github.com/puckpuck), Honeycomb
-- [Roger Coll](https://github.com/rogercoll), Elastic
+> **Honest note:** setting `OTEL_*_EXPORTER=none` alone is *not* enough. The Go,
+> C++, Rust and .NET services (and Envoy) construct their exporters in code and
+> ignore it, so their SDK data kept arriving until the collector change above.
+> The SDKs remain in the source and running in the pods; their output is
+> discarded. Removing them from the source would need rebuilt images.
 
-For more information about the maintainer role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#maintainer).
+Verify in Dynatrace (replace the cluster name if you change it):
 
-### Approvers
+```dql
+fetch spans, from: now() - 15m
+| filter k8s.cluster.name == "orbstack-obi-eval"
+| summarize spans = count(),
+    by:{source = if(telemetry.distro.name == "opentelemetry-ebpf-instrumentation", "OBI (eBPF)", else: "anything else")}
+```
 
-- [Cedric Ziel](https://github.com/cedricziel), Grafana Labs
-- [Shenoy Pratik](https://github.com/ps48), AWS OpenSearch
+Use **equality** on `telemetry.distro.name`. `isNotNull(...)` is wrong: other
+auto-instrumentation agents set their own distro names. Spans only — metrics are
+identified by instrumentation scope (`go.opentelemetry.io/obi`,
+`network_ebpf_events`, `stats_ebpf_events`).
 
-For more information about the approver role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#approver).
+---
 
-### Emeritus
+## What OBI captured in this demo
 
-- [Austin Parker](https://github.com/austinlparker)
-- [Carter Socha](https://github.com/cartersocha)
-- [Michael Maxwell](https://github.com/mic-max)
-- [Morgan McLean](https://github.com/mtwo)
-- [Penghan Wang](https://github.com/wph95)
-- [Reiley Yang](https://github.com/reyang)
-- [Ziqi Zhao](https://github.com/fatsheep9146)
+Languages as **classified by OBI** (a runtime classification, not a statement
+about how the service was built). Observed on this deployment:
 
-For more information about the emeritus role, see the [community repository](https://github.com/open-telemetry/community/blob/main/guides/contributor/membership.md#emeritus-maintainerapprovertriager).
+| OBI classification | Services | What the data shows |
+|---|---|---|
+| Go | `product-catalog`, `checkout`, `flagd` | Client + server spans, parent/child links; richest coverage |
+| Java | `ad`, `fraud-detection`, `kafka` | Spans plus **JVM memory** runtime metrics |
+| .NET | `accounting` | Kafka consumer spans, PostgreSQL `INSERT` client spans |
+| Node.js | `frontend` (Next.js), `payment` | HTTP/gRPC spans plus **event-loop** metrics |
+| Python | `recommendation`, `product-reviews`, `llm`, `load-generator` | HTTP/gRPC spans |
+| PHP / Ruby / Rust | `quote` / `email` / `shipping` | Protocol-level spans |
+| Native / "generic" | `currency` (C++), `cart`, `postgresql`, `valkey-cart` (Redis), Envoy `frontend-proxy` | Protocol-level spans; DB/cache semantics decoded |
 
-### Thanks to all the people who have contributed
+Beyond request telemetry, OBI also produced (all from the kernel, none requiring
+workload cooperation): network flow bytes and packets, TCP RTT / retransmits /
+failed connections / I/O, a service graph, DNS lookup timing and node-level host
+info.
 
-[![contributors](https://contributors-img.web.app/image?repo=open-telemetry/opentelemetry-demo)](https://github.com/open-telemetry/opentelemetry-demo/graphs/contributors)
+An importable Dynatrace notebook that renders all of this live —
+**25 DQL tiles + explanatory text** — is in
+[`docs/obi/dynatrace-notebook.json`](docs/obi/dynatrace-notebook.json).
 
-[docs]: https://opentelemetry.io/docs/demo/
+---
 
-<!-- Links for Demos featuring the Astronomy Shop section -->
+## Network layer (L3 / L4) data
 
-[AlibabaCloud LogService]: https://github.com/aliyun-sls/opentelemetry-demo
-[AppDynamics]: https://community.splunk.com/t5/AppDynamics-Knowledge-Base/How-to-observe-Kubernetes-deployment-of-OpenTelemetry-demo-app/ta-p/741454
-[Apache Doris]: https://github.com/apache/doris-opentelemetry-demo
-[Aspecto]: https://github.com/aspecto-io/opentelemetry-demo
-[Axiom]: https://play.axiom.co/axiom-play-qf1k/dashboards/otel.traces.otel-demo-traces
-[Axoflow]: https://axoflow.com/opentelemetry-support-in-more-detail-in-axosyslog-and-syslog-ng/
-[Azure Data Explorer]: https://github.com/Azure/Azure-kusto-opentelemetry-demo
-[Causely]: https://github.com/causely-oss/otel-demo
-[ClickStack]: https://github.com/ClickHouse/opentelemetry-demo
-[Coralogix]: https://coralogix.com/blog/configure-otel-demo-send-telemetry-data-coralogix
-[Dash0]: https://github.com/dash0hq/opentelemetry-demo
-[Datadog]: https://docs.datadoghq.com/opentelemetry/guide/otel_demo_to_datadog
-[Dynatrace]: https://www.dynatrace.com/news/blog/opentelemetry-demo-application-with-dynatrace/
-[Elastic]: https://github.com/elastic/opentelemetry-demo
-[Google Cloud]: https://github.com/GoogleCloudPlatform/opentelemetry-demo
-[Grafana Labs]: https://github.com/grafana/opentelemetry-demo
-[Guance]: https://github.com/GuanceCloud/opentelemetry-demo
-[Honeycomb.io]: https://github.com/honeycombio/opentelemetry-demo
-[Instana]: https://github.com/instana/opentelemetry-demo
-[Kloudfuse]: https://github.com/kloudfuse/opentelemetry-demo
-[Last9]: https://last9.io/docs/integrations-opentelemetry-demo/
-[Liatrio]: https://github.com/liatrio/opentelemetry-demo
-[Logz.io]: https://logz.io/learn/how-to-run-opentelemetry-demo-with-logz-io/
-[New Relic]: https://github.com/newrelic/opentelemetry-demo
-[Oodle]: https://blog.oodle.ai/meet-oodle-unified-and-ai-native-observability/
-[OpenSearch]: https://github.com/opensearch-project/opentelemetry-demo
-[OpenObserve]: https://openobserve.ai/blog/opentelemetry-astronomy-shop-demo/
-[Oracle]: https://github.com/oracle-quickstart/oci-o11y-solutions/blob/main/knowledge-content/opentelemetry-demo
-[Parseable]: https://www.parseable.com/blog/open-telemetry-demo-with-parseable-a-complete-observability-setup
-[Sentry]: https://github.com/getsentry/opentelemetry-demo
-[ServiceNow Cloud Observability]: https://docs.lightstep.com/otel/quick-start-operator#send-data-from-the-opentelemetry-demo
-[SigNoz]: https://signoz.io/blog/opentelemetry-demo/
-[Splunk]: https://github.com/signalfx/opentelemetry-demo
-[Sumo Logic]: https://www.sumologic.com/blog/common-opentelemetry-demo-application/
-[TelemetryHub]: https://github.com/TelemetryHub/opentelemetry-demo/tree/telemetryhub-backend
-[Teletrace]: https://github.com/teletrace/opentelemetry-demo
-[Tinybird]: https://github.com/tinybirdco/opentelemetry-demo
-[Tracetest]: https://github.com/kubeshop/opentelemetry-demo
-[Uptrace]: https://github.com/uptrace/uptrace/tree/master/example/opentelemetry-demo
-[VictoriaMetrics]: https://github.com/VictoriaMetrics-Community/opentelemetry-demo
+**Yes — it is feasible, and it is enabled here.** OBI captures network-layer data
+independently of application protocols, using eBPF traffic-control (TC) hooks on
+the node's network interfaces plus TCP socket statistics.
+
+Enabled by two settings in [`k8s/obi/values.yaml`](k8s/obi/values.yaml):
+
+```yaml
+env:
+  OTEL_EBPF_METRICS_FEATURES: "application,…,network,network_flow_packets,stats,…"
+config:
+  data:
+    network:
+      enable: true
+```
+
+| Metric | Meaning | Key attributes |
+|---|---|---|
+| `obi.network.flow.bytes` | L3/L4 bytes between two endpoints | source/destination workload, namespace, owner type, direction |
+| `obi.network.flow.packets` | Packet counts | same |
+| `obi.stat.tcp.rtt` | TCP round-trip time | source/destination workload, IPs |
+| `obi.stat.tcp.retransmits` | TCP retransmissions | same |
+| `obi.stat.tcp.failed.connections` | Failed connection attempts | destination workload, IPs |
+| `obi.stat.tcp.io` | Bytes at the socket layer | same |
+
+Observed here: **182 distinct workload-to-workload flows in 30 minutes**,
+spanning `otel-demo`, `argocd` and `kube-system`, with endpoints that do not
+resolve to a Kubernetes owner (external/node traffic) reported as such.
+
+Things to know before enabling it elsewhere:
+
+- It sees the **whole node**, not just instrumented namespaces. Scope it with
+  `filter.network` (this repo excludes `kube*`, Prometheus and agent workloads).
+- Needs `hostNetwork` and elevated capabilities (the Helm chart sets these) and a
+  kernel with TC/BTF support.
+- It counts bytes and packets; it does **not** read payloads, so it works for
+  encrypted traffic but says nothing about the request inside it.
+- Cardinality grows with the number of workload pairs — filter accordingly.
+- If the cluster runs **Cilium**, OBI and Cilium both attach TC programs; they
+  coexist when both use TCX (kernel ≥ 6.6, the default in recent Cilium).
+  See the OBI/Cilium compatibility page in the upstream docs.
+
+---
+
+## Honest limits
+
+Measured on this deployment (single node, 2026-10-01); treat as indicative.
+
+- **Partial trace stitching.** ~81% of traces contained a single service, ~16%
+  two, ~3% three. Cross-service linking works but is not end-to-end everywhere.
+- **No business context.** OBI cannot attach application-level attributes (for
+  example the currency codes in a conversion call). Custom spans need an SDK.
+- **gRPC method names can be lost** for some native services (`currency`: ~99% of
+  spans reported the method as `*`).
+- **Service naming fallbacks.** Some Go/Python/Java processes were reported
+  under the namespace name when OBI could not derive a better one.
+- **SQL text is not captured** — operation and table only.
+- **Runtime metrics are partial:** JVM and Node.js were received; Go, .NET and
+  Python runtime metrics were not.
+- **OBI skips services it detects as already OpenTelemetry-instrumented by
+  default** (`exclude_otel_instrumented_services`).
+- **Resource cost depends on process churn, not just traffic.** Headless-browser
+  processes in the load generator made OBI restart repeatedly (OOM at 6 GiB);
+  excluding them brought it to a steady ~300 MiB.
+
+---
+
+## Repository map
+
+| Path | What |
+|---|---|
+| `k8s/obi/values.yaml` | **OBI configuration** (Helm values) |
+| `k8s/obi/README.md` | Operating OBI: secrets, config reference, troubleshooting |
+| `k8s/argocd/obi-application.yaml` | Argo CD Application that deploys OBI |
+| `k8s/overlays/demo/` | The shop (Kustomize overlay); collector and SDK-silencing patches in `patches/` |
+| `docs/obi/how-obi-instruments.md` | Deep dive: mechanics, per-language behaviour, protocols, limits |
+| `docs/obi/dynatrace-notebook.json` | Importable Dynatrace notebook (live DQL) |
+| `docs/UPSTREAM_README.md` | Original OpenTelemetry Demo README |
+
+Other directories (`src/`, `pb/`, …) are the upstream demo's services. This fork
+also carries unrelated experiments (`GEOMETRY-LAB.md`); they are not part of the
+OBI work.
+
+## References
+
+- [OBI documentation](https://opentelemetry.io/docs/zero-code/obi/)
+- [OBI distributed traces / context propagation](https://opentelemetry.io/docs/zero-code/obi/distributed-traces/)
+- [OBI and Cilium compatibility](https://opentelemetry.io/docs/zero-code/obi/cilium-compatibility/)
+- [OpenTelemetry Demo (upstream)](https://github.com/open-telemetry/opentelemetry-demo)
