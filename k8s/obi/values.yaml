@@ -16,6 +16,15 @@ env:
   # applies via its cumulativetodelta processor).
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
   OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
+  # Beyond the default "application" (RED metrics): host/runtime/infra signals
+  # that show OBI's full reach without any agent or SDK in the workloads.
+  #   application_host          host-level app metrics
+  #   application_runtime       Go/JVM/Node.js runtime (GC, heap, event loop)
+  #   application_service_graph service-to-service topology metrics
+  #   network, network_flow_packets   L3/L4 flow bytes + packets
+  #   stats                     TCP RTT, retransmits, failed connections, I/O
+  #   ebpf                      OBI's own probe/map health
+  OTEL_EBPF_METRICS_FEATURES: "application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats,ebpf"
 
 envValueFrom:
   OTEL_EXPORTER_OTLP_HEADERS:
