@@ -55,6 +55,12 @@ config:
     discovery:
       instrument:
         - k8s_namespace: otel-demo
+      # The load-generator's Playwright/Chromium spawns and kills dozens of
+      # short-lived renderer processes; OBI was attaching/detaching to every one
+      # and OOM-killing at the memory limit (9 restarts in ~50 min, 2026-10-01).
+      # Browser internals aren't a workload we want to trace, so skip them.
+      exclude_instrument:
+        - exe_path: '*chrome*'
     attributes:
       kubernetes:
         enable: true
