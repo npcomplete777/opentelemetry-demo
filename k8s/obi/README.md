@@ -13,18 +13,18 @@ For *what OBI is and how it instruments*, see
 
 ## One-time setup: Dynatrace credentials
 
-The token is never committed. Create the Secret before or after the first sync:
+Neither the token nor the tenant URL is committed. Create the Secret **before**
+the first sync (the pod won't start without both keys):
 
 ```sh
 kubectl create namespace obi --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic obi-dynatrace-secret -n obi \
+  --from-literal=otlp-endpoint="https://<tenant>.live.dynatrace.com/api/v2/otlp" \
   --from-literal=otlp-headers="Authorization=Api-Token <DT_API_TOKEN>" \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Token scopes: `openTelemetryTrace.ingest`, `metrics.ingest`. Set the endpoint in
-`values.yaml` (`OTEL_EXPORTER_OTLP_ENDPOINT`, form
-`https://<tenant>.live.dynatrace.com/api/v2/otlp`).
+Token scopes: `openTelemetryTrace.ingest`, `metrics.ingest`.
 
 After rotating the token, restart OBI:
 
@@ -36,25 +36,31 @@ kubectl rollout restart daemonset -n obi -l app.kubernetes.io/name=opentelemetry
 
 | Setting | Value here | Why |
 |---|---|---|
-| `env.OTEL_EXPORTER_OTLP_ENDPOINT` / `_PROTOCOL` | Dynatrace OTLP, `http/protobuf` | Direct export, no collector hop |
+| `envValueFrom.OTEL_EXPORTER_OTLP_ENDPOINT`, `env.OTEL_EXPORTER_OTLP_PROTOCOL` | Secret key `otlp-endpoint`, `http/protobuf` | Direct export, no collector hop |
 | `env.OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` | Dynatrace rejects cumulative histograms |
 | `env.OTEL_EBPF_KUBE_CLUSTER_NAME` | `orbstack-obi-eval` | Becomes `k8s.cluster.name`; use it to scope queries |
-| `env.OTEL_EBPF_METRICS_FEATURES` | `application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats,ebpf` | Metric groups to emit (default is `application` only) |
+| `env.OTEL_EBPF_BPF_CONTEXT_PROPAGATION` | `all` | Cross-service trace linking; v0.12.2 default is `disabled` (the chart's `contextPropagation.enabled` only grants privileges). Use `headers` if TCP-option injection causes trouble |
+| `env.OTEL_EBPF_METRICS_FEATURES` | `application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats` | Metric groups to emit (default is `application` only). `ebpf` is omitted: it is Prometheus-only |
 | `envValueFrom.OTEL_EXPORTER_OTLP_HEADERS` | Secret `obi-dynatrace-secret` | Credentials |
 | `config.data.otel_traces_export` / `otel_metrics_export` | `null` | Use the standard `OTEL_EXPORTER_OTLP_*` env vars instead of OBI's own exporter blocks |
 | `config.data.discovery.instrument` | `k8s_namespace: otel-demo` | What to instrument |
-| `config.data.discovery.exclude_instrument` | `exe_path: '*chrome*'` | Skip headless-browser churn (see Troubleshooting) |
+| `config.data.prometheus_export` | `null` | Turn off the chart's default `/metrics` on :9090 (exposed on the node via hostNetwork) |
+| `config.data.discovery.exclude_instrument` | `exe_path: '*chrome*'`; `prometheus`/`grafana`/`jaeger` Deployments, `opensearch` StatefulSet | Skip headless-browser churn (see Troubleshooting) and the idle observability backends |
 | `config.data.attributes.kubernetes.enable` | `true` | Add `k8s.*` metadata |
-| `config.data.filter.application` | `server.address: not_match 'otel-collector*'` | Don't record apps' own OTLP exports as telemetry |
-| `config.data.network.enable` | `true` | L3/L4 flow metrics |
+| `config.data.attributes.select.obi_network_flow_*` | IPs, ports, transport, pod names, CIDR names | L4 detail on flows (off by default) |
+| `config.data.filter.application` / `.network` / `.stats` | drop `otel-collector*` | Don't record apps' own (refused) OTLP exports as spans, flows or TCP stats; the three families are independent |
+| `config.data.network.enable`, `network.cidrs`, `stats.cidrs` | `true`; pods / services / node / external | `enable` is a deprecated alias; the CIDR list names address ranges |
 | `resources` | requests `1Gi`/`250m`, limits `6Gi`/`2500m` | See sizing note |
 
-The chart merges `filter.network` defaults (exclude `kube*`, Prometheus, agent
-workloads) with the `filter.application` block above.
+The chart's `filter.network` defaults (owner names `kube*`, `*prometheus*`,
+agents) are merged per key with the values here, so the network keys in
+`values.yaml` restate the default pattern plus `otel-collector*`. They match
+owner names, not namespaces.
 
 Render locally before pushing:
 
 ```sh
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
 helm template obi open-telemetry/opentelemetry-ebpf-instrumentation \
   --version 0.13.0 -n obi -f k8s/obi/values.yaml | less
 ```
@@ -90,12 +96,16 @@ Expect `obi.network.flow.bytes`, `obi.stat.tcp.*`, `traces_service_graph_*`,
 
 ## Network (L3/L4) data
 
-Two switches: `config.data.network.enable: true` and the `network`,
-`network_flow_packets` and `stats` entries in `OTEL_EBPF_METRICS_FEATURES`. It
-covers the whole node, so scope it with `filter.network`. It needs `hostNetwork`
-and elevated capabilities, which the chart sets. If the cluster runs Cilium, make
-both Cilium and OBI use TCX (or set Cilium `bpf.tc.priority: 2` and OBI's
-`OTEL_EBPF_BPF_TC_BACKEND` explicitly).
+The switch is the `network`, `network_flow_packets` and `stats` entries in
+`OTEL_EBPF_METRICS_FEATURES` (`network.enable` is a deprecated alias). Capture
+uses a socket filter by default (`network.source: tc` for TC). Flows default to
+k8s owner/namespace + direction only; IPs, ports and transport come from
+`attributes.select`, and `network.cidrs` names address ranges. It covers the
+whole node, so scope it with `filter.network`. It needs `hostNetwork` and
+elevated capabilities, which the chart sets. If the cluster runs Cilium and OBI
+attaches TC programs (TC source, or context propagation as here), make both use
+TCX (or set Cilium `bpf.tc.priority: 2` and OBI's `OTEL_EBPF_BPF_TC_BACKEND`:
+`tc`, `tcx` or `auto`).
 
 ## Troubleshooting
 
@@ -126,11 +136,16 @@ pod logs on start; revert the env var to roll back (Argo CD re-syncs).
 continues; only pinned-map features such as the log enricher are disabled).
 
 **Telemetry from the apps themselves appears as OBI data.** If app SDKs still
-export, OBI traces those exports. See the *OBI is the only telemetry source*
-section of the [root README](../../README.md) for the three controls.
+export, OBI records those attempts as spans, flows and TCP failed-connection
+stats. See the *OBI is the only telemetry source* section of the
+[root README](../../README.md) for the controls.
+
+**Requests fail or hang after enabling context propagation.** Set
+`OTEL_EBPF_BPF_CONTEXT_PROPAGATION` to `headers` (drops TCP-option injection) or
+`disabled`, and check the OBI logs for TC attach errors.
 
 ## Why OBI exports directly
 
-OBI supports one OTLP destination per signal and has no built-in fan-out. To send
-the same data to two backends, put a small collector in front of OBI and export
-to that instead.
+OBI supports one OTLP destination per signal and has no built-in fan-out (its
+Prometheus exporter is turned off here). To send the same data to two backends,
+put a small collector in front of OBI and export to that instead.

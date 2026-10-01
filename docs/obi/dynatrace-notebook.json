@@ -5,7 +5,7 @@
   {
    "id": "intro",
    "type": "markdown",
-   "markdown": "# How OBI (eBPF) instruments each language in the Astronomy Shop\n\n**What this is:** a live walkthrough of what OpenTelemetry eBPF Instrumentation (OBI) sees in a polyglot app *without any SDK, agent, sidecar or code change*. Every number below is queried live from this tenant; nothing is pasted in.\n\n**Setup:** OBI runs as one privileged DaemonSet (`obi` namespace) on the node and instruments the `otel-demo` namespace. It exports OTLP **directly** to this tenant. Since 2026-10-01 the app-side collector no longer forwards *any* SDK telemetry here, so everything in `otel-demo` below is OBI-produced. The tile directly under this text proves that claim instead of asking you to trust it.\n\n**How OBI-sourced data is identified:** spans carry `telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\"`; metrics carry instrumentation scope `go.opentelemetry.io/obi` (app metrics) or `network_ebpf_events` / `stats_ebpf_events` (infra metrics). Note `telemetry.distro.name` is *not* OBI-exclusive in general (other auto-instrumentation agents set their own), which is why the check below uses equality, not `isNotNull`."
+   "markdown": "# How OBI (eBPF) instruments each language in the Astronomy Shop\n\n**What this is:** a live walkthrough of what OpenTelemetry eBPF Instrumentation (OBI) sees in a polyglot app *without any SDK, sidecar or code change* (for Node.js, OBI injects a small agent script into the running process). Every number below is queried live from this tenant; nothing is pasted in.\n\n**Setup:** OBI runs as one privileged DaemonSet (`obi` namespace) on the node and instruments the `otel-demo` namespace. It exports OTLP **directly** to this tenant. Since 2026-10-01 the app-side collector no longer forwards *any* SDK telemetry here, so everything in `otel-demo` below is OBI-produced. The tile directly under this text proves that claim instead of asking you to trust it.\n\n**How OBI-sourced data is identified:** spans carry `telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\"`; metrics carry instrumentation scope `go.opentelemetry.io/obi` (app metrics) or `network_ebpf_events` / `stats_ebpf_events` (infra metrics). Note `telemetry.distro.name` is *not* OBI-exclusive in general (other auto-instrumentation agents set their own), which is why the check below uses equality, not `isNotNull`."
   },
   {
    "id": "q-proof",
@@ -44,7 +44,7 @@
   {
    "id": "how",
    "type": "markdown",
-   "markdown": "## 1. How OBI works (and what it needs)\n\n- **eBPF in the kernel, not in your process.** OBI loads small verified programs into the Linux kernel. It attaches *probes* to kernel events (syscalls/sockets), to functions inside application binaries and runtimes (uprobes), and to the network path (Linux traffic control) for flow data. The app is never restarted, rebuilt or reconfigured.\n- **Discovery.** OBI watches the node's processes, selects the ones matching its rules (here: namespace `otel-demo`, excluding `*chrome*`), and classifies each by runtime. Its own startup logs show the classification (`type=go|java|dotnet|python|nodejs|php|cpp|generic`); the `telemetry.sdk.language` column below is that classification, **not** a statement about what the app was built with.\n- **Protocol decoding.** From what the probes see, OBI parses protocols itself: HTTP/1.1, HTTP/2, gRPC, Kafka, Redis, PostgreSQL and more (full list in the OBI docs). This is why spans exist for a database or message broker you never instrumented.\n- **Trace context.** OBI reads incoming W3C `traceparent` and can inject it on the way out. Per the OBI docs: Go uses library-level uprobes; Node.js uses async hooks (8.0+); Python asyncio needs `uvloop`; Java thread pools (JDK 8+) and Ruby Puma (5.0+) are supported; network-level injection works for any language but not through L7 proxies/load balancers.\n- **Requirements.** Linux 5.8+ with BTF, root/capabilities, and for the Kubernetes DaemonSet: `hostPID`, `hostNetwork`, and `/sys/fs/cgroup` mounted. This cluster's kernel is 7.0.x.\n\n**What it is not:** OBI \"does not replace language-level instrumentation\" for custom spans or business logic, and \"cannot always recover application-specific details\" invisible at the syscall/protocol level (OBI docs). Section 8 shows concrete examples from this demo."
+   "markdown": "## 1. How OBI works (and what it needs)\n\n- **eBPF in the kernel, not in your process.** OBI loads small verified programs into the Linux kernel. It attaches *probes* to kernel events (syscalls/sockets), to functions inside application binaries and runtimes (uprobes), and to the network path (a socket filter by default, optionally Linux traffic control) for flow data. The app is never restarted, rebuilt or reconfigured.\n- **Discovery.** OBI watches the node's processes, selects the ones matching its rules (here: namespace `otel-demo`, excluding `*chrome*` and the idle Prometheus/Grafana/Jaeger/OpenSearch backends), and classifies each by runtime. Its own startup logs show the classification (`type=go|java|dotnet|python|nodejs|ruby|rust|php|cpp|generic`); the `telemetry.sdk.language` column below is that classification, **not** a statement about what the app was built with.\n- **Protocol decoding.** From what the probes see, OBI parses protocols itself: HTTP/1.1, HTTP/2, gRPC, Kafka, Redis, PostgreSQL and more (full list in the OBI docs). This is why spans exist for a database or message broker you never instrumented.\n- **Trace context.** Context propagation is **off by default** in OBI v0.12.2 (`OTEL_EBPF_BPF_CONTEXT_PROPAGATION=disabled`; the Helm chart's `contextPropagation.enabled` only grants privileges). With it enabled, which this deployment now does (`all`), OBI reads incoming W3C `traceparent` and injects it on the way out. Per the OBI docs: Go uses library-level uprobes; Node.js uses async hooks (8.0+) via the injected agent script; Python asyncio needs `uvloop`; Java thread pools (JDK 8+) and Ruby Puma (5.0+) are supported; network-level injection works for any language but not through L7 proxies/load balancers.\n- **Requirements.** Linux 5.8+ with BTF, root/capabilities, and for the Kubernetes DaemonSet: `hostPID`, `hostNetwork`, and `/sys/fs/cgroup` mounted. This cluster's kernel is 7.0.x.\n\n**What it is not:** OBI \"does not replace language-level instrumentation in every scenario\" (OBI docs): custom spans and business attributes need an SDK, and details \"not visible from eBPF observation points\" cannot be recovered. Section 13 shows concrete examples from this demo."
   },
   {
    "id": "q-scope",
@@ -112,12 +112,12 @@
   {
    "id": "lang-caveat",
    "type": "markdown",
-   "markdown": "**Read this table with care.**\n- `otel-demo` as a service name is OBI's *fallback* when it cannot derive a better one from the process/pod; it shows up under Go, Python and Java. It is a naming limitation, not a real service.\n- `cart` appears under `cpp` although it is a .NET app: it is published self-contained and launched as `./cart` (no `dotnet` host process), so OBI sees a native executable. `postgresql` (C) and `currency` (C++) are genuinely native.\n- `generic` means OBI recognised the process but no language-specific logic applies (Redis, nginx/Envoy-style proxies); protocol decoding still works."
+   "markdown": "**Read this table with care.**\n- `otel-demo` as a service name is OBI's *fallback* when it cannot derive a better one from the process/pod. In this demo it was health-probe traffic to the bundled Prometheus, Grafana and Jaeger, which are idle in OBI-only mode and are now excluded from instrumentation; it should fade out of this table.\n- `cart` appears under `cpp` although it is a .NET app: it is published self-contained and launched as `./cart` (no `dotnet` host process), so OBI sees a native executable. `postgresql` (C) and `currency` (C++) are genuinely native.\n- `generic` means OBI recognised the process but no language-specific logic applies (Redis, nginx/Envoy-style proxies); protocol decoding still works."
   },
   {
    "id": "go",
    "type": "markdown",
-   "markdown": "## 3. Go \u2014 `product-catalog`, `checkout`, `flagd`\nGo is OBI's best-supported runtime: because Go binaries carry rich symbol information and a predictable runtime, OBI can attach uprobes to library functions inside the process (HTTP, gRPC, \u2026) and track goroutines, and per the docs Go is the only runtime with **library-level** context propagation (Go 1.18+, via `bpf_probe_write_user`, up to 6 nested goroutine levels). Expect complete client + server span pairs with parent/child links."
+   "markdown": "## 3. Go — `product-catalog`, `checkout`, `flagd`\nGo is OBI's best-supported runtime: because Go binaries carry rich symbol information and a predictable runtime, OBI can attach uprobes to library functions inside the process (HTTP, gRPC, …) and track goroutines, and per the docs Go is the only runtime whose propagation works by writing into the process's memory from eBPF (Node.js uses an injected in-process script instead) (Go 1.18+, via `bpf_probe_write_user`, up to 6 nested goroutine levels). Expect complete client + server span pairs with parent/child links."
   },
   {
    "id": "q-go",
@@ -151,7 +151,7 @@
   {
    "id": "java",
    "type": "markdown",
-   "markdown": "## 4. Java \u2014 `ad`, `fraud-detection`, `kafka`\nOBI supports JDK 8+. Spans are derived from the traffic OBI observes; thread-pool context propagation is supported per the docs. With the `application_runtime` metric group enabled, OBI also reports **JVM memory** (below) \u2014 runtime health with no JMX agent or `-javaagent` flag."
+   "markdown": "## 4. Java — `ad`, `fraud-detection`, `kafka`\nOBI supports JDK 8+. Spans are derived from the traffic OBI observes; thread-pool context propagation is supported per the docs. With the `application_runtime` metric group enabled, OBI also reports **JVM memory** (below) — runtime health with no JMX agent or `-javaagent` flag."
   },
   {
    "id": "q-java",
@@ -214,7 +214,7 @@
   {
    "id": "dotnet",
    "type": "markdown",
-   "markdown": "## 5. .NET \u2014 `accounting`\nA JIT-compiled .NET service looks like any other process to OBI: no runtime-specific uprobes are needed, protocol decoding does the work (here: Kafka consumption and PostgreSQL writes). Note the contrast with `cart`, also .NET but published self-contained and launched as `./cart`, which OBI classifies as C/C++ (section 2)."
+   "markdown": "## 5. .NET — `accounting`\nA JIT-compiled .NET service looks like any other process to OBI: OBI v0.12.2 has no .NET-specific probes or runtime metrics, protocol decoding does the work (here: Kafka consumption and PostgreSQL writes). Note the contrast with `cart`, also .NET but published self-contained and launched as `./cart`, which OBI classifies as C/C++ (section 2)."
   },
   {
    "id": "q-dotnet",
@@ -248,7 +248,7 @@
   {
    "id": "nodejs",
    "type": "markdown",
-   "markdown": "## 6. Node.js \u2014 `frontend` (Next.js), `payment`\nPer the docs, Node.js context propagation uses async hooks (Node 8.0+; custom `SIGUSR1` handlers can interfere). With `application_runtime` enabled OBI also exports **event-loop** metrics (delay percentiles, utilization) \u2014 below, for every Node process it found, including the load-generator's Playwright driver."
+   "markdown": "## 6. Node.js — `frontend` (Next.js), `payment`\nPer the docs, OBI injects a small agent script into each Node process; context propagation uses async hooks (Node 8.0+; custom `SIGUSR1` handlers can interfere). With `application_runtime` enabled OBI also exports **event-loop** metrics (delay percentiles, utilization) — below, for every Node process it found, including the load-generator's Playwright driver."
   },
   {
    "id": "q-node",
@@ -311,7 +311,7 @@
   {
    "id": "python",
    "type": "markdown",
-   "markdown": "## 7. Python \u2014 `recommendation`, `product-reviews`, `llm`, `load-generator` (Locust)\nPython is traced at the protocol level; per the docs, asyncio context propagation additionally requires the `uvloop` event loop. Four unrelated Python workloads show how OBI separates services in the same language."
+   "markdown": "## 7. Python — `recommendation`, `product-reviews`, `llm`, `load-generator` (Locust)\nPython is traced at the protocol level; per the docs, asyncio context propagation additionally requires the `uvloop` event loop. Four unrelated Python workloads show how OBI separates services in the same language."
   },
   {
    "id": "q-python",
@@ -345,7 +345,7 @@
   {
    "id": "php-ruby-rust",
    "type": "markdown",
-   "markdown": "## 8. PHP (`quote`), Ruby (`email`), Rust (`shipping`)\nOBI classifies these runtimes and decodes their traffic at the protocol level; nothing language-specific beyond the classification is visible in the data. Ruby/Puma 5.0+ has documented propagation support. **Volume is low** for `shipping` (Rust) \u2014 the OBI service graph shows `checkout` as its only caller; whether OBI missed any calls cannot be checked now that the SDK comparison is off (the earlier *Nuances* notebook holds the historical comparison)."
+   "markdown": "## 8. PHP (`quote`), Ruby (`email`), Rust (`shipping`)\nOBI classifies these runtimes and decodes their traffic at the protocol level; nothing language-specific beyond the classification is visible in the data. Ruby/Puma 5.0+ has documented propagation support. **Volume is low** for `shipping` (Rust) — the OBI service graph shows `checkout` as its only caller; whether OBI missed any calls cannot be checked now that the SDK comparison is off. PHP is not in OBI's official supported-language list; the `php` classification here is observed only."
   },
   {
    "id": "q-php",
@@ -437,7 +437,7 @@
   {
    "id": "native",
    "type": "markdown",
-   "markdown": "## 9. Native & \"generic\" workloads \u2014 `currency` (C++), `cart` (self-contained .NET), `postgresql`, `valkey-cart` (Redis), proxies\nNo language runtime to hook, so everything is derived from sockets and protocol parsing. This is where OBI's limits are most visible: for `currency`, ~99% of spans have `rpc.method = *` (597 of 601 in the last hour when checked): the gRPC method could not be recovered, so operations are indistinguishable by name."
+   "markdown": "## 9. Native & \"generic\" workloads — `currency` (C++), `cart` (self-contained .NET), `postgresql`, `valkey-cart` (Redis), proxies\nNo language runtime to hook, so everything is derived from sockets and protocol parsing. This is where OBI's limits are most visible: for `currency`, ~99% of spans have `rpc.method = *` (597 of 601 in the last hour when checked): the gRPC method could not be recovered, so operations are indistinguishable by name."
   },
   {
    "id": "q-native",
@@ -471,7 +471,7 @@
   {
    "id": "proto",
    "type": "markdown",
-   "markdown": "## 10. Protocol decoding: what OBI extracts with zero instrumentation\nThe same span schema carries database, cache, queue and RPC semantics. Below, raw OBI spans for each. **PostgreSQL:** operation and table are captured (`SELECT` on `accounting.order`); the SQL statement text is *not* in these spans. **Redis:** the command (`HGET`, \u2026). **Kafka:** topic, partition, offset, client id \u2014 including the producer-side span in `checkout`."
+   "markdown": "## 10. Protocol decoding: what OBI extracts with zero instrumentation\nThe same span schema carries database, cache, queue and RPC semantics. Below, raw OBI spans for each. **PostgreSQL:** operation and table are captured (`SELECT` on `accounting.order`); the SQL statement text is *not* in these spans. **Redis:** the command (`HGET`, …). **Kafka:** topic, partition, offset, client id — including the producer-side span in `checkout`."
   },
   {
    "id": "q-db",
@@ -563,7 +563,7 @@
   {
    "id": "trace",
    "type": "markdown",
-   "markdown": "## 11. Distributed traces without trace libraries\nEach row: how many distinct OBI services appear in a single trace, and how many traces have that shape. Multi-service traces exist only if context was propagated across process boundaries. **Read honestly:** when checked (2026-10-01, 30 min window) ~81% of traces were single-service, ~16% spanned two, ~3% three, and four-service traces were rare. Cross-service stitching works but is partial in this deployment; OBI is not giving full end-to-end traces here."
+   "markdown": "## 11. Distributed traces without trace libraries\nEach row: how many distinct OBI services appear in a single trace, and how many traces have that shape. Multi-service traces exist only if context was propagated across process boundaries. **Read honestly:** when first checked (2026-10-01, 30 min window) ~81% of traces were single-service, ~16% spanned two, ~3% three. That run had OBI context propagation at its default (**disabled**) and also counted single-service health-probe traces, so it measured the default configuration, not OBI's limit. Propagation is now `all` and the query below excludes the `otel-demo` fallback name; read the current numbers from the tile."
   },
   {
    "id": "q-trace",
@@ -578,7 +578,7 @@
       "from": "now()-1h",
       "to": "now()"
      },
-     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\"\n| summarize spans = count(), services = countDistinct(service.name), by:{trace.id}\n| summarize traces = count(), avg_spans = avg(spans), by:{services}\n| sort services asc"
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.namespace.name == \"otel-demo\"\n    and isNotNull(service.name) and service.name != \"otel-demo\"\n| summarize spans = count(), services = countDistinct(service.name), by:{trace.id}\n| summarize traces = count(), avg_spans = avg(spans), by:{services}\n| sort services asc"
     },
     "visualizationSettings": {
      "autoSelectVisualization": false,
@@ -597,7 +597,7 @@
   {
    "id": "infra",
    "type": "markdown",
-   "markdown": "## 12. Infrastructure data from the same agent\nBeyond request telemetry, OBI is configured (`OTEL_EBPF_METRICS_FEATURES`) to emit: network **flow bytes/packets**, **TCP statistics** (RTT, retransmits, failed connections, I/O), a **service graph**, DNS lookup timing, and **runtime** metrics (JVM, Node.js \u2014 shown above). All of it comes from the kernel; none requires a workload to cooperate.\n\n*Note: flow and TCP data is not limited to `otel-demo` \u2014 the network pipeline sees the whole node (for example `argocd` below).*"
+   "markdown": "## 12. Infrastructure data from the same agent\nBeyond request telemetry, OBI is configured (`OTEL_EBPF_METRICS_FEATURES`) to emit: network **flow bytes/packets**, **TCP statistics** (RTT, retransmits, failed connections, I/O), a **service graph**, DNS lookup timing, and **runtime** metrics (JVM, Node.js — shown above). All of it comes from the kernel; none requires a workload to cooperate.\n\n*Note: flow and TCP data is not limited to `otel-demo` — the network pipeline sees the whole node (for example `argocd` below); the chart's default filter matches owner names (`kube*`, …), not namespaces. Flows default to workload-level attributes only; this deployment also selects IPs, ports, transport and CIDR names (`pods`/`services`/`node`/`external`). Traffic to/from `otel-collector*` is filtered out of flows and TCP stats: before that filter, refused SDK/Envoy export attempts dominated the failed-connections tile.*"
   },
   {
    "id": "q-flows",
@@ -805,7 +805,7 @@
   {
    "id": "limits",
    "type": "markdown",
-   "markdown": "## 13. Honest limits observed in this deployment\n1. **No business attributes.** OBI sees `currency`'s gRPC call but not the `from`/`to` currency codes an SDK could attach; custom spans and business context need language-level instrumentation (the earlier *Nuances* notebook shows a side-by-side).\n2. **Service naming fallbacks.** Several Go/Python/Java processes land under `otel-demo`; `cart` (a self-contained .NET app) is classified C++.\n3. **Runtime metrics are partial.** Of the `application_runtime` group, this deployment received JVM and Node.js metrics only \u2014 none for Go, .NET or Python. OBI's own `ebpf` self-metrics also did not appear.\n4. **OBI skips already-instrumented services by default** (`exclude_otel_instrumented_services: true`). This matters in mixed SDK/OBI estates; it is why SDK-silencing was a prerequisite for this view.\n5. **SQL text is not captured**, only operation + table.\n6. **Resource cost is real and workload-dependent.** After excluding the load generator's headless-Chromium processes (hundreds of short-lived PIDs) OBI steady-states around **300 MiB**; before that it crash-looped at its 6 GiB limit (9 OOM restarts in ~50 minutes on 2026-10-01). Discovery churn, not traffic volume, was the driver.\n7. **Encrypted hops and L7 proxies** limit network-level context propagation (OBI docs)."
+   "markdown": "## 13. Honest limits observed in this deployment\n1. **No business attributes.** OBI sees `currency`'s gRPC call but not the `from`/`to` currency codes an SDK could attach; custom spans and business context need language-level instrumentation.\n2. **Service naming fallbacks.** Health probes to the bundled observability backends landed under `otel-demo` (now excluded); `cart` (a self-contained .NET app) is classified C++.\n3. **Runtime metrics are limited.** OBI v0.12.2 defines runtime metrics for Go, the JVM and Node.js only (none for .NET or Python by design). JVM and Node.js arrived; Go did not (open gap). OBI's `ebpf` self-metrics are Prometheus-only and are not enabled.\n4. **OBI skips already-instrumented services by default** (`exclude_otel_instrumented_services: true`). This matters in mixed SDK/OBI estates; it is why SDK-silencing was a prerequisite for this view.\n5. **SQL text is not captured**, only operation + table.\n6. **Resource cost is real and workload-dependent.** After excluding the load generator's headless-Chromium processes (hundreds of short-lived PIDs) OBI steady-states around **300 MiB**; before that it crash-looped at its 6 GiB limit (9 OOM restarts in ~50 minutes on 2026-10-01). Discovery churn, not traffic volume, was the driver.\n7. **Encrypted hops and L7 proxies** limit network-level context propagation (OBI docs)."
   }
  ]
 }

@@ -2,8 +2,9 @@
 
 A working reference for **OpenTelemetry eBPF Instrumentation (OBI)**: a polyglot,
 20+ service microservice application observed end to end **without adding an SDK,
-agent, sidecar or code change to any service**, with all telemetry exported over
-OTLP to Dynatrace.
+sidecar or code change to any service**, with all telemetry exported over OTLP to
+Dynatrace. (One nuance: for Node.js, OBI injects a small agent script into the
+running process at runtime; nothing is added to the image or the code.)
 
 This repository is a fork of the
 [OpenTelemetry Demo](https://github.com/open-telemetry/opentelemetry-demo)
@@ -35,8 +36,9 @@ OpenTelemetry **traces, metrics and network-flow data**.
 
 - **No code changes, no rebuilds, no restarts.** Services run as they were built.
 - **One agent for every language.** The same OBI pod instruments Go, Java, .NET,
-  Node.js, Python, Ruby, PHP, Rust and native C/C++ processes, plus databases and
-  brokers you could never put an SDK into (PostgreSQL, Redis, Kafka).
+  Node.js, Python, Ruby, Rust and native C/C++ processes (the officially supported
+  set), plus databases and brokers you could never put an SDK into (PostgreSQL,
+  Redis, Kafka). OBI also classified this demo's PHP service.
 - **Standard output.** OTLP, with Kubernetes metadata attached, to any backend.
 
 ### How it instruments (short version)
@@ -49,7 +51,7 @@ flowchart LR
     app2["frontend (Node.js)"] --- k
     app3["ad (Java)"] --- k
     app4["postgres, redis, kafka…"] --- k
-    k["eBPF probes<br/>socket / syscall hooks · library uprobes · TC network hooks"]
+    k["eBPF probes<br/>socket / syscall hooks · library uprobes · socket-filter / TC network hooks"]
     k -->|ring buffers| obi["OBI agent<br/>(DaemonSet)"]
   end
   obi -->|"decode protocols · build spans, RED metrics,<br/>service graph, flow & TCP stats ·<br/>add Kubernetes metadata"| otlp(("OTLP"))
@@ -61,8 +63,8 @@ flowchart LR
    (Go, Java, .NET, Node.js, Python, …) from the executable itself.
 2. **Attach.** It attaches eBPF probes: to the kernel's socket/network paths
    (works for *every* language), to functions inside the process where that adds
-   precision (for example Go libraries and TLS libraries), and to network
-   interfaces for flow data.
+   precision (for example Go libraries and TLS libraries), and packet-level
+   hooks for flow data (a socket filter by default, optionally TC).
 3. **Decode.** Raw events are reassembled in user space into requests and
    responses and parsed as HTTP, HTTP/2, gRPC, SQL, Redis, Kafka and more.
 4. **Enrich & export.** Spans and metrics are decorated with `k8s.*` attributes
@@ -94,25 +96,31 @@ Full detail, per-language behaviour and the exact limits we measured are in
 ### OBI is the only telemetry source (and how that's enforced)
 
 The shop's services still contain their original OpenTelemetry SDK code. To make
-the data in Dynatrace **purely OBI-produced**, three controls are applied:
+the data in Dynatrace **purely OBI-produced**, four controls are applied:
 
 | Control | Where | Effect |
 |---|---|---|
 | App-side collector no longer forwards to Dynatrace and **no longer listens for OTLP** | `k8s/overlays/demo/patches/collector-dynatrace-export.yaml` | Any SDK export is refused at connect; nothing app-side is delivered |
-| `OTEL_*_EXPORTER=none` on every service | `k8s/overlays/demo/patches/disable-app-sdk.yaml` | Silences SDKs that honour the standard env vars (Java, Node, Python, Ruby) |
-| OBI filter drops traffic addressed to the collector | `k8s/obi/values.yaml` (`filter.application`) | Stops OBI recording the apps' failed export retries as "telemetry" |
+| `OTEL_*_EXPORTER=none` on every service | `k8s/overlays/demo/patches/disable-app-sdk.yaml` | Silences SDKs that honour the standard env vars |
+| `OTEL_SDK_DISABLED=true` on every service except `email`, `cart`, `ad` | `k8s/overlays/demo/patches/sdk-disabled.yaml` | Turns off SDKs that honour the flag (`email`/Ruby and `cart`/.NET crash with it) |
+| OBI filters drop traffic to/from the collector | `k8s/obi/values.yaml` (`filter.application`, `filter.network`, `filter.stats`) | Stops OBI recording the remaining export attempts as spans, flows or TCP failed-connection stats |
 
-> **Honest note:** setting `OTEL_*_EXPORTER=none` alone is *not* enough. The Go,
-> C++, Rust and .NET services (and Envoy) construct their exporters in code and
-> ignore it, so their SDK data kept arriving until the collector change above.
-> The SDKs remain in the source and running in the pods; their output is
-> discarded. Removing them from the source would need rebuilt images.
+> **Honest note:** the env vars alone are *not* enough. [observed] Even with both
+> set, `frontend-proxy` (Envoy's built-in tracer), `shipping` (Rust),
+> `product-catalog`, `checkout` and `flagd` (Go) and Jaeger kept opening
+> connections to the collector, and `cart` has its metrics exporter deliberately
+> re-enabled to avoid a .NET SDK crash. All of these are refused at the collector,
+> and the OBI filters keep them out of the data. The filters are per family in
+> OBI v0.12.2: `filter.application` alone does not touch flows or TCP stats.
+> Removing the SDKs from the source would need rebuilt images.
 
-Verify in Dynatrace (replace the cluster name if you change it):
+Verify in Dynatrace. Scope by **namespace**, not by `k8s.cluster.name`: only
+OBI sets the cluster name, so a cluster filter would hide SDK spans and the check
+could never fail.
 
 ```dql
 fetch spans, from: now() - 15m
-| filter k8s.cluster.name == "orbstack-obi-eval"
+| filter k8s.namespace.name == "otel-demo"
 | summarize spans = count(),
     by:{source = if(telemetry.distro.name == "opentelemetry-ebpf-instrumentation", "OBI (eBPF)", else: "anything else")}
 ```
@@ -153,45 +161,71 @@ An importable Dynatrace notebook that renders all of this live —
 ## Network layer (L3 / L4) data
 
 **Yes — it is feasible, and it is enabled here.** OBI captures network-layer data
-independently of application protocols, using eBPF traffic-control (TC) hooks on
-the node's network interfaces plus TCP socket statistics.
+independently of application protocols, using an eBPF packet hook (a **socket
+filter** by default in v0.12.2; TC with `network.source: tc`) plus TCP socket
+statistics.
 
-Enabled by two settings in [`k8s/obi/values.yaml`](k8s/obi/values.yaml):
+[docs] The `network` entry in `OTEL_EBPF_METRICS_FEATURES` turns flows on
+(`network.enable` is a deprecated alias in v0.12.2, kept here because chart
+0.13.0 keys its hostNetwork mounts off `config.data.network`). By default flows
+carry only Kubernetes owner/namespace/type and direction; IPs, ports and transport
+are opt-in via `attributes.select`. This repo enables them and labels addresses
+by CIDR ([`k8s/obi/values.yaml`](k8s/obi/values.yaml)):
 
 ```yaml
 env:
-  OTEL_EBPF_METRICS_FEATURES: "application,…,network,network_flow_packets,stats,…"
+  OTEL_EBPF_METRICS_FEATURES: "application,…,network,network_flow_packets,stats"
 config:
   data:
+    attributes:
+      select:
+        obi_network_flow_bytes:
+          include: [direction, transport, src.address, dst.address, src.port,
+                    dst.port, src.cidr, dst.cidr, k8s.src.name, k8s.dst.name, …]
     network:
-      enable: true
+      cidrs:            # narrowest match wins
+        - {cidr: 192.168.194.0/25,   name: pods}
+        - {cidr: 192.168.194.128/25, name: services}
+        - {cidr: 192.168.139.0/24,   name: node}
+        - {cidr: 0.0.0.0/0,          name: external}
+    stats:
+      cidrs: …          # same list
 ```
 
 | Metric | Meaning | Key attributes |
 |---|---|---|
-| `obi.network.flow.bytes` | L3/L4 bytes between two endpoints | source/destination workload, namespace, owner type, direction |
+| `obi.network.flow.bytes` | L3/L4 bytes between two endpoints | source/destination workload, pod, namespace, owner type, IP, port, CIDR name, transport, direction |
 | `obi.network.flow.packets` | Packet counts | same |
 | `obi.stat.tcp.rtt` | TCP round-trip time | source/destination workload, IPs |
 | `obi.stat.tcp.retransmits` | TCP retransmissions | same |
 | `obi.stat.tcp.failed.connections` | Failed connection attempts | destination workload, IPs |
 | `obi.stat.tcp.io` | Bytes at the socket layer | same |
 
-Observed here: **182 distinct workload-to-workload flows in 30 minutes**,
-spanning `otel-demo`, `argocd` and `kube-system`, with endpoints that do not
-resolve to a Kubernetes owner (external/node traffic) reported as such.
+Observed here (before the IP/port/CIDR attributes were added): **182 distinct
+workload-to-workload flows in 30 minutes**, spanning `otel-demo`, `argocd` and
+`kube-system`. The single largest destination had no Kubernetes owner (node or
+external traffic) and could not be identified without addresses, which is why
+the CIDR labels above were added. `direction` is `request`/`response` from the
+observed TCP handshake and `unknown` when OBI did not see the connection start.
 
 Things to know before enabling it elsewhere:
 
 - It sees the **whole node**, not just instrumented namespaces. Scope it with
-  `filter.network` (this repo excludes `kube*`, Prometheus and agent workloads).
+  `filter.network`. The chart's default filter matches **owner names** (`kube*`,
+  `*prometheus*`, agents), not namespaces, so `kube-system` workloads such as
+  CoreDNS still appear; this repo adds `otel-collector*`. Filter on
+  `k8s_src_namespace`/`k8s_dst_namespace` if you need namespace scoping.
 - Needs `hostNetwork` and elevated capabilities (the Helm chart sets these) and a
-  kernel with TC/BTF support.
+  kernel with BTF. [docs] The socket-filter source needs `BPF` + `NET_RAW`; the
+  TC source needs `BPF` + `NET_ADMIN` + `PERFMON`.
 - It counts bytes and packets; it does **not** read payloads, so it works for
   encrypted traffic but says nothing about the request inside it.
-- Cardinality grows with the number of workload pairs — filter accordingly.
-- If the cluster runs **Cilium**, OBI and Cilium both attach TC programs; they
-  coexist when both use TCX (kernel ≥ 6.6, the default in recent Cilium).
-  See the OBI/Cilium compatibility page in the upstream docs.
+- Cardinality grows with workload pairs, and much faster with IPs and ports —
+  filter accordingly.
+- If the cluster runs **Cilium**: OBI attaches TC programs only with
+  `network.source: tc` or when context propagation is on (it is, here, with
+  `all`). They coexist when both use TCX (kernel ≥ 6.6, the default in recent
+  Cilium). See the OBI/Cilium compatibility page in the upstream docs.
 
 ---
 
@@ -199,17 +233,24 @@ Things to know before enabling it elsewhere:
 
 Measured on this deployment (single node, 2026-10-01); treat as indicative.
 
-- **Partial trace stitching.** ~81% of traces contained a single service, ~16%
-  two, ~3% three. Cross-service linking works but is not end-to-end everywhere.
+- **Trace stitching was measured with context propagation off.** ~81% of traces
+  contained a single service, ~16% two, ~3% three, but that run had OBI's
+  context propagation at its v0.12.2 default (**disabled**; the chart's
+  `contextPropagation.enabled` only grants privileges), and the numbers also
+  included single-service health-probe traces. Propagation is now set to `all`
+  (`OTEL_EBPF_BPF_CONTEXT_PROPAGATION`); re-measure before quoting a figure.
 - **No business context.** OBI cannot attach application-level attributes (for
   example the currency codes in a conversion call). Custom spans need an SDK.
 - **gRPC method names can be lost** for some native services (`currency`: ~99% of
   spans reported the method as `*`).
-- **Service naming fallbacks.** Some Go/Python/Java processes were reported
-  under the namespace name when OBI could not derive a better one.
+- **Service naming fallbacks.** Health-probe traffic to the demo's bundled
+  Prometheus, Grafana and Jaeger (~5.5k spans / 30 min) was reported under the
+  namespace name `otel-demo`. Those backends are idle in OBI-only mode and are now
+  excluded from instrumentation.
 - **SQL text is not captured** — operation and table only.
-- **Runtime metrics are partial:** JVM and Node.js were received; Go, .NET and
-  Python runtime metrics were not.
+- **Runtime metrics are limited by design:** v0.12.2 defines runtime metrics
+  only for Go, the JVM and Node.js (none for .NET or Python). JVM and Node.js were
+  received; the missing Go runtime metrics are an open gap.
 - **OBI skips services it detects as already OpenTelemetry-instrumented by
   default** (`exclude_otel_instrumented_services`).
 - **Resource cost depends on process churn, not just traffic.** Headless-browser
