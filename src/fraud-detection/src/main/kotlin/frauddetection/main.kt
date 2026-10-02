@@ -29,9 +29,7 @@ const val groupID = "fraud-detection"
 private val logger: Logger = LogManager.getLogger(groupID)
 
 fun main() {
-    val options = FlagdOptions.builder()
-    .withGlobalTelemetry(true)
-    .build()
+    val options = FlagdOptions.builder().build()
     val flagdProvider = FlagdProvider(options)
     OpenFeatureAPI.getInstance().setProvider(flagdProvider)
 

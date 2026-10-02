@@ -26,6 +26,13 @@ repositories {
 }
 
 
+// The flagd OpenFeature provider declares opentelemetry-api as a hard dependency
+// but only touches it when telemetry is explicitly enabled (withGlobalTelemetry /
+// openTelemetry(...)), which this service no longer does. Exclude it so the
+// image carries no OpenTelemetry code at all.
+configurations.configureEach {
+    exclude(group = "io.opentelemetry")
+}
 
 dependencies {
     implementation("com.google.protobuf:protobuf-java:${protobufVersion}")
@@ -37,9 +44,6 @@ dependencies {
     implementation("io.grpc:grpc-stub:${grpcVersion}")
     implementation("io.grpc:grpc-netty:${grpcVersion}")
     implementation("io.grpc:grpc-services:${grpcVersion}")
-    implementation("io.opentelemetry:opentelemetry-api:1.58.0")
-    implementation("io.opentelemetry:opentelemetry-sdk:1.58.0")
-    implementation("io.opentelemetry:opentelemetry-extension-annotations:1.18.0")
     implementation("org.apache.logging.log4j:log4j-core:2.25.3")
     implementation("org.slf4j:slf4j-api:2.0.17")
     implementation("com.google.protobuf:protobuf-kotlin:${protobufVersion}")
