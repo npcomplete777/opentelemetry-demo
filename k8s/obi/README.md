@@ -205,7 +205,7 @@ signal, are best reached through an OpenTelemetry Collector (next section).
 ### Example: traces to Jaeger, metrics to Prometheus (per-signal endpoints)
 
 The demo already runs both, and both accept OTLP natively: Jaeger for traces,
-Prometheus at `/api/v1/otlp`, which the app collector already uses. Per-signal
+Prometheus at `/api/v1/otlp`; both are scaled to 0 in OBI-only mode, so scale them up first. Per-signal
 endpoints take the **full** path. Remove `OTEL_EXPORTER_OTLP_ENDPOINT` and the
 headers from `envValueFrom` (neither backend needs auth), then set:
 
@@ -226,8 +226,8 @@ this export traffic won't be traced back into itself.
 OBI has **one destination per signal** and no fan-out. To send the same data to
 Dynatrace *and* another platform, run an OpenTelemetry Collector, point OBI at
 it (`otlp-endpoint=http://<collector-svc>.<ns>:4318`, no headers), and configure
-one exporter per backend in the collector. A dedicated gateway works well; the
-demo's existing collector no longer has an OTLP receiver. The collector is also
+one exporter per backend in the collector. A dedicated gateway works well (the
+demo's own app collector has been removed). The collector is also
 the place for temporality conversion (`cumulativetodelta`), filtering,
 sampling and attribute renaming. If that collector runs in `otel-demo`, its
 traffic is already excluded by the `otel-collector*` filters; elsewhere, add a
@@ -261,7 +261,8 @@ pod logs on start; revert the env var to roll back (Argo CD re-syncs).
 (no cloud on a laptop cluster) and "creating OTEL namespace in bpffs failed" (OBI
 continues; only pinned-map features such as the log enricher are disabled).
 
-**Telemetry from the apps themselves appears as OBI data.** If app SDKs still
+**Telemetry from the apps themselves appears as OBI data.** (Not an issue here,
+since the SDKs are removed; relevant in mixed estates.) If app SDKs still
 export, OBI records those attempts as spans, flows and TCP failed-connection
 stats. See the *OBI is the only telemetry source* section of the
 [root README](../../README.md) for the controls.

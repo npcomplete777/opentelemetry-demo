@@ -204,7 +204,7 @@ structures directly and attaches uprobes to library functions such as
 
 ```
  Astronomy Shop (otel-demo namespace, ~25 workloads, many languages)
-        │   unmodified services — no telemetry leaves them
+        │   no OpenTelemetry agent or SDK in any service
         ▼
    OBI DaemonSet (obi namespace) ── eBPF on the node ──► OTLP/HTTP ──► Dynatrace
         ▲
@@ -224,30 +224,53 @@ structures directly and attaches uprobes to library functions such as
   per-signal Jaeger + Prometheus example and multi-backend fan-out are in
   [`k8s/obi/README.md` → Sending OBI data to any OTLP backend](k8s/obi/README.md#sending-obi-data-to-any-otlp-backend).
 
-### OBI is the only telemetry source (and how that's enforced)
+### OBI is the only telemetry source: no agent or SDK in any service
 
-The shop's services still contain their original OpenTelemetry SDK code. To make
-the data in Dynatrace **purely OBI-produced**, four controls are applied:
+Every Astronomy Shop service is **rebuilt from this repo's source with all
+OpenTelemetry instrumentation removed**. That covers SDKs, API calls,
+auto-instrumentation agents, instrumentation libraries, exporters, OTel log
+bridges, OpenFeature OTel hooks, the browser tracer, the Envoy tracer and the
+nginx OTel module.
 
-| Control | Where | Effect |
+| Language | Services | What was removed |
 |---|---|---|
-| App-side collector no longer forwards to Dynatrace and **no longer listens for OTLP** | `k8s/overlays/demo/patches/collector-dynatrace-export.yaml` | Any SDK export is refused at connect; nothing app-side is delivered |
-| `OTEL_*_EXPORTER=none` on every service | `k8s/overlays/demo/patches/disable-app-sdk.yaml` | Silences SDKs that honour the standard env vars |
-| `OTEL_SDK_DISABLED=true` on every service except `email`, `cart`, `ad` | `k8s/overlays/demo/patches/sdk-disabled.yaml` | Turns off SDKs that honour the flag (`email`/Ruby and `cart`/.NET crash with it) |
-| OBI filters drop traffic to/from the collector | `k8s/obi/values.yaml` (`filter.application`, `filter.network`, `filter.stats`) | Stops OBI recording the remaining export attempts as spans, flows or TCP failed-connection stats. Spans are matched on `server.address` **and** the OTLP gRPC method, because a refused connection has an empty `server.address` |
+| Go | `checkout`, `product-catalog` | SDK, `otelgrpc`/`otelhttp`/`otelsql`, `otelslog`, runtime metrics, OpenFeature hook |
+| Java / Kotlin | `ad`, `fraud-detection`, `kafka` | the `-javaagent` (`JAVA_TOOL_OPTIONS` / `KAFKA_OPTS`), OTel API/SDK deps, spans and metrics |
+| .NET | `accounting`, `cart` | CLR-profiler auto-instrumentation, all `OpenTelemetry.*` packages, ActivitySource/Meter |
+| Python | `recommendation`, `product-reviews`, `load-generator` | `opentelemetry-instrument`, SDK, instrumentors, OTLP log handler |
+| Node.js | `payment`, `frontend` | `--require` preloads, `@opentelemetry/*`, browser tracer, Dash0 web SDK |
+| Ruby / PHP / Rust / C++ / Elixir | `email`, `quote`, `shipping`, `currency`, `flagd-ui` | gems, the PHP extension, crates, the opentelemetry-cpp build, mix deps |
+| Proxies | `frontend-proxy` (Envoy), `image-provider` (nginx) | Envoy OTel tracer and OTLP routes; nginx otel module |
 
-> **Honest note:** the env vars alone are *not* enough. [observed] Even with both
-> set, `frontend-proxy` (Envoy's built-in tracer), `shipping` (Rust),
-> `product-catalog`, `checkout` and `flagd` (Go) and Jaeger kept opening
-> connections to the collector, and `cart` has its metrics exporter deliberately
-> re-enabled to avoid a .NET SDK crash. All of these are refused at the collector,
-> and the OBI filters keep them out of the data. The filters are per family in
-> OBI v0.12.2: `filter.application` alone does not touch flows or TCP stats.
-> Removing the SDKs from the source would need rebuilt images.
+The deployment side matches:
+- No `OTEL_*` environment variables on any running service.
+- The app-side collector is removed.
+- Jaeger, Prometheus, Grafana and OpenSearch are scaled to 0, since nothing
+  sends to them.
+- Manifests: `k8s/overlays/demo/patches/custom-images.yaml` points every service
+  at its OTel-free image.
+
+Two new services, `warehouse` (Spring Boot 3) and `fx` (FastAPI), were written
+without any telemetry dependency in the first place. See
+[`docs/obi/java-python-findings.md`](docs/obi/java-python-findings.md).
+
+> **Honest note, what remains:** only inert OpenTelemetry code that ships
+> *inside third-party dependencies*. None of it has an SDK or exporter, so
+> nothing is emitted:
+> - the no-op OTel API that the OpenFeature flagd Go provider links (`checkout`,
+>   `product-catalog`);
+> - Kafka's bundled `opentelemetry-proto` jar;
+> - Next.js's built-in `@opentelemetry/api` copy;
+> - Locust's optional `--otel` module;
+> - the third-party `flagd` binary.
+>
+> Removing them would mean forking those libraries. OBI's filters for
+> collector traffic (`filter.application`/`.network`/`.stats` on
+> `otel-collector*`) are kept as a guard, but no longer match anything.
 
 Verify in Dynatrace. Scope by **namespace**, not by `k8s.cluster.name`: only
-OBI sets the cluster name, so a cluster filter would hide SDK spans and the check
-could never fail.
+OBI sets the cluster name, so a cluster filter would hide any non-OBI spans and the
+check could never fail.
 
 ```dql
 fetch spans, from: now() - 15m
@@ -423,7 +446,7 @@ Measured on this deployment (single node, 2026-10-01); treat as indicative.
 | `k8s/obi/values.yaml` | **OBI configuration** (Helm values) |
 | `k8s/obi/README.md` | Operating OBI: secrets, config reference, troubleshooting |
 | `k8s/argocd/obi-application.yaml` | Argo CD Application that deploys OBI |
-| `k8s/overlays/demo/` | The shop (Kustomize overlay); collector and SDK-silencing patches in `patches/` |
+| `k8s/overlays/demo/` | The shop (Kustomize overlay); OTel-free image references in `patches/custom-images.yaml` |
 | `docs/obi/how-obi-instruments.md` | Deep dive: mechanics, per-language behaviour, protocols, limits |
 | `docs/obi/dynatrace-notebook.json` | Importable Dynatrace notebook (live DQL) |
 | `docs/UPSTREAM_README.md` | Original OpenTelemetry Demo README |

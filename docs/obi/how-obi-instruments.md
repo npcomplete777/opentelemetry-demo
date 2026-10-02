@@ -252,7 +252,9 @@ statistics.
    `discovery.exclude_instrument: [{exe_path: '*chrome*'}]` brought it to a steady
    ~300 MiB with no restarts. Size limits from observed peaks, and exclude noisy
    process trees.
-9. **OBI will observe the application's own telemetry traffic.** If SDKs still
+9. **OBI will observe the application's own telemetry traffic.** (Measured
+   before the SDKs were removed from this repo; still relevant to mixed estates.)
+   If SDKs still
    export, OBI records those attempts as spans, flows and TCP failed-connection
    stats. [observed] `filter.application` alone removed the spans but not the
    stats: ~3,800 refused collector connections per 30 min (mostly Envoy) still
