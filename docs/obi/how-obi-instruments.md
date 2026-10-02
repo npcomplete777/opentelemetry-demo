@@ -125,7 +125,7 @@ the next service's incoming request.
   HTTP headers, add it to TCP/IP packets via TC, and for gRPC a per-stream HPACK
   header. Needs kernel ≥ 5.17 and `CAP_NET_ADMIN`.
 - [docs] **Runtime-specific context tracking:** Node.js async hooks (8.0+),
-  Python asyncio (3.9+; plain `asyncio` and `uvloop` both work per OBI's devdoc `python-asyncio-context-propagation.md`, via uprobes on CPython symbols, so a stripped `libpython` limits it — see the root README), Java thread pools (JDK 8+), Ruby Puma
+  Python asyncio (3.9+ **with `uvloop`**, per OBI's support matrix; implemented with uprobes on CPython symbols, so a stripped `libpython`, as in `python:*-slim` and `-alpine`, disables it; see the root README), Java thread pools (JDK 8+), Ruby Puma
   (5.0+).
 - [docs] Limits: L7 proxies and load balancers disrupt the TCP-level propagation;
   encrypted traffic can only carry context between two OBI-instrumented services;
@@ -160,7 +160,7 @@ the next service's incoming request.
 
 | Protocol | Attributes captured |
 |---|---|
-| PostgreSQL | `db.system.name`, `db.operation.name` (e.g. `SELECT`, `INSERT`), `db.collection.name` (e.g. `accounting.order`), `server.address/port`. **Not** the SQL text. |
+| PostgreSQL | `db.system.name`, `db.operation.name` (e.g. `SELECT`, `INSERT`), `db.collection.name` (e.g. `accounting.order`), `server.address/port`. SQL text only if `db.query.text` is opted in via `attributes.select.traces` (off by default; may contain literals/PII). |
 | Redis | `db.system.name=redis`, command (`HGET`, …) |
 | Kafka | `messaging.system`, `messaging.destination.name` (topic), partition, **offset**, operation type (publish/process), client id |
 | gRPC | `rpc.system.name`, `rpc.method` (when recoverable), status |
@@ -237,7 +237,7 @@ statistics.
 1. **Business context is invisible.** No custom attributes, no custom spans.
 2. **Method names can be lost.** For the C++ `currency` service ~99% of gRPC
    spans reported `rpc.method = *`.
-3. **No SQL text** — operation and table only.
+3. **SQL text is opt-in** (`db.query.text`), off by default; statements prepared before OBI started may lack it.
 4. **Service naming.** If OBI cannot derive a name it falls back to the namespace
    (`otel-demo`), which is not a real service. [observed] Here that was health
    probes to the bundled Prometheus/Grafana/Jaeger; they are now excluded.

@@ -101,7 +101,11 @@ extension module:
   [`bpf/generictracer/python.c`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/bpf/generictracer/python.c) (for example
   `SEC("uprobe/_asyncio.so:task_step")`). The design is described in
   [`devdocs/python-asyncio-context-propagation.md`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/devdocs/python-asyncio-context-propagation.md).
-  It covers plain `asyncio` *and* `uvloop`; uvloop is not required.
+  **Support boundary:** OBI's own support matrix lists asyncio propagation as
+  Python 3.9+ **with `uvloop` only**
+  ([`SUPPORT_MATRIX.md`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/SUPPORT_MATRIX.md), "Context Propagation
+  Frameworks"). The devdoc describes the same probes for plain asyncio, but
+  treat that path as unsupported.
 - The table carries variants for Python versions and compilers: `task_step` for
   `< 3.12` vs `>= 3.12`, `context_run.lto_priv.0` for Python 3.14 built with LTO,
   and `context_new_from_vars` where `PyContext_CopyCurrent` was tail-call
@@ -125,6 +129,12 @@ extension module:
     Thread-based correlation covers that model.
   - For an asyncio service, use an image whose `libpython` keeps its symbol table
     (or ships debug symbols).
+  - [observed] **The base image decides this.** The official `python:3.12-slim`
+    image is stripped the same way (0 static symbols, so no `context_run`,
+    `task_step` or `_asyncio_Task___init__`). The full `python:3.12` image
+    keeps them (54,691 symbols, all four present). Check an image with
+    `docker run --rm --entrypoint cat <image> /usr/local/lib/libpython3.12.so.1.0 > lp.so && nm -a lp.so | grep -w context_run`
+    (adjust the path and version; no output means stripped).
 
 **Java: two mechanisms, a USDT probe and an injected agent.**
 
@@ -391,7 +401,10 @@ Measured on this deployment (single node, 2026-10-01); treat as indicative.
   Prometheus, Grafana and Jaeger (~5.5k spans / 30 min) was reported under the
   namespace name `otel-demo`. Those backends are idle in OBI-only mode and are now
   excluded from instrumentation.
-- **SQL text is not captured** — operation and table only.
+- **SQL text is off by default.** Spans carry operation and table. Full
+  `db.query.text` is opt-in (`attributes.select.traces.include: [db.query.text]`)
+  and may contain literals or PII. Statements prepared before OBI started (for
+  example by a connection pool at boot) can lack text until reconnect.
 - **Runtime metrics are limited by design:** v0.12.2 defines runtime metrics
   only for Go, the JVM and Node.js (none for .NET or Python). JVM and Node.js were
   received; the missing Go runtime metrics are an open gap.
