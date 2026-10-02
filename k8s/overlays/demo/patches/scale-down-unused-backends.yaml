@@ -1,7 +1,8 @@
-# OBI-only mode: nothing exports to OpenSearch (the collector's opensearch
-# exporter was removed) and Grafana only fronts the bundled backends, which
-# no longer receive app telemetry. Scaled to 0 rather than deleted to free
-# ~1.7 GiB on the single-node cluster (local image builds share the VM).
+# OBI-only mode: no service contains OpenTelemetry instrumentation any more,
+# so the bundled backends receive nothing. Scaled to 0 rather than deleted
+# (manifests kept) to free memory on the single-node cluster, where local
+# image builds share the VM. The app-side collector is removed entirely
+# (k8s/base/kustomization.yaml).
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -13,6 +14,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
+  namespace: otel-demo
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
   namespace: otel-demo
 spec:
   replicas: 0

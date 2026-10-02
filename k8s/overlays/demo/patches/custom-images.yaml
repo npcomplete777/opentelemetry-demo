@@ -1,3 +1,16 @@
+# OBI-only images: every Astronomy Shop service rebuilt from this repo's
+# source with ALL OpenTelemetry agents, SDKs and instrumentation libraries
+# removed (see src/*). The only telemetry left is what OBI observes.
+#
+# Images: ghcr.io/npcomplete777/opentelemetry-demo/<svc>:latest, published by
+# .github/workflows/build-and-deploy.yaml when src/<svc> changes. On the local
+# OrbStack cluster the same names are tagged from local builds
+# (docker build ... -t ghcr.io/npcomplete777/opentelemetry-demo/<svc>:latest),
+# and IfNotPresent uses them without a registry round-trip.
+#
+# flagd-ui (Elixir) is not in the CI build map yet, so it uses a locally built
+# image (imagePullPolicy: Never) like the obi-showcase services.
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,6 +21,19 @@ spec:
       containers:
         - name: accounting
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/accounting:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ad
+spec:
+  template:
+    spec:
+      containers:
+        - name: ad
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/ad:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -19,6 +45,7 @@ spec:
       containers:
         - name: cart
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/cart:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -30,6 +57,19 @@ spec:
       containers:
         - name: checkout
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/checkout:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency
+spec:
+  template:
+    spec:
+      containers:
+        - name: currency
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/currency:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -41,6 +81,43 @@ spec:
       containers:
         - name: email
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/email:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-detection
+spec:
+  template:
+    spec:
+      containers:
+        - name: fraud-detection
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/fraud-detection:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/frontend:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-proxy
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend-proxy
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/frontend-proxy:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,8 +128,20 @@ spec:
     spec:
       containers:
         - name: image-provider
-          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:willfulwaste'
-          imagePullPolicy: Always
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/image-provider:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+spec:
+  template:
+    spec:
+      containers:
+        - name: kafka
+          image: 'ghcr.io/npcomplete777/opentelemetry-demo/kafka:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -64,6 +153,7 @@ spec:
       containers:
         - name: llm
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/llm:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -75,6 +165,7 @@ spec:
       containers:
         - name: load-generator
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/load-generator:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -86,6 +177,7 @@ spec:
       containers:
         - name: payment
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/payment:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -97,6 +189,7 @@ spec:
       containers:
         - name: product-catalog
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-catalog:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -108,6 +201,7 @@ spec:
       containers:
         - name: product-reviews
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/product-reviews:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -119,6 +213,7 @@ spec:
       containers:
         - name: quote
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/quote:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -130,6 +225,7 @@ spec:
       containers:
         - name: recommendation
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/recommendation:latest'
+          imagePullPolicy: IfNotPresent
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -141,3 +237,16 @@ spec:
       containers:
         - name: shipping
           image: 'ghcr.io/npcomplete777/opentelemetry-demo/shipping:latest'
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flagd
+spec:
+  template:
+    spec:
+      containers:
+        - name: flagd-ui
+          image: 'obi-showcase/flagd-ui:noinst'
+          imagePullPolicy: Never

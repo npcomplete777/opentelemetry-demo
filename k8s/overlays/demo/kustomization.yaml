@@ -9,35 +9,19 @@ resources:
   - grafana-secret.yaml
   # NodePort services - expose observability UIs via k3d node IP
   - patches/grafana-nodeport.yaml
-  - patches/jaeger-nodeport.yaml
-  - patches/prometheus-nodeport.yaml
   - patches/load-generator-nodeport.yaml
   - patches/flagd-ui-nodeport.yaml
 patches:
-  - path: patches/collector-dash0-exclude.yaml
-  - path: patches/collector-dynatrace-export.yaml
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
-  - path: patches/frontend-dash0-web-sdk.yaml
-  - path: patches/frontend-proxy-dash0-web.yaml
-  - path: patches/collector-memory-increase.yaml
   # accounting-memory-increase.yaml consolidated into resource-limits.yaml
   - path: patches/grafana-resources.yaml
   - path: patches/grafana-config.yaml
-  # Custom images for WillfulWaste retheme
+  # OBI-only images (all OpenTelemetry instrumentation removed)
   - path: patches/custom-images.yaml
   - path: patches/scale-down-geometry-lab-broken-images.yaml
   - path: patches/scale-down-unused-backends.yaml
-  - path: patches/disable-app-sdk.yaml
-    target:
-      kind: Deployment
-      labelSelector: "app.kubernetes.io/part-of=opentelemetry-demo"
-  - path: patches/sdk-disabled.yaml
-    target:
-      kind: Deployment
-      labelSelector: "app.kubernetes.io/part-of=opentelemetry-demo,app.kubernetes.io/name notin (email,cart,ad)"
-  - path: patches/cart-metrics-exporter-workaround.yaml
 # Scale down redundant backends - using Dash0 instead
 # - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
 # - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base

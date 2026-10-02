@@ -4,7 +4,7 @@ resources:
   - accounting
   - ad
   # - admin-secret  # REMOVED: Only contained grafana admin password
-  - agent-collector
+  # agent-collector removed: no service exports OTLP any more (OBI-only mode)
   - all-in-one
   - cart
   - checkout

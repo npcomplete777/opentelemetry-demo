@@ -67,15 +67,6 @@ spec:
             - containerPort: 8080
               name: service
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: FRONTEND_PORT
               value: "8080"
             - name: PORT
@@ -104,14 +95,6 @@ spec:
               value: "8013"
             - name: ENV_PLATFORM
               value: kubernetes
-            - name: OTEL_COLLECTOR_HOST
-              value: $(OTEL_COLLECTOR_NAME)
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4317
-            - name: WEB_OTEL_SERVICE_NAME
-              value: frontend-web
-            - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-              value: http://localhost:8080/otlp-http/v1/traces
           resources:
             limits:
               memory: 250Mi

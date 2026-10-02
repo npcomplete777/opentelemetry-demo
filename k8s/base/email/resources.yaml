@@ -67,21 +67,10 @@ spec:
             - containerPort: 8080
               name: service
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: EMAIL_PORT
               value: "8080"
             - name: APP_ENV
               value: production
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4318
             - name: FLAGD_HOST
               value: flagd
             - name: FLAGD_PORT

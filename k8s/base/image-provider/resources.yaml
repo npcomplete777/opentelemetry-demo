@@ -73,21 +73,8 @@ spec:
             - containerPort: 8081
               name: service
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: IMAGE_PROVIDER_PORT
               value: "8081"
-            - name: OTEL_COLLECTOR_PORT_GRPC
-              value: "4317"
-            - name: OTEL_COLLECTOR_HOST
-              value: $(OTEL_COLLECTOR_NAME)
           resources:
             limits:
               memory: 50Mi

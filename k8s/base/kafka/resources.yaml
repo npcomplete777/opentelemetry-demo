@@ -72,19 +72,8 @@ spec:
             - containerPort: 9093
               name: controller
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: KAFKA_ADVERTISED_LISTENERS
               value: PLAINTEXT://kafka:9092
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4318
             - name: KAFKA_HEAP_OPTS
               value: -Xmx400M -Xms400M
             - name: KAFKA_LISTENERS

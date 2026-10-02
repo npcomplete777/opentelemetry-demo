@@ -67,15 +67,6 @@ spec:
             - containerPort: 8080
               name: service
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: PRODUCT_CATALOG_PORT
               value: "8080"
             - name: FLAGD_HOST
@@ -86,10 +77,6 @@ spec:
               value: 16MiB
             - name: DB_CONNECTION_STRING
               value: postgres://otelu:otelp@postgresql/otel?sslmode=disable
-            - name: OTEL_SEMCONV_STABILITY_OPT_IN
-              value: database
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4317
           resources:
             limits:
               memory: 20Mi

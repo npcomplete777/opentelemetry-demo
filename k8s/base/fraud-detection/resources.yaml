@@ -38,27 +38,12 @@ spec:
           image: 'ghcr.io/open-telemetry/demo:2.2.0-fraud-detection'
           imagePullPolicy: IfNotPresent
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: KAFKA_ADDR
               value: kafka:9092
             - name: FLAGD_HOST
               value: flagd
             - name: FLAGD_PORT
               value: "8013"
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4318
-            - name: OTEL_INSTRUMENTATION_KAFKA_EXPERIMENTAL_SPAN_ATTRIBUTES
-              value: "true"
-            - name: OTEL_INSTRUMENTATION_MESSAGING_EXPERIMENTAL_RECEIVE_TELEMETRY_ENABLED
-              value: "true"
           resources:
             limits:
               memory: 300Mi

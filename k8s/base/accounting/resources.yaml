@@ -38,23 +38,10 @@ spec:
           image: 'ghcr.io/open-telemetry/demo:2.2.0-accounting'
           imagePullPolicy: IfNotPresent
           env:
-            - name: OTEL_SERVICE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.labels['app.kubernetes.io/component']
-            - name: OTEL_COLLECTOR_NAME
-              value: otel-collector
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: KAFKA_ADDR
               value: kafka:9092
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://$(OTEL_COLLECTOR_NAME):4318
             - name: DB_CONNECTION_STRING
               value: Host=postgresql;Username=otelu;Password=otelp;Database=otel
-            - name: OTEL_DOTNET_AUTO_TRACES_ENTITYFRAMEWORKCORE_INSTRUMENTATION_ENABLED
-              value: "false"
           resources:
             limits:
               memory: 120Mi
