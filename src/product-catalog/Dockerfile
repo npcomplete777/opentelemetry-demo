@@ -14,7 +14,9 @@ RUN go mod download
 COPY ./src/product-catalog/genproto/oteldemo/ genproto/oteldemo/
 COPY ./src/product-catalog/main.go main.go
 
-RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o product-catalog main.go
+# Not stripped (no -ldflags "-s -w"): OBI needs the ELF symbol table for Go
+# runtime metrics (go.memory.*, go.goroutine.*).
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -o product-catalog main.go
 
 FROM gcr.io/distroless/static-debian12:nonroot
 

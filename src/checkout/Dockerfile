@@ -16,7 +16,9 @@ COPY ./src/checkout/kafka/ kafka/
 COPY ./src/checkout/money/ money/
 COPY ./src/checkout/main.go main.go
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o checkout main.go
+# Not stripped (no -ldflags "-s -w"): OBI needs the ELF symbol table for Go
+# runtime metrics (go.memory.*, go.goroutine.*).
+RUN CGO_ENABLED=0 GOOS=linux go build -o checkout main.go
 
 FROM gcr.io/distroless/static-debian12:nonroot
 

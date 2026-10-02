@@ -7,14 +7,11 @@
 #include <demo.grpc.pb.h>
 #include <grpc/health/v1/health.grpc.pb.h>
 
-#include "opentelemetry/trace/context.h"
-#include "opentelemetry/semconv/incubating/rpc_attributes.h"
-#include "opentelemetry/trace/span_context_kv_iterable_view.h"
-#include "opentelemetry/baggage/baggage.h"
-#include "opentelemetry/nostd/string_view.h"
+#include <map>
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include "logger_common.h"
-#include "meter_common.h"
-#include "tracer_common.h"
 
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
@@ -23,8 +20,6 @@
 #include <grpcpp/impl/codegen/string_ref.h>
 
 using namespace std;
-using namespace opentelemetry::baggage;
-using namespace opentelemetry::trace;
 
 using oteldemo::Empty;
 using oteldemo::GetSupportedCurrenciesResponse;
@@ -35,13 +30,6 @@ using grpc::Status;
 using grpc::ServerContext;
 using grpc::ServerBuilder;
 using grpc::Server;
-
-using Span            = Span;
-using SpanContext     = SpanContext;
-namespace context     = opentelemetry::context;
-namespace metrics_api = opentelemetry::metrics;
-namespace nostd       = opentelemetry::nostd;
-namespace semconv     = opentelemetry::semconv;
 
 namespace
 {
@@ -82,11 +70,9 @@ namespace
     {"ZAR", 16.0583},
   };
 
-  std::string version = std::getenv("VERSION"); 
   std::string name{ "currency" };
 
-  nostd::unique_ptr<metrics_api::Counter<uint64_t>> currency_counter;
-  nostd::shared_ptr<opentelemetry::logs::Logger> logger;
+  std::unique_ptr<StdoutLogger> logger;
 
 class HealthServer final : public grpc::health::v1::Health::Service
 {
@@ -106,38 +92,12 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
   	const Empty* request,
   	GetSupportedCurrenciesResponse* response) override
   {
-    StartSpanOptions options;
-    options.kind = SpanKind::kServer;
-    GrpcServerCarrier carrier(context);
-
-    auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
-    auto current_ctx = context::RuntimeContext::GetCurrent();
-    auto new_context = prop->Extract(carrier, current_ctx);
-    options.parent   = GetSpan(new_context)->GetContext();
-
-    std::string span_name = "Currency/GetSupportedCurrencies";
-    auto span =
-        get_tracer("currency")->StartSpan(span_name,
-                                      {{semconv::rpc::kRpcSystem, "grpc"},
-                                       {semconv::rpc::kRpcService, "oteldemo.CurrencyService"},
-                                       {semconv::rpc::kRpcMethod, "GetSupportedCurrencies"},
-                                       {semconv::rpc::kRpcGrpcStatusCode, semconv::rpc::RpcGrpcStatusCodeValues::kOk}},
-                                      options);
-    auto scope = get_tracer("currency")->WithActiveSpan(span);
-
-    span->AddEvent("Processing supported currencies request");
-
     for (auto &code : currency_conversion) {
       response->add_currency_codes(code.first);
     }
 
-    span->AddEvent("Currencies fetched, response sent back");
-    span->SetStatus(StatusCode::kOk);
-
     logger->Info(std::string(__func__) + " successful");
 
-    // Make sure to end your spans!
-    span->End();
   	return Status::OK;
   }
 
@@ -167,27 +127,6 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
   	const CurrencyConversionRequest* request,
   	Money* response) override
   {
-    StartSpanOptions options;
-    options.kind = SpanKind::kServer;
-    GrpcServerCarrier carrier(context);
-
-    auto prop        = context::propagation::GlobalTextMapPropagator::GetGlobalPropagator();
-    auto current_ctx = context::RuntimeContext::GetCurrent();
-    auto new_context = prop->Extract(carrier, current_ctx);
-    options.parent   = GetSpan(new_context)->GetContext();
-
-    std::string span_name = "Currency/Convert";
-    auto span =
-        get_tracer("currency")->StartSpan(span_name,
-                                      {{semconv::rpc::kRpcSystem, "grpc"},
-                                       {semconv::rpc::kRpcService, "oteldemo.CurrencyService"},
-                                       {semconv::rpc::kRpcMethod, "Convert"},
-                                       {semconv::rpc::kRpcGrpcStatusCode, semconv::rpc::RpcGrpcStatusCodeValues::kOk}},
-                                      options);
-    auto scope = get_tracer("currency")->WithActiveSpan(span);
-
-    span->AddEvent("Processing currency conversion request");
-
     try {
       // Do the conversion work
       Money from = request->from();
@@ -202,37 +141,16 @@ class CurrencyService final : public oteldemo::CurrencyService::Service
       getUnitsAndNanos(*response, final);
       response->set_currency_code(to_code);
 
-      span->SetAttribute("app.currency.conversion.from", from_code);
-      span->SetAttribute("app.currency.conversion.to", to_code);
-
-      CurrencyCounter(to_code);
-
-      span->AddEvent("Conversion successful, response sent back");
-      span->SetStatus(StatusCode::kOk);
-
       logger->Info(std::string(__func__) + " conversion successful");
       
-      // End the span
-      span->End();
       return Status::OK;
 
     } catch(...) {
-      span->AddEvent("Conversion failed");
-      span->SetStatus(StatusCode::kError);
-
       logger->Error(std::string(__func__) + " conversion failure");
 
-      span->End();
       return Status::CANCELLED;
     }
     return Status::OK;
-  }
-
-  void CurrencyCounter(const std::string& currency_code)
-  {
-      std::map<std::string, std::string> labels = { {"currency_code", currency_code} };
-      auto labelkv = common::KeyValueIterableView<decltype(labels)>{ labels };
-      currency_counter->Add(1, labelkv);
   }
 };
 
@@ -273,11 +191,7 @@ int main(int argc, char **argv) {
 
   uint16_t port = atoi(argv[1]);
 
-  initTracer();
-  initMeter();
-  initLogger();
-  currency_counter = initIntCounter("app.currency", version);
-  logger = getLogger(name);
+  logger = std::make_unique<StdoutLogger>(name);
   RunServer(port);
 
   return 0;

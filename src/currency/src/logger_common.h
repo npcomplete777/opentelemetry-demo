@@ -1,35 +1,36 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#include "opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h"
-#include "opentelemetry/logs/provider.h"
-#include "opentelemetry/sdk/logs/logger.h"
-#include "opentelemetry/sdk/logs/logger_provider_factory.h"
-#include "opentelemetry/sdk/logs/simple_log_record_processor_factory.h"
-#include "opentelemetry/sdk/logs/logger_context_factory.h"
-#include "opentelemetry/exporters/otlp/otlp_grpc_log_record_exporter_factory.h"
+#pragma once
 
-using namespace std;
-namespace nostd     = opentelemetry::nostd;
-namespace otlp      = opentelemetry::exporter::otlp;
-namespace logs      = opentelemetry::logs;
-namespace logs_sdk  = opentelemetry::sdk::logs;
+#include <ctime>
+#include <iostream>
+#include <mutex>
+#include <string>
 
+// Minimal stdout logger. No OpenTelemetry SDK/exporter: telemetry for this
+// service is produced externally (eBPF / OBI).
 namespace
 {
-  void initLogger() {
-    otlp::OtlpGrpcLogRecordExporterOptions loggerOptions;
-    auto exporter  = otlp::OtlpGrpcLogRecordExporterFactory::Create(loggerOptions);
-    auto processor = logs_sdk::SimpleLogRecordProcessorFactory::Create(std::move(exporter));
-    std::vector<std::unique_ptr<logs_sdk::LogRecordProcessor>> processors;
-    processors.push_back(std::move(processor));
-    auto context = logs_sdk::LoggerContextFactory::Create(std::move(processors));
-    std::shared_ptr<logs::LoggerProvider> provider = logs_sdk::LoggerProviderFactory::Create(std::move(context));
-    opentelemetry::logs::Provider::SetLoggerProvider(provider);
+class StdoutLogger
+{
+public:
+  explicit StdoutLogger(std::string name) : name_(std::move(name)) {}
+
+  void Info(const std::string &msg) { Write("INFO", msg); }
+  void Error(const std::string &msg) { Write("ERROR", msg); }
+
+private:
+  void Write(const char *level, const std::string &msg)
+  {
+    char ts[32];
+    std::time_t now = std::time(nullptr);
+    std::strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&now));
+    std::lock_guard<std::mutex> lock(mu_);
+    std::cout << ts << " " << level << " " << name_ << ": " << msg << std::endl;
   }
 
-  nostd::shared_ptr<opentelemetry::logs::Logger> getLogger(std::string name){
-    auto provider = logs::Provider::GetLoggerProvider();
-    return provider->GetLogger(name + "_logger", name, OPENTELEMETRY_SDK_VERSION);
-  }
-}
+  std::string name_;
+  std::mutex mu_;
+};
+}  // namespace
