@@ -16,7 +16,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import java.net.HttpURLConnection;
+import javax.net.ssl.HttpsURLConnection;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.config.TopicBuilder;
@@ -73,19 +76,46 @@ public class WarehouseApplication {
     return RestClient.builder().requestFactory(new JdkClientHttpRequestFactory(http)).build();
   }
 
+  /**
+   * Same call through blocking HttpsURLConnection (SSLSocket): socket I/O
+   * happens on the calling thread, unlike the JDK HttpClient, which writes
+   * from its own internal threads. Used to show how that affects OBI's trace
+   * linking.
+   */
+  @Bean
+  RestClient fxClientBlocking() throws Exception {
+    TrustManager[] trustAll = {new X509TrustManager() {
+      public void checkClientTrusted(X509Certificate[] c, String a) {}
+      public void checkServerTrusted(X509Certificate[] c, String a) {}
+      public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+    }};
+    SSLContext ssl = SSLContext.getInstance("TLS");
+    ssl.init(null, trustAll, new SecureRandom());
+    SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory() {
+      @Override
+      protected void prepareConnection(HttpURLConnection c, String method) throws java.io.IOException {
+        if (c instanceof HttpsURLConnection https) https.setSSLSocketFactory(ssl.getSocketFactory());
+        super.prepareConnection(c, method);
+      }
+    };
+    return RestClient.builder().requestFactory(f).build();
+  }
+
   @RestController
   static class StockController {
     private final JdbcTemplate jdbc;
     private final KafkaTemplate<String, String> kafka;
-    private final RestClient fx;
+    private final RestClient fx, fxBlocking;
     private final ExecutorService pool;
     private final String topic, fxFull, fxSlim;
 
     StockController(JdbcTemplate jdbc, KafkaTemplate<String, String> kafka, RestClient fxClient,
+        RestClient fxClientBlocking,
         ExecutorService fxPool, @Value("${warehouse.topic}") String topic,
         @Value("${warehouse.fx.full-url}") String fxFull,
         @Value("${warehouse.fx.slim-url}") String fxSlim) {
-      this.jdbc = jdbc; this.kafka = kafka; this.fx = fxClient; this.pool = fxPool;
+      this.jdbc = jdbc; this.kafka = kafka; this.fx = fxClient; this.fxBlocking = fxClientBlocking;
+      this.pool = fxPool;
       this.topic = topic; this.fxFull = fxFull; this.fxSlim = fxSlim;
     }
 
@@ -97,11 +127,17 @@ public class WarehouseApplication {
           .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, sku));
     }
 
-    /** DB update, HTTPS call on a pool thread, Kafka publish. */
+    /**
+     * DB update, HTTPS call to fx, Kafka publish.
+     * client=jdk (java.net.http, async internally) | blocking (HttpsURLConnection)
+     * hop=pool (CompletableFuture on a platform thread pool) | inline (request thread)
+     */
     @PostMapping("/api/stock/{sku}/reserve")
     Map<String, Object> reserve(@PathVariable String sku,
         @RequestParam(defaultValue = "EUR") String ccy,
-        @RequestParam(defaultValue = "full") String fxVariant) {
+        @RequestParam(defaultValue = "full") String fxVariant,
+        @RequestParam(defaultValue = "jdk") String client,
+        @RequestParam(defaultValue = "pool") String hop) {
       // Restocks when empty so the demo's continuous traffic never runs dry.
       int updated = jdbc.update(
           "UPDATE warehouse.stock SET quantity = CASE WHEN quantity > 0 THEN quantity - 1"
@@ -110,12 +146,16 @@ public class WarehouseApplication {
       BigDecimal usd = jdbc.queryForObject(
           "SELECT price_usd FROM warehouse.stock WHERE sku = ?", BigDecimal.class, sku);
       String base = "slim".equals(fxVariant) ? fxSlim : fxFull;
-      Map<?, ?> converted = CompletableFuture.supplyAsync(() -> fx.get()
-              .uri(base + "/convert?amount={a}&ccy={c}", usd, ccy)
-              .retrieve().body(Map.class), pool)
-          .join();
+      RestClient http = "blocking".equals(client) ? fxBlocking : fx;
+      java.util.function.Supplier<Map<?, ?>> call = () -> http.get()
+          .uri(base + "/convert?amount={a}&ccy={c}", usd, ccy)
+          .retrieve().body(Map.class);
+      Map<?, ?> converted = "inline".equals(hop)
+          ? call.get()
+          : CompletableFuture.supplyAsync(call, pool).join();
       kafka.send(topic, sku, "reserved:" + sku);
-      return Map.of("sku", sku, "usd", usd, "fx", converted, "fxVariant", fxVariant);
+      return Map.of("sku", sku, "usd", usd, "fx", converted, "fxVariant", fxVariant,
+          "client", client, "hop", hop);
     }
 
     /** Called back by the fx services (Python) for exchange rates. */

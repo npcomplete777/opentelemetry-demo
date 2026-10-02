@@ -806,6 +806,165 @@
    "id": "limits",
    "type": "markdown",
    "markdown": "## 13. Honest limits observed in this deployment\n1. **No business attributes.** OBI sees `currency`'s gRPC call but not the `from`/`to` currency codes an SDK could attach; custom spans and business context need language-level instrumentation.\n2. **Service naming fallbacks.** Health probes to the bundled observability backends landed under `otel-demo` (now excluded); `cart` (a self-contained .NET app) is classified C++.\n3. **Runtime metrics are limited.** OBI v0.12.2 defines runtime metrics for Go, the JVM and Node.js only (none for .NET or Python by design). JVM and Node.js arrived; Go did not (open gap). OBI's `ebpf` self-metrics are Prometheus-only and are not enabled.\n4. **OBI skips already-instrumented services by default** (`exclude_otel_instrumented_services: true`). This matters in mixed SDK/OBI estates; it is why SDK-silencing was a prerequisite for this view.\n5. **SQL text is off by default**: only operation + table unless `db.query.text` is opted in (may contain literals/PII).\n6. **Resource cost is real and workload-dependent.** After excluding the load generator's headless-Chromium processes (hundreds of short-lived PIDs) OBI steady-states around **300 MiB**; before that it crash-looped at its 6 GiB limit (9 OOM restarts in ~50 minutes on 2026-10-01). Discovery churn, not traffic volume, was the driver.\n7. **Encrypted hops and L7 proxies** limit network-level context propagation (OBI docs)."
+  },
+  {
+   "id": "showcase",
+   "type": "markdown",
+   "markdown": "## 14. Spring Boot 3 and FastAPI with *zero* instrumentation\n`warehouse` (Spring Boot 3.5, Java 21, MVC on virtual threads, JDBC, spring-kafka, HTTPS client) and `fx-full` / `fx-slim` (identical FastAPI-on-uvloop code over HTTPS, on `python:3.12` vs the stripped `python:3.12-slim`) contain **no OpenTelemetry agent, SDK or library**. Everything below is OBI. Source and full write-up: `docs/obi/java-python-findings.md` in the repo.\n\nWhat to look for:\n- JDBC, Kafka and **TLS-decoded** HTTPS spans on both the Java client and the Python server.\n- Trace linking by call style. Synchronous calls on the request thread link (~97%). Thread-pool hops, the JDK `HttpClient` and the Kafka producer did not (0%). The OpenTelemetry Java agent linked all of them (100%) in a side-by-side run.\n- Under concurrency, async Python linking depends on CPython symbols: 92% correct on the full image vs 68% on slim."
+  },
+  {
+   "id": "q-showcase-spans",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "height": 300,
+   "previousFilterSegments": [],
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and in(k8s.deployment.name, {\"warehouse\",\"fx-full\",\"fx-slim\",\"obi-traffic\"})\n| summarize spans = count(), by:{k8s.deployment.name, telemetry.sdk.language, span.kind, span.name}\n| sort k8s.deployment.name, spans desc"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "barChart",
+    "state": "idle",
+    "davis": {
+     "includeLogs": true,
+     "davisVisualization": {
+      "isAvailable": true
+     }
+    }
+   }
+  },
+  {
+   "id": "showcase-linking",
+   "type": "markdown",
+   "markdown": "**Trace linking by Java call style.** Each row is one SKU, driven with a different `client` / `hop` combination (see the traffic loop in `k8s/base/obi-showcase/resources.yaml`):\n- TELESCOPE-1: JDK HttpClient on a pool thread\n- BINOCULAR-2: blocking client on a pool thread\n- STARMAP-3: blocking client, inline\n- NEBULA-4: JDK HttpClient, inline\n- COMET-5: blocking client, inline, calling fx-slim\n\n`full_chain` means warehouse → fx → both rate calls back into warehouse, all in one trace."
+  },
+  {
+   "id": "q-showcase-linking",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "height": 300,
+   "previousFilterSegments": [],
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and in(k8s.deployment.name, {\"warehouse\",\"fx-full\",\"fx-slim\"})\n| fieldsAdd rpath = if(span.name == \"POST /api/stock/*/reserve\" and span.kind == \"server\", url.path)\n| summarize sku = takeMax(rpath),\n    wh_convert_client = countIf(k8s.deployment.name == \"warehouse\" and span.name == \"GET /convert\"),\n    fx_server = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"server\" and span.name == \"GET /convert\"),\n    fx_rate_clients = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"client\"),\n    wh_rate_servers = countIf(k8s.deployment.name == \"warehouse\" and span.kind == \"server\" and startsWith(span.name, \"GET /api/rates\")),\n    producer = countIf(span.kind == \"producer\"),\n    by:{trace.id}\n| filter isNotNull(sku)\n| summarize traces = count(),\n    linked_to_fx = countIf(fx_server > 0),\n    full_chain = countIf(fx_server > 0 and fx_rate_clients >= 2 and wh_rate_servers >= 2),\n    kafka_publish_in_trace = countIf(producer > 0),\n    by:{sku}\n| sort sku"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "barChart",
+    "state": "idle",
+    "davis": {
+     "includeLogs": true,
+     "davisVisualization": {
+      "isAvailable": true
+     }
+    }
+   }
+  },
+  {
+   "id": "showcase-asyncio",
+   "type": "markdown",
+   "markdown": "**Async Python: does each incoming `/convert` own exactly its two outgoing calls?** These are concurrent bursts sent straight at fx. `lost` means context was dropped; `wrong` means calls were attached to the wrong request. OBI's asyncio tracking hooks CPython's `task_step` / `context_run` / `_asyncio_Task___init__`, and `python:3.12-slim` strips those symbols."
+  },
+  {
+   "id": "q-showcase-asyncio",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "height": 300,
+   "previousFilterSegments": [],
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and in(k8s.deployment.name, {\"warehouse\",\"fx-full\",\"fx-slim\"})\n| summarize fxfull = countIf(k8s.deployment.name == \"fx-full\" and span.kind == \"server\" and span.name == \"GET /convert\"),\n    fxslim = countIf(k8s.deployment.name == \"fx-slim\" and span.kind == \"server\" and span.name == \"GET /convert\"),\n    from_wh = countIf(k8s.deployment.name == \"warehouse\" and span.kind == \"server\" and startsWith(span.name, \"POST\")),\n    rate_clients = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"client\"),\n    by:{trace.id}\n| filter from_wh == 0 and (fxfull > 0 or fxslim > 0)\n| fieldsAdd variant = if(fxfull > 0, \"fx-full (python:3.12)\", else: \"fx-slim (python:3.12-slim)\")\n| fieldsAdd shape = if(rate_clients == 2, \"correct\", else: if(rate_clients == 0, \"lost\", else: \"wrong\"))\n| summarize traces = count(), by:{variant, shape}\n| sort variant, shape"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "barChart",
+    "state": "idle",
+    "davis": {
+     "includeLogs": true,
+     "davisVisualization": {
+      "isAvailable": true
+     }
+    }
+   }
+  },
+  {
+   "id": "q-showcase-sql",
+   "type": "dql",
+   "drilldownPath": [],
+   "filterSegments": [],
+   "height": 300,
+   "previousFilterSegments": [],
+   "state": {
+    "input": {
+     "timeframe": {
+      "from": "now()-1h",
+      "to": "now()"
+     },
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and k8s.deployment.name == \"warehouse\" and isNotNull(db.system.name)\n| summarize calls = count(), by:{span.name, db.query.text}\n| sort calls desc"
+    },
+    "visualizationSettings": {
+     "autoSelectVisualization": false,
+     "chartSettings": {}
+    },
+    "querySettings": {
+     "maxResultRecords": 1000,
+     "defaultScanLimitGbytes": 500,
+     "maxResultMegaBytes": 1,
+     "defaultSamplingRatio": 10,
+     "enableSampling": false
+    },
+    "visualization": "barChart",
+    "state": "idle",
+    "davis": {
+     "includeLogs": true,
+     "davisVisualization": {
+      "isAvailable": true
+     }
+    }
+   }
   }
  ]
 }

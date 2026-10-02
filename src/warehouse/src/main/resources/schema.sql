@@ -13,5 +13,7 @@ CREATE TABLE IF NOT EXISTS warehouse.audit (
 INSERT INTO warehouse.stock (sku, quantity, price_usd) VALUES
   ('TELESCOPE-1', 100000, 349.99),
   ('BINOCULAR-2', 100000,  89.50),
-  ('STARMAP-3',   100000,  12.00)
+  ('STARMAP-3',   100000,  12.00),
+  ('NEBULA-4',    100000,  45.00),
+  ('COMET-5',     100000,   7.25)
 ON CONFLICT (sku) DO NOTHING;

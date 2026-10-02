@@ -71,6 +71,18 @@ resources:
     memory: 6Gi
     cpu: 2500m
 
+# OBI pins some BPF maps under /sys/fs/bpf/otel; without the host's bpffs
+# mounted it logs "creating OTEL namespace in bpffs failed" and disables the
+# features that need pinned maps (log enricher, profile correlation).
+volumes:
+  - name: bpffs
+    hostPath:
+      path: /sys/fs/bpf
+      type: Directory
+volumeMounts:
+  - name: bpffs
+    mountPath: /sys/fs/bpf
+
 config:
   data:
     # OBI's own YAML-config exporter is unused in favor of the standard
@@ -99,9 +111,34 @@ config:
         # skewing per-trace statistics.
         - k8s_deployment_name: '{prometheus,grafana,jaeger}'
         - k8s_statefulset_name: 'opensearch'
+    # Route templates. OBI can't see Spring's @GetMapping("/api/stock/{sku}"),
+    # so without patterns its heuristic produced both "/api/rates/*" and
+    # "/api/rates/EUR" for the same endpoint. Unmatched paths keep the
+    # heuristic.
+    routes:
+      unmatched: heuristic
+      patterns:
+        - /api/stock/:sku
+        - /api/stock/:sku/reserve
+        - /api/rates/:ccy
+        - /convert
+    # Trace/log correlation: OBI rewrites the selected processes' stdout and
+    # stderr writes to add trace_id/span_id. It does this by zeroing the
+    # original buffer (bpf_probe_write_user) and emitting an enriched copy,
+    # so treat it as a deliberate, per-service opt-in. Python needs
+    # PYTHONUNBUFFERED=1 and, for asyncio, the CPython symbols (fx-full has
+    # them, fx-slim does not). Requests on Java virtual threads are not
+    # enriched, so warehouse is not listed.
+    ebpf:
+      log_enricher:
+        services:
+          - service:
+              - k8s_deployment_name: '{fx-full,fx-slim,checkout}'
     attributes:
       kubernetes:
         enable: true
+      # db.query.text is off by default because it can contain literals/PII.
+      # The demo's data is synthetic, so it's on to show JDBC/SQL capture.
       # L3/L4 detail for network flows. OBI v0.12.2's flow defaults are only
       # k8s owner/namespace/type + direction; IPs, ports and transport are
       # opt-in (pkg/export/attributes/attr_defs.go). Cardinality goes up with
@@ -111,6 +148,9 @@ config:
       # OTLP request limit (413 Payload Too Large) and no flows arrived at
       # all (2026-10-01). dst.port carries the meaningful L4 (server) port.
       select:
+        traces:
+          include:
+            - db.query.text
         obi_network_flow_bytes:
           include: &flow_attrs
             - direction

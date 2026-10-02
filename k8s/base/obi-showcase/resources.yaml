@@ -71,6 +71,8 @@ spec:
           env:
             - name: FX_VARIANT
               value: full
+            - name: PYTHONUNBUFFERED   # lets OBI's log enricher see each write
+              value: "1"
             - name: WAREHOUSE_URL
               value: http://warehouse:8080
           ports:
@@ -117,6 +119,8 @@ spec:
           env:
             - name: FX_VARIANT
               value: slim
+            - name: PYTHONUNBUFFERED
+              value: "1"
             - name: WAREHOUSE_URL
               value: http://warehouse:8080
           ports:
@@ -163,14 +167,30 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
+              # One SKU per experiment, so each shows up separately in the data:
+              #   TELESCOPE-1  client=jdk      hop=pool    fx-full
+              #   BINOCULAR-2  client=blocking hop=pool    fx-full
+              #   STARMAP-3    client=blocking hop=inline  fx-full
+              #   NEBULA-4     client=jdk      hop=inline  fx-full
+              #   COMET-5      client=blocking hop=inline  fx-slim
+              # plus a burst of 16 concurrent requests straight to each fx
+              # service, so asyncio tasks interleave on the event loop.
               W=http://warehouse:8080
               until curl -sf -o /dev/null $W/api/rates/USD; do sleep 5; done
+              r() { curl -s -o /dev/null -X POST "$W/api/stock/$1/reserve?ccy=EUR&fxVariant=$2&client=$3&hop=$4"; }
               while true; do
-                for sku in TELESCOPE-1 BINOCULAR-2 STARMAP-3; do
-                  curl -s -o /dev/null $W/api/stock/$sku
-                  curl -s -o /dev/null -X POST "$W/api/stock/$sku/reserve?ccy=EUR&fxVariant=full"
-                  curl -s -o /dev/null -X POST "$W/api/stock/$sku/reserve?ccy=GBP&fxVariant=slim"
+                curl -s -o /dev/null $W/api/stock/TELESCOPE-1
+                r TELESCOPE-1 full jdk pool
+                r BINOCULAR-2 full blocking pool
+                r STARMAP-3 full blocking inline
+                r NEBULA-4 full jdk inline
+                r COMET-5 slim blocking inline
+                for v in full slim; do
+                  for i in $(seq 16); do
+                    curl -sk -o /dev/null "https://fx-$v:8443/convert?amount=$i&ccy=JPY" &
+                  done
                 done
+                wait
                 sleep 2
               done
           resources:
