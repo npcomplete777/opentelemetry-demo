@@ -16,7 +16,8 @@
 #
 ARG ELIXIR_VERSION=1.19.3
 ARG OTP_VERSION=28.0.2
-ARG DEBIAN_VERSION=bullseye-20251117-slim
+# bookworm: bullseye (Debian 11, EOL) security packages now 404 during apt-get.
+ARG DEBIAN_VERSION=bookworm-20251117-slim
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"

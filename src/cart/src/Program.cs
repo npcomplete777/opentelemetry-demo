@@ -18,13 +18,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using OpenTelemetry.Instrumentation.StackExchangeRedis;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using OpenFeature;
-using OpenFeature.Hooks;
 using OpenFeature.Contrib.Providers.Flagd;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,7 +30,6 @@ if (string.IsNullOrEmpty(valkeyAddress))
 }
 
 builder.Logging
-    .AddOpenTelemetry(options => options.AddOtlpExporter())
     .AddConsole();
 
 builder.Services.AddSingleton<ICartStore>(x =>
@@ -49,9 +42,7 @@ builder.Services.AddSingleton<ICartStore>(x =>
 builder.Services.AddOpenFeature(openFeatureBuilder =>
 {
     openFeatureBuilder
-        .AddProvider(_ => new FlagdProvider())
-        .AddHook<MetricsHook>()
-        .AddHook<TraceEnricherHook>();
+        .AddProvider(_ => new FlagdProvider());
 });
 
 builder.Services.AddSingleton(x =>
@@ -62,30 +53,6 @@ builder.Services.AddSingleton(x =>
 ));
 
 
-Action<ResourceBuilder> appResourceBuilder =
-    resource => resource
-        .AddService(builder.Environment.ApplicationName)
-        .AddContainerDetector()
-        .AddHostDetector();
-
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(appResourceBuilder)
-    .WithTracing(tracerBuilder => tracerBuilder
-        .AddSource("OpenTelemetry.Demo.Cart")
-        .AddRedisInstrumentation(
-            options => options.SetVerboseDatabaseStatements = true)
-        .AddAspNetCoreInstrumentation()
-        .AddGrpcClientInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter())
-    .WithMetrics(meterBuilder => meterBuilder
-        .AddMeter("OpenTelemetry.Demo.Cart")
-        .AddMeter("OpenFeature")
-        .AddProcessInstrumentation()
-        .AddRuntimeInstrumentation()
-        .AddAspNetCoreInstrumentation()
-        .SetExemplarFilter(ExemplarFilterType.TraceBased)
-        .AddOtlpExporter());
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<readinessCheck>();
 builder.Services.AddGrpcHealthChecks()
@@ -95,8 +62,8 @@ builder.Services.AddSingleton<HealthServiceImpl>();
 
 var app = builder.Build();
 
-var ValkeyCartStore = (ValkeyCartStore)app.Services.GetRequiredService<ICartStore>();
-app.Services.GetRequiredService<StackExchangeRedisInstrumentation>().AddConnection(ValkeyCartStore.GetConnection());
+// Eagerly resolve the cart store so the Valkey connection is opened at startup.
+app.Services.GetRequiredService<ICartStore>();
 
 app.MapGrpcService<CartService>();
 app.MapGrpcService<HealthServiceImpl>();

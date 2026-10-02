@@ -12,14 +12,5 @@ gem "google-protobuf", "~> 4.33.0"
 
 gem "ostruct"
 
-gem "opentelemetry-sdk",                   "~> 1.10"
-gem "opentelemetry-common",                "~> 0.23"
-gem "opentelemetry-logs-sdk",              "~> 0.4"
-gem 'opentelemetry-metrics-sdk',           "~> 0.11"
-gem "opentelemetry-exporter-otlp",         "~> 0.31"
-gem 'opentelemetry-exporter-otlp-metrics', "~> 0.6"
-gem 'opentelemetry-exporter-otlp-logs',    "~> 0.2"
-gem "opentelemetry-instrumentation-all",   "~> 0.87"
-
 gem "openfeature-sdk", "~> 0.4"
 gem "openfeature-flagd-provider", "~> 0.1"

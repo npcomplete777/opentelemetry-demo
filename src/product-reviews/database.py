@@ -6,15 +6,11 @@
 # Python
 import os
 import simplejson as json
-import time
 import logging
 
 # Postgres
 import psycopg2
 from psycopg2 import pool
-
-# OpenTelemetry
-from opentelemetry import metrics
 
 def must_map_env(key: str):
     value = os.environ.get(key)
@@ -32,54 +28,6 @@ connection_pool = pool.ThreadedConnectionPool(
     dsn=db_connection_str
 )
 
-# OTel metrics for pool observability
-meter = metrics.get_meter("product-reviews.db")
-
-connection_wait_time = meter.create_histogram(
-    "db.client.connection.pool.wait_time_ms",
-    description="Time spent waiting for a connection from pool",
-    unit="ms",
-)
-
-connection_create_count = meter.create_counter(
-    "db.client.connection.create_total",
-    description="Total new connections created (should stabilize after warmup)",
-)
-
-# Observable gauges for pool state
-pool_size_gauge = meter.create_observable_gauge(
-    "db.client.connection.pool.size",
-    callbacks=[lambda options: [
-        metrics.Observation(
-            len(connection_pool._used) + len(connection_pool._pool),
-            {"db.system": "postgresql"}
-        )
-    ]],
-    description="Current number of connections in the pool",
-)
-
-pool_used_gauge = meter.create_observable_gauge(
-    "db.client.connection.pool.used",
-    callbacks=[lambda options: [
-        metrics.Observation(
-            len(connection_pool._used),
-            {"db.system": "postgresql"}
-        )
-    ]],
-    description="Number of connections currently in use",
-)
-
-pool_available_gauge = meter.create_observable_gauge(
-    "db.client.connection.pool.available",
-    callbacks=[lambda options: [
-        metrics.Observation(
-            len(connection_pool._pool),
-            {"db.system": "postgresql"}
-        )
-    ]],
-    description="Number of idle connections available",
-)
-
 def fetch_product_reviews(product_id):
     try:
         return json.dumps(fetch_product_reviews_from_db(product_id), use_decimal=True)
@@ -87,10 +35,7 @@ def fetch_product_reviews(product_id):
         return json.dumps({"error": str(e)})
 
 def fetch_product_reviews_from_db(request_product_id):
-    start = time.monotonic()
     conn = connection_pool.getconn()
-    wait_ms = (time.monotonic() - start) * 1000
-    connection_wait_time.record(wait_ms, {"db.system": "postgresql"})
 
     try:
         with conn.cursor() as cursor:
@@ -111,10 +56,7 @@ def fetch_product_reviews_from_db(request_product_id):
         connection_pool.putconn(conn)
 
 def fetch_avg_product_review_score_from_db(request_product_id):
-    start = time.monotonic()
     conn = connection_pool.getconn()
-    wait_ms = (time.monotonic() - start) * 1000
-    connection_wait_time.record(wait_ms, {"db.system": "postgresql"})
 
     try:
         with conn.cursor() as cursor:
@@ -152,7 +94,6 @@ def verify_pool_health():
         with conn.cursor() as cursor:
             cursor.execute("SELECT 1")
         logger.info("Database connection pool verified healthy")
-        connection_create_count.add(connection_pool.minconn, {"db.system": "postgresql"})
     finally:
         connection_pool.putconn(conn)
 
