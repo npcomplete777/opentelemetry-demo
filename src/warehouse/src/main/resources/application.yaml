@@ -1,0 +1,29 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: warehouse
+  threads:
+    virtual:
+      enabled: true          # Java 21 virtual threads for request handling
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgresql}:5432/${DB_NAME:otel}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:otel}
+    hikari:
+      maximum-pool-size: 5
+  sql:
+    init:
+      mode: always           # runs schema.sql on startup
+  kafka:
+    bootstrap-servers: ${KAFKA_ADDR:kafka:9092}
+    consumer:
+      group-id: warehouse
+      auto-offset-reset: latest
+    producer:
+      acks: all
+warehouse:
+  fx:
+    full-url: ${FX_FULL_URL:https://fx-full:8443}
+    slim-url: ${FX_SLIM_URL:https://fx-slim:8443}
+  topic: warehouse-events

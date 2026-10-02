@@ -1,0 +1,178 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: warehouse
+  labels: &labels
+    app.kubernetes.io/name: warehouse
+    app.kubernetes.io/part-of: obi-showcase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: warehouse
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      containers:
+        - name: warehouse
+          image: obi-showcase/warehouse:0.1.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: postgresql
+            - name: KAFKA_ADDR
+              value: kafka:9092
+          resources:
+            requests: {cpu: 100m, memory: 384Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          readinessProbe:
+            httpGet: {path: /api/rates/USD, port: 8080}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: warehouse
+  labels:
+    app.kubernetes.io/name: warehouse
+spec:
+  selector:
+    app.kubernetes.io/name: warehouse
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fx-full
+  labels: &labels
+    app.kubernetes.io/name: fx-full
+    app.kubernetes.io/part-of: obi-showcase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fx-full
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      containers:
+        - name: fx
+          image: obi-showcase/fx:full-0.1.0   # python:3.12 (libpython keeps symbols)
+          imagePullPolicy: Never
+          env:
+            - name: FX_VARIANT
+              value: full
+            - name: WAREHOUSE_URL
+              value: http://warehouse:8080
+          ports:
+            - containerPort: 8443
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8443, scheme: HTTPS}
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fx-full
+spec:
+  selector:
+    app.kubernetes.io/name: fx-full
+  ports:
+    - name: https
+      port: 8443
+      targetPort: 8443
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fx-slim
+  labels: &labels
+    app.kubernetes.io/name: fx-slim
+    app.kubernetes.io/part-of: obi-showcase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fx-slim
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      containers:
+        - name: fx
+          image: obi-showcase/fx:slim-0.1.0   # python:3.12-slim (stripped libpython)
+          imagePullPolicy: Never
+          env:
+            - name: FX_VARIANT
+              value: slim
+            - name: WAREHOUSE_URL
+              value: http://warehouse:8080
+          ports:
+            - containerPort: 8443
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8443, scheme: HTTPS}
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fx-slim
+spec:
+  selector:
+    app.kubernetes.io/name: fx-slim
+  ports:
+    - name: https
+      port: 8443
+      targetPort: 8443
+---
+# Plain curl loop driving the showcase services (no instrumentation).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obi-traffic
+  labels: &labels
+    app.kubernetes.io/name: obi-traffic
+    app.kubernetes.io/part-of: obi-showcase
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: obi-traffic
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      containers:
+        - name: traffic
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              W=http://warehouse:8080
+              until curl -sf -o /dev/null $W/api/rates/USD; do sleep 5; done
+              while true; do
+                for sku in TELESCOPE-1 BINOCULAR-2 STARMAP-3; do
+                  curl -s -o /dev/null $W/api/stock/$sku
+                  curl -s -o /dev/null -X POST "$W/api/stock/$sku/reserve?ccy=EUR&fxVariant=full"
+                  curl -s -o /dev/null -X POST "$W/api/stock/$sku/reserve?ccy=GBP&fxVariant=slim"
+                done
+                sleep 2
+              done
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}

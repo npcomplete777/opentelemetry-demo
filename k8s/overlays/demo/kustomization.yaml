@@ -28,6 +28,7 @@ patches:
   # Custom images for WillfulWaste retheme
   - path: patches/custom-images.yaml
   - path: patches/scale-down-geometry-lab-broken-images.yaml
+  - path: patches/scale-down-unused-backends.yaml
   - path: patches/disable-app-sdk.yaml
     target:
       kind: Deployment

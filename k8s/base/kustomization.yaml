@@ -35,3 +35,5 @@ resources:
   - shipping
   - user
   - valkey-cart
+  # OBI showcase services (Spring Boot 3, FastAPI); no OTel instrumentation
+  - obi-showcase
