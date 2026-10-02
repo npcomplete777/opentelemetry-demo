@@ -13,6 +13,9 @@ For *what OBI is and how it instruments*, see
 
 ## One-time setup: Dynatrace credentials
 
+(For any other OTLP backend, see
+[Sending OBI data to any OTLP backend](#sending-obi-data-to-any-otlp-backend).)
+
 Neither the token nor the tenant URL is committed. Create the Secret **before**
 the first sync (the pod won't start without both keys):
 
@@ -107,6 +110,129 @@ attaches TC programs (TC source, or context propagation as here), make both use
 TCX (or set Cilium `bpf.tc.priority: 2` and OBI's `OTEL_EBPF_BPF_TC_BACKEND`:
 `tc`, `tcx` or `auto`).
 
+## Sending OBI data to any OTLP backend
+
+OBI is a standard OTLP exporter, so Dynatrace is just one destination. Switching
+platforms is a configuration change: no rebuild, and no change to the apps.
+OBI v0.12.2 exports **traces and metrics** (no logs) and reads the standard
+OpenTelemetry exporter variables
+([`pkg/export/otel/otelcfg/`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/export/otel/otelcfg)):
+
+| Variable | Purpose | Notes |
+|---|---|---|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Base URL for both signals | OBI appends `/v1/traces` and `/v1/metrics` |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` / `_METRICS_ENDPOINT` | Per-signal URL | Used **as is**: include the full path. Overrides the base URL for that signal |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Auth/headers for both signals | `key=value,key2=value2` |
+| `OTEL_EXPORTER_OTLP_TRACES_HEADERS` / `_METRICS_HEADERS` | Per-signal headers | e.g. a metrics-only dataset header |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` (and `_TRACES_` / `_METRICS_` variants) | `http/protobuf`, `grpc` or `http/json` | gRPC endpoints are usually port 4317, HTTP 4318 or 443 |
+| `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` or `cumulative` | Pick what the backend wants (table below) |
+| `OTEL_EBPF_INSECURE_SKIP_VERIFY` | Skip TLS certificate checks | Only for self-signed endpoints. `http://` URLs are sent in plaintext automatically |
+
+In this repo the endpoint and headers come from the `obi-dynatrace-secret`
+Secret (keys `otlp-endpoint` and `otlp-headers`). Everything else is in
+[`values.yaml`](values.yaml). The Secret's name is historical: it can hold any
+backend's values.
+
+### Steps
+
+1. **Collect three facts from the target platform's OTLP docs:** the endpoint
+   URL, the auth header, and the protocol and temporality it expects. See the
+   table below for common values.
+2. **Update the Secret** (endpoint and credentials never go in git):
+
+   ```sh
+   kubectl create secret generic obi-dynatrace-secret -n obi \
+     --from-literal=otlp-endpoint="https://otlp.example.com" \
+     --from-literal=otlp-headers="Authorization=Bearer <token>" \
+     --dry-run=client -o yaml | kubectl apply -f -
+   ```
+
+   Separate multiple headers with commas: `api-key=abc,x-tenant=demo`.
+   Percent-encode any comma or `=` *inside* a value. A space, as in
+   `Api-Token <token>`, works as is.
+3. **Adjust `values.yaml` if the protocol or temporality differs**, then commit
+   and push. Argo CD rolls OBI automatically:
+
+   ```yaml
+   env:
+     OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"            # or "grpc"
+     OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "cumulative"   # Dynatrace needs "delta"
+   ```
+
+4. **Restart OBI if only the Secret changed.** A Secret update alone does not
+   roll the DaemonSet:
+
+   ```sh
+   kubectl rollout restart daemonset -n obi -l app.kubernetes.io/name=opentelemetry-ebpf-instrumentation
+   ```
+
+5. **Verify.** OBI logs export problems at `INFO` with the text `failed to upload`:
+
+   ```sh
+   kubectl logs -n obi ds/obi-opentelemetry-ebpf-instrumentation | grep -E "failed to upload|401|403|413"
+   ```
+
+   - `401` / `403`: wrong header or token scope.
+   - `404`: wrong path. Remember that per-signal endpoints need the full path.
+   - `413`: payload too large; reduce flow attribute cardinality (see the
+     `src.port` note in `values.yaml`).
+   - `OTLP partial success … dimension dropped`: warnings only.
+
+   Then look for spans with
+   `telemetry.distro.name = opentelemetry-ebpf-instrumentation` and metrics
+   named `obi.network.flow.bytes`, `http.server.request.duration` and so on in
+   the new backend.
+
+### Common endpoint values
+
+Typical values from each vendor's OTLP documentation. They are **not exercised
+in this deployment** (only Dynatrace is), and regions, ports and header names
+change, so confirm against the vendor docs before use.
+
+| Platform | `otlp-endpoint` (base URL) | `otlp-headers` | Protocol | Temporality |
+|---|---|---|---|---|
+| Dynatrace *(used here)* | `https://<env-id>.live.dynatrace.com/api/v2/otlp` | `Authorization=Api-Token <token>` (scopes `openTelemetryTrace.ingest`, `metrics.ingest`) | `http/protobuf` | `delta` (required) |
+| Grafana Cloud | `https://otlp-gateway-<zone>.grafana.net/otlp` | `Authorization=Basic <base64(instanceID:token)>` | `http/protobuf` | `cumulative` |
+| Honeycomb | `https://api.honeycomb.io` | `x-honeycomb-team=<api-key>`; metrics also need `x-honeycomb-dataset=<name>` via `OTEL_EXPORTER_OTLP_METRICS_HEADERS` | `http/protobuf` or `grpc` | `delta` or `cumulative` |
+| New Relic | `https://otlp.nr-data.net` (EU: `https://otlp.eu01.nr-data.net`) | `api-key=<license-key>` | `http/protobuf` | `delta` (recommended) |
+| Elastic Observability | your deployment's OTLP / APM endpoint | `Authorization=ApiKey <key>` | `http/protobuf` | `cumulative` |
+| Dash0 | `https://ingress.<region>.aws.dash0.com` | `Authorization=Bearer <token>` | `http/protobuf` or `grpc` | `cumulative` |
+| Any OpenTelemetry Collector | `http://<collector-svc>.<ns>:4318` (or `:4317` with `grpc`) | usually none | either | whatever its exporters need |
+
+Backends without native OTLP intake, or ones needing different credentials per
+signal, are best reached through an OpenTelemetry Collector (next section).
+
+### Example: traces to Jaeger, metrics to Prometheus (per-signal endpoints)
+
+The demo already runs both, and both accept OTLP natively: Jaeger for traces,
+Prometheus at `/api/v1/otlp`, which the app collector already uses. Per-signal
+endpoints take the **full** path. Remove `OTEL_EXPORTER_OTLP_ENDPOINT` and the
+headers from `envValueFrom` (neither backend needs auth), then set:
+
+```yaml
+env:
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://jaeger.otel-demo:4318/v1/traces"
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://prometheus.otel-demo:9090/api/v1/otlp/v1/metrics"
+  OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "cumulative"   # Prometheus wants cumulative
+```
+
+`http://` means plaintext, which is fine inside the cluster. Jaeger, Prometheus
+and Grafana are excluded from OBI's own instrumentation in `values.yaml`, so
+this export traffic won't be traced back into itself.
+
+### Several backends at once
+
+OBI has **one destination per signal** and no fan-out. To send the same data to
+Dynatrace *and* another platform, run an OpenTelemetry Collector, point OBI at
+it (`otlp-endpoint=http://<collector-svc>.<ns>:4318`, no headers), and configure
+one exporter per backend in the collector. A dedicated gateway works well; the
+demo's existing collector no longer has an OTLP receiver. The collector is also
+the place for temporality conversion (`cumulativetodelta`), filtering,
+sampling and attribute renaming. If that collector runs in `otel-demo`, its
+traffic is already excluded by the `otel-collector*` filters; elsewhere, add a
+matching rule.
+
 ## Troubleshooting
 
 **OBI restarts repeatedly / `OOMKilled`.** Check `kubectl get pod -n obi -o
@@ -146,6 +272,7 @@ stats. See the *OBI is the only telemetry source* section of the
 
 ## Why OBI exports directly
 
-OBI supports one OTLP destination per signal and has no built-in fan-out (its
-Prometheus exporter is turned off here). To send the same data to two backends,
-put a small collector in front of OBI and export to that instead.
+Fewer moving parts for a demo: no collector hop to size or secure. The trade-off
+is that OBI supports one OTLP destination per signal with no built-in fan-out (its
+Prometheus exporter is turned off here); see
+[Several backends at once](#several-backends-at-once).

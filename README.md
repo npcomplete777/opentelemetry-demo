@@ -22,6 +22,7 @@ and the material that explains how it works.
 | See what it captured per language | [Results by language](#what-obi-captured-in-this-demo) |
 | Know whether L3/L4 network data is possible | [Network layer (L3/L4)](#network-layer-l3--l4-data) |
 | Deploy or reconfigure it | [`k8s/obi/README.md`](k8s/obi/README.md) |
+| Send OBI's data somewhere other than Dynatrace | [Any OTLP backend](k8s/obi/README.md#sending-obi-data-to-any-otlp-backend) |
 | Import the explanatory Dynatrace notebook | [`docs/obi/dynatrace-notebook.json`](docs/obi/dynatrace-notebook.json) |
 | Know what it can't do | [Limits](#honest-limits) |
 
@@ -206,6 +207,12 @@ structures directly and attaches uprobes to library functions such as
   (OBI, from the official Helm chart + `k8s/obi/values.yaml`).
 - OBI exports **directly** to Dynatrace; credentials live in a Kubernetes Secret
   created out-of-band (never committed) — see [`k8s/obi/README.md`](k8s/obi/README.md).
+- **Any OTLP backend works.** Dynatrace is only the destination chosen here.
+  Changing it is a Secret update, plus protocol and temporality in
+  `values.yaml`: step-by-step instructions, common vendor values (Grafana Cloud,
+  Honeycomb, New Relic, Elastic, Dash0, any OpenTelemetry Collector), a
+  per-signal Jaeger + Prometheus example and multi-backend fan-out are in
+  [`k8s/obi/README.md` → Sending OBI data to any OTLP backend](k8s/obi/README.md#sending-obi-data-to-any-otlp-backend).
 
 ### OBI is the only telemetry source (and how that's enforced)
 
