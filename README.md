@@ -208,6 +208,18 @@ external traffic) and could not be identified without addresses, which is why
 the CIDR labels above were added. `direction` is `request`/`response` from the
 observed TCP handshake and `unknown` when OBI did not see the connection start.
 
+With addresses, ports and CIDR labels on (2026-10-02, 6 min) the "unknown"
+traffic resolved immediately:
+
+- The largest `node → external` flow (TCP 443) is **OBI's own OTLP export to
+  Dynatrace**, about 3.5 MB/min (~5 GB/day) for this one-node demo. OBI runs on
+  the host network, so it appears as owner `orbstack` (the node). It is left in
+  deliberately; it is a real cost of the agent.
+- The load generator's headless Chromium sends QUIC (UDP 443) to Google
+  addresses, which shows up as both a pod flow and a node flow, after SNAT.
+
+That is the kind of answer L3/L4 data gives that request traces cannot.
+
 Things to know before enabling it elsewhere:
 
 - It sees the **whole node**, not just instrumented namespaces. Scope it with

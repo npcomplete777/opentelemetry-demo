@@ -206,6 +206,11 @@ statistics.
   `network.allowed_attributes`, which does not exist in v0.12.2.)
 - [docs] `direction` is `request`/`response` based on the observed TCP
   connection initiator, and `unknown` when OBI did not see the handshake.
+- [observed] With those attributes on, the biggest `node → external` flow was
+  OBI's own OTLP export to Dynatrace (TCP 443, ~3.5 MB/min, ~5 GB/day). OBI is on
+  the host network, so its traffic is attributed to the node. The load
+  generator's Chromium also sends QUIC (UDP 443) to Google, counted once as a
+  pod flow and again as a node flow after SNAT.
 - [observed] Scope is the **whole node**: flows involving `argocd` and
   `kube-system` appeared alongside `otel-demo`, and 182 distinct workload pairs
   were seen in 30 minutes. Endpoints with no Kubernetes owner (external or node
