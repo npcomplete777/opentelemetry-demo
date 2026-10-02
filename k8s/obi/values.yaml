@@ -146,7 +146,10 @@ config:
       # NOT src.port: client ports are ephemeral, so it creates a series per
       # connection. With it, every flow export exceeded Dynatrace's 4 MiB
       # OTLP request limit (413 Payload Too Large) and no flows arrived at
-      # all (2026-10-01). dst.port carries the meaningful L4 (server) port.
+      # all (2026-10-01). dst.port has the same problem: flows are directional,
+      # so on response packets dst.port is the client's ephemeral port (52k
+      # distinct values in 5 min, 2026-10-02). server.port is resolved from the
+      # connection initiator and stays the service port in both directions.
       select:
         traces:
           include:
@@ -157,7 +160,7 @@ config:
             - transport
             - src.address
             - dst.address
-            - dst.port
+            - server.port
             - src.cidr
             - dst.cidr
             - k8s.src.namespace

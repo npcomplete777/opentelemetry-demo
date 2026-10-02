@@ -50,7 +50,7 @@ kubectl rollout restart daemonset -n obi -l app.kubernetes.io/name=opentelemetry
 | `config.data.prometheus_export` | `null` | Turn off the chart's default `/metrics` on :9090 (exposed on the node via hostNetwork) |
 | `config.data.discovery.exclude_instrument` | `exe_path: '*chrome*'`; `prometheus`/`grafana`/`jaeger` Deployments, `opensearch` StatefulSet | Skip headless-browser churn (see Troubleshooting) and the idle observability backends |
 | `config.data.attributes.kubernetes.enable` | `true` | Add `k8s.*` metadata |
-| `config.data.attributes.select.obi_network_flow_*` | IPs, `dst.port`, transport, pod names, CIDR names | L4 detail on flows (off by default). Not `src.port`: ephemeral ports blew past Dynatrace's 4 MiB OTLP request limit (HTTP 413) |
+| `config.data.attributes.select.obi_network_flow_*` | IPs, `server.port`, transport, pod names, CIDR names | L4 detail on flows (off by default). Not `src.port`/`dst.port`: flows are directional, so each carries ephemeral client ports on one side. `src.port` blew past Dynatrace's 4 MiB OTLP request limit (HTTP 413); `dst.port` produced 52k distinct values in 5 minutes |
 | `config.data.filter.application` / `.network` / `.stats` | drop `otel-collector*` (spans also by `rpc.method` `/opentelemetry.proto.collector.*`) | Don't record apps' own (refused) OTLP exports as spans, flows or TCP stats; the three families are independent |
 | `config.data.network.enable`, `network.cidrs`, `stats.cidrs` | `true`; pods / services / node / external | `enable` is a deprecated alias; the CIDR list names address ranges |
 | `resources` | requests `1Gi`/`250m`, limits `6Gi`/`2500m` | See sizing note |
@@ -266,6 +266,14 @@ since the SDKs are removed; relevant in mixed estates.) If app SDKs still
 export, OBI records those attempts as spans, flows and TCP failed-connection
 stats. See the *OBI is the only telemetry source* section of the
 [root README](../../README.md) for the controls.
+
+**Log enricher shows `logenricher=true` but logs have no trace_id.**
+[observed 2026-10-02] Enabled with the host bpffs mounted (the "bpffs failed"
+warning is gone) for fx-full, fx-slim and checkout. OBI reports
+`logenricher=true` for those processes, but no `trace_id` appeared in their
+container logs in the first 10 minutes. Not yet diagnosed: run OBI with
+`OTEL_EBPF_LOG_LEVEL=debug` and see `devdocs/trace-log-correlation.md` (pipe
+registration, stdout buffering) in the OBI repo.
 
 **Requests fail or hang after enabling context propagation.** Set
 `OTEL_EBPF_BPF_CONTEXT_PROPAGATION` to `headers` (drops TCP-option injection) or

@@ -334,7 +334,7 @@ config:
     attributes:
       select:
         obi_network_flow_bytes:
-          include: [direction, transport, src.address, dst.address, dst.port,
+          include: [direction, transport, src.address, dst.address, server.port,
                     src.cidr, dst.cidr, k8s.src.name, k8s.dst.name, …]
     network:
       cidrs:            # narrowest match wins
@@ -430,7 +430,11 @@ Measured on this deployment (single node, 2026-10-01); treat as indicative.
   example by a connection pool at boot) can lack text until reconnect.
 - **Runtime metrics are limited by design:** v0.12.2 defines runtime metrics
   only for Go, the JVM and Node.js (none for .NET or Python). JVM and Node.js were
-  received; the missing Go runtime metrics are an open gap.
+  received. Go: the demo's Go services were built with `-ldflags "-s -w"`,
+  which strips the ELF symbols OBI's Go runtime probes need, so they are now
+  built unstripped. [observed 2026-10-02] The probe symbols
+  (`runtime.gcMarkDone`, …) are now present, but `go.*` metrics still did not
+  arrive. That is an open item, and OBI debug logging is the next step.
 - **OBI skips services it detects as already OpenTelemetry-instrumented by
   default** (`exclude_otel_instrumented_services`).
 - **Resource cost depends on process churn, not just traffic.** Headless-browser

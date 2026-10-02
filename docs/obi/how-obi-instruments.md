@@ -201,10 +201,13 @@ statistics.
   `dst.address`, `src.port`, `dst.port`, `transport`, `k8s.src.name`,
   `k8s.dst.name`, node attributes and more. `network.cidrs` (and `stats.cidrs`)
   add `src.cidr`/`dst.cidr` names. `iface`/`iface.direction` additionally need
-  `network.deduper: none`. This deployment enables addresses, destination port,
+  `network.deduper: none`. This deployment enables addresses, `server.port`,
   transport, pod names and CIDR names. [observed] Adding `src.port` (ephemeral
   client ports) made every flow export exceed Dynatrace's 4 MiB OTLP request
-  limit (HTTP 413) and no flows arrived, so it is left out. (The public docs page mentions
+  limit (HTTP 413) and no flows arrived, so it is left out. `dst.port` is no better:
+  flows are directional, so response packets carry the client's ephemeral port
+  as `dst.port` (52k distinct values in 5 minutes). Use `server.port`, which OBI
+  resolves from the connection initiator. (The public docs page mentions
   `network.allowed_attributes`, which does not exist in v0.12.2.)
 - [docs] `direction` is `request`/`response` based on the observed TCP
   connection initiator, and `unknown` when OBI did not see the handshake.
