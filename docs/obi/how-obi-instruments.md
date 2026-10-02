@@ -5,6 +5,8 @@ against what we observed running it on the Astronomy Shop. Statements are tagged
 
 - **[docs]** — stated in the upstream OBI documentation
   (<https://opentelemetry.io/docs/zero-code/obi/>)
+- **[source]** — read in the OBI v0.12.2 source code
+  (<https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/tree/v0.12.2>)
 - **[observed]** — measured on this deployment (single-node Kubernetes, Linux
   7.0 kernel, OBI Helm chart 0.13.0 / OBI v0.12.2, October 2026)
 
@@ -123,7 +125,7 @@ the next service's incoming request.
   HTTP headers, add it to TCP/IP packets via TC, and for gRPC a per-stream HPACK
   header. Needs kernel ≥ 5.17 and `CAP_NET_ADMIN`.
 - [docs] **Runtime-specific context tracking:** Node.js async hooks (8.0+),
-  Python asyncio (3.9+, requires `uvloop`), Java thread pools (JDK 8+), Ruby Puma
+  Python asyncio (3.9+; plain `asyncio` and `uvloop` both work per OBI's devdoc `python-asyncio-context-propagation.md`, via uprobes on CPython symbols, so a stripped `libpython` limits it — see the root README), Java thread pools (JDK 8+), Ruby Puma
   (5.0+).
 - [docs] Limits: L7 proxies and load balancers disrupt the TCP-level propagation;
   encrypted traffic can only carry context between two OBI-instrumented services;
@@ -142,10 +144,10 @@ the next service's incoming request.
 | OBI classification | Services | What is distinctive |
 |---|---|---|
 | Go | `product-catalog`, `checkout`, `flagd` | Highest fidelity. Library-level context propagation [docs]. Client and server spans with parent/child links [observed]. |
-| Java | `ad`, `fraud-detection`, `kafka` | JDK 8+ [docs]. With the runtime metric group enabled, `jvm.memory.*` metrics arrive with no `-javaagent` [observed]. |
+| Java | `ad`, `fraud-detection`, `kafka` | JDK 8+ [docs]. OBI dynamically attaches its own Java agent (TLS plaintext + thread-pool context, reported via `ioctl`) and reads GC USDT probes in `libjvm.so` for `jvm.memory.*` [source, observed]. `ad` and `fraud-detection` also set the upstream OTel `-javaagent` in their Dockerfiles; confirmed loaded in `ad`, exporters off [observed]. |
 | .NET | `accounting` | Normal (managed) .NET is handled at the protocol level: Kafka consumer spans and PostgreSQL client spans [observed]. No .NET-specific probes or runtime metrics in v0.12.2 [docs]. |
 | Node.js | `frontend`, `payment` | OBI injects a small agent script into the running Node process for async-hook context tracking and event-loop metrics [docs]; `nodejs.eventloop.*` metrics [observed]. |
-| Python | `recommendation`, `product-reviews`, `llm`, `load-generator` | Protocol-level; asyncio propagation needs `uvloop` [docs]. |
+| Python | `recommendation`, `product-reviews`, `llm`, `load-generator` | Protocol-level. asyncio context tracking uses uprobes on CPython symbols (`task_step`, `context_run`, …) [source]; [observed] these images' `libpython` is stripped, so only the exported `PyContext_CopyCurrent` is hookable; the services use gRPC thread pools, not asyncio. |
 | PHP | `quote` | Not in OBI's official supported-language list, but classified as `php` and decoded at protocol level; nothing PHP-specific visible in the data [observed]. |
 | Ruby | `email` | Puma 5.0+ propagation [docs]; protocol-level spans [observed]. |
 | Rust | `shipping` | Protocol-level; low volume in this demo [observed]. |

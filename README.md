@@ -18,6 +18,7 @@ and the material that explains how it works.
 | I want to… | Go to |
 |---|---|
 | Understand what OBI is and how it instruments code | [What OBI is](#what-obi-is) and [`docs/obi/how-obi-instruments.md`](docs/obi/how-obi-instruments.md) |
+| See how it reaches inside Python and Java (symbols, USDT, Java agent) | [Inside the runtime](#inside-the-runtime-symbols-usdt-probes-and-the-java-agent-python-and-java) |
 | See what it captured per language | [Results by language](#what-obi-captured-in-this-demo) |
 | Know whether L3/L4 network data is possible | [Network layer (L3/L4)](#network-layer-l3--l4-data) |
 | Deploy or reconfigure it | [`k8s/obi/README.md`](k8s/obi/README.md) |
@@ -72,6 +73,119 @@ flowchart LR
 
 Full detail, per-language behaviour and the exact limits we measured are in
 [`docs/obi/how-obi-instruments.md`](docs/obi/how-obi-instruments.md).
+
+### Inside the runtime: symbols, USDT probes and the Java agent (Python and Java)
+
+Kernel socket probes alone tell OBI *that* bytes moved, but not which request
+inside an interpreter or JVM they belong to. For Python and Java, OBI goes one
+level deeper using two different techniques. Source links point at OBI
+**v0.12.2**, the version deployed here; "observed" means checked in this cluster
+on 2026-10-02.
+
+**Python: uprobes on CPython's own C functions (ELF symbols).** OBI never
+touches Python code. It attaches eBPF uprobes to C functions inside the
+interpreter, found **by symbol name** in `libpython3.*.so` and in the `_asyncio`
+extension module:
+
+| Symbol | Library | Why OBI hooks it |
+|---|---|---|
+| `task_step` | `_asyncio` | Records which `asyncio.Task` is currently running on the event-loop thread |
+| `_asyncio_Task___init__` | `_asyncio` | Records the parent task when a child task is created (`create_task`, `gather`) |
+| `PyContext_CopyCurrent` | `libpython3.x` | Binds a copied `contextvars.Context` to its task (`asyncio.to_thread`) |
+| `context_run` | `libpython3.x` | Lets a worker thread map that context back to the original task |
+
+- Where it lives: the symbol table is in
+  [`pkg/internal/ebpf/generictracer/generictracer.go:515-555`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/internal/ebpf/generictracer/generictracer.go#L515-L555)
+  and the eBPF programs in
+  [`bpf/generictracer/python.c`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/bpf/generictracer/python.c) (for example
+  `SEC("uprobe/_asyncio.so:task_step")`). The design is described in
+  [`devdocs/python-asyncio-context-propagation.md`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/devdocs/python-asyncio-context-propagation.md).
+  It covers plain `asyncio` *and* `uvloop`; uvloop is not required.
+- The table carries variants for Python versions and compilers: `task_step` for
+  `< 3.12` vs `>= 3.12`, `context_run.lto_priv.0` for Python 3.14 built with LTO,
+  and `context_new_from_vars` where `PyContext_CopyCurrent` was tail-call
+  optimised.
+- Every Python probe is `Required: false`: if a symbol is missing, OBI skips that
+  probe and carries on.
+- **[observed] This is where symbols matter in this demo.**
+  - All four Python services (`recommendation`, `product-reviews`, `llm`,
+    `load-generator`) load `libpython3.12.so.1.0` and `_asyncio`.
+  - Their base image is `python:3.12-alpine3.22`
+    ([`src/recommendation/Dockerfile:17`](src/recommendation/Dockerfile)), and
+    its `libpython` is **stripped**: no `.symtab`, only the 2,097 exported
+    dynamic symbols.
+  - So `PyContext_CopyCurrent` (exported) can be hooked, but `task_step`,
+    `context_run` and `_asyncio_Task___init__` (static, unexported) cannot.
+  - It doesn't hurt here: these services serve gRPC from a thread pool, not
+    asyncio (`grpc.server(futures.ThreadPoolExecutor(max_workers=10))` at
+    [`src/recommendation/recommendation_server.py:189`](src/recommendation/recommendation_server.py)
+    and
+    [`src/product-reviews/product_reviews_server.py:361`](src/product-reviews/product_reviews_server.py)).
+    Thread-based correlation covers that model.
+  - For an asyncio service, use an image whose `libpython` keeps its symbol table
+    (or ships debug symbols).
+
+**Java: two mechanisms, a USDT probe and an injected agent.**
+
+1. **USDT probes for runtime metrics.** HotSpot's `libjvm.so` ships
+   statically-defined tracepoints: an ELF `.note.stapsdt` table of named probe
+   sites, a stable cousin of symbols. With `application_runtime` enabled, OBI
+   attaches to `hotspot:mem__pool__gc__begin` and `mem__pool__gc__end`
+   ([`generictracer.go:560-585`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/internal/ebpf/generictracer/generictracer.go#L560-L585),
+   [`bpf/generictracer/jvm.c`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/bpf/generictracer/jvm.c)) to produce the
+   `jvm.memory.*` metrics seen in Dynatrace. [observed] `ad`'s
+   `/opt/java/openjdk/lib/server/libjvm.so` (Eclipse Temurin 21,
+   [`src/ad/Dockerfile:23`](src/ad/Dockerfile)) carries `.note.stapsdt`.
+2. **The OBI Java agent (dynamic attach).** Bytecode is compiled at run time by
+   the JIT, so there are no stable machine-code symbols for uprobes. OBI instead
+   loads a small Java agent into the running JVM, without a restart or a
+   `-javaagent` flag.
+   - **Attach:**
+     [`pkg/internal/java/java_inject.go`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/internal/java/java_inject.go)
+     copies the embedded `obi-java-agent.jar` into the container's `/tmp`
+     (`copyAgent`, line 244). It then uses the JVM Attach API (HotSpot's
+     `/tmp/.java_pid<N>` socket; `attachJDKAgent`, line 329) to send
+     `load instrument false <jar>`.
+   - **Instrument:** the agent
+     ([`Agent.java`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/internal/java/agent/src/main/java/io/opentelemetry/obi/java/Agent.java),
+     `agentmain`, line 157) uses ByteBuddy to wrap:
+     - `SSLSocket`, `SSLEngine`, `SocketChannel` and Netty's `SslHandler`, to
+       read TLS plaintext;
+     - `Runnable`, `Callable`, `Executor`, `ForkJoinTask` and virtual threads,
+       to follow a request across thread pools (this is OBI's "Java thread
+       pools" context support).
+   - **Report:** the agent talks to the kernel side through a JNI call to
+     `ioctl()` with magic command `0x0b10b1`
+     ([`io_opentelemetry_obi_java_jni.c:32`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/internal/java/agent/src/main/c/io_opentelemetry_obi_java_jni.c)).
+     OBI catches it with `SEC("kprobe/sys_ioctl")` in
+     [`bpf/generictracer/java_tls.c:55`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/bpf/generictracer/java_tls.c).
+   - It is on by default (`javaagent.enabled`, `OTEL_EBPF_JAVAAGENT_ENABLED`,
+     [`pkg/obi/config.go:351-354`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/obi/config.go#L351-L354)).
+
+   [observed] In the running `ad` pod, `/tmp` holds `.java_pid1`,
+   `obi-java-agent.jar` and two `libobijni*.so` copies. OBI's log shows
+   `OpenTelemetry eBPF Java Agent already loaded, not reloading` for `ad`,
+   `fraud-detection` and `kafka`: the agent outlives an OBI restart because it
+   lives inside the JVM.
+
+> **Honest note: `ad` and `fraud-detection` also carry the upstream
+> OpenTelemetry Java agent.** Their images set
+> `JAVA_TOOL_OPTIONS=-javaagent:/usr/src/app/opentelemetry-javaagent.jar`
+> ([`src/ad/Dockerfile:31-32`](src/ad/Dockerfile),
+> [`src/fraud-detection/Dockerfile:21-22`](src/fraud-detection/Dockerfile)).
+> [observed] It is loaded in `ad`'s JVM, with its exporters set to `none`, so it
+> instruments but sends nothing. For these two services "no agent" is only true
+> of *exported* telemetry. Two agents share the JVM. OBI still instruments them
+> because its "already OTel-instrumented" skip
+> (`exclude_otel_instrumented_services`) keys on the OTLP export requests it
+> actually observes from each process
+> ([`checkIfExportsOTel`, `pkg/ebpf/common/pids.go:143-144`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/ebpf/common/pids.go#L143-L144)),
+> and there are none.
+
+**Contrast:** Go needs neither trick. OBI reads Go's symbol table and runtime
+structures directly and attaches uprobes to library functions such as
+`net/http` and `google.golang.org/grpc`. Node.js gets an injected script
+(`pkg/internal/nodejs`) for async-hook context and event-loop metrics.
 
 ---
 
