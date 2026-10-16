@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: warehouse
-          image: obi-showcase/warehouse:0.1.0
+          image: obi-showcase/warehouse:0.1.1
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
@@ -29,17 +29,22 @@ spec:
           resources:
             requests: {cpu: 100m, memory: 384Mi}
             limits: {cpu: "1", memory: 768Mi}
+          # Dedicated health paths, so probe requests don't land on the
+          # experiment routes/SKUs that OBI's traces are analysed by. The
+          # schema is created by Postgres (warehouse.sql in postgresql-init).
+          # Readiness checks the database: while Postgres is down, warehouse
+          # leaves the Service instead of returning 500s. Liveness does not,
+          # so a database outage never restarts the JVM.
           readinessProbe:
-            httpGet: {path: /api/rates/USD, port: 8080}
+            httpGet: {path: /readyz, port: 8080}
             initialDelaySeconds: 20
             periodSeconds: 10
-          # The demo's Postgres has no volume. If it is recreated, the warehouse
-          # schema (created by schema.sql at startup) is gone; failing this
-          # DB-backed check restarts warehouse, which re-creates it.
+            timeoutSeconds: 3
           livenessProbe:
-            httpGet: {path: /api/stock/TELESCOPE-1, port: 8080}
+            httpGet: {path: /healthz, port: 8080}
             initialDelaySeconds: 60
             periodSeconds: 20
+            timeoutSeconds: 3
             failureThreshold: 3
 ---
 apiVersion: v1

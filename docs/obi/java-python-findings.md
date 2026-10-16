@@ -38,6 +38,12 @@ warehouse  — Spring Boot 3.5, Java 21, Spring MVC on virtual threads
 - **Traffic:** each loop exercises every switch combination once, under its own
   SKU. It also fires 16 concurrent requests straight at each fx service, so
   asyncio tasks interleave on the event loop.
+- **Health checks and schema:** kubelet probes warehouse on `/healthz`
+  (liveness, no database) and `/readyz` (readiness, queries `warehouse.stock`).
+  Neither touches the experiment routes, so probe spans don't mix into the
+  per-SKU data. The demo Postgres has no volume, so the `warehouse` schema is
+  created by Postgres on every fresh start (`warehouse.sql` in the
+  `postgresql-init` ConfigMap), not by the app.
 
 ## What OBI captured, with zero instrumentation
 

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.DataAccessException;
 import java.net.HttpURLConnection;
 import javax.net.ssl.HttpsURLConnection;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -163,6 +164,23 @@ public class WarehouseApplication {
     Map<String, Object> rate(@PathVariable String ccy) {
       double r = switch (ccy) { case "EUR" -> 0.92; case "GBP" -> 0.79; case "JPY" -> 149.3; default -> 1.0; };
       return Map.of("ccy", ccy, "rate", r);
+    }
+
+    /** Liveness: the JVM is serving requests. Deliberately touches nothing else. */
+    @GetMapping("/healthz")
+    Map<String, Object> healthz() {
+      return Map.of("status", "ok");
+    }
+
+    /** Readiness: Postgres is reachable and the warehouse schema exists. */
+    @GetMapping("/readyz")
+    Map<String, Object> readyz() {
+      try {
+        jdbc.queryForObject("SELECT count(*) FROM warehouse.stock", Integer.class);
+      } catch (DataAccessException e) {
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "database not ready", e);
+      }
+      return Map.of("status", "ok");
     }
 
     @KafkaListener(topics = "${warehouse.topic}")

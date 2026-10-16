@@ -170,6 +170,30 @@ data:
         ('9SIQT8TOJO', 'Duct Tape Roll (Silver)', '60 yards of the handyman''s secret weapon. Fixes everything except your life choices. Industrial-strength adhesive on a polyethylene-coated cloth backing. Tears easily by hand. The most versatile tool in any drawer.', 'ductTape.jpeg', 'USD', 4, 490000000, 'tools,hardware'),
         ('6E92ZMYYFZ', 'AA Batteries (24-Pack)', 'Because the remote always dies at the worst moment. Stock up. 24 long-lasting alkaline AA batteries with a 10-year shelf life. Powers everything from TV remotes to kids'' toys to that flashlight you keep meaning to find.', 'AABatteries.jpeg', 'USD', 8, 990000000, 'electronics,batteries'),
         ('HQTGWGPNH4', 'Mystery Grab Bag', 'A surprise assortment of WillfulWaste favorites. Could be anything. That''s the thrill. Each bag contains 3-5 items from our catalog, hand-picked by our warehouse team (or whoever is closest to the shelf). Guaranteed value over $15.', 'MysteryGrabBag.jpeg', 'USD', 9, 990000000, 'mystery,value');
+
+  # OBI showcase warehouse service (src/warehouse). This Postgres has no volume,
+  # so the schema has to be created here, on every fresh start, rather than by
+  # the app. Runs after init.sql (the entrypoint sorts files by name).
+  warehouse.sql: |
+    CREATE SCHEMA IF NOT EXISTS warehouse;
+    CREATE TABLE IF NOT EXISTS warehouse.stock (
+      sku       TEXT PRIMARY KEY,
+      quantity  INTEGER NOT NULL,
+      price_usd NUMERIC(10,2) NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS warehouse.audit (
+      id         BIGSERIAL PRIMARY KEY,
+      sku        TEXT NOT NULL,
+      event      TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    INSERT INTO warehouse.stock (sku, quantity, price_usd) VALUES
+      ('TELESCOPE-1', 100000, 349.99),
+      ('BINOCULAR-2', 100000,  89.50),
+      ('STARMAP-3',   100000,  12.00),
+      ('NEBULA-4',    100000,  45.00),
+      ('COMET-5',     100000,   7.25)
+    ON CONFLICT (sku) DO NOTHING;
 ---
 # Source: opentelemetry-demo/templates/component.yaml
 apiVersion: v1

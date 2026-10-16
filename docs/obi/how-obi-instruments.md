@@ -198,7 +198,8 @@ statistics.
   statistics also carry source and destination IPs.
 - [docs] More L3/L4 detail is opt-in through `attributes.select`
   (`obi_network_flow_bytes` / `obi_network_flow_packets`): `src.address`,
-  `dst.address`, `src.port`, `dst.port`, `transport`, `k8s.src.name`,
+  `dst.address`, `src.port`, `dst.port`, `server.port`, `client.port`,
+  `transport`, `k8s.src.name`,
   `k8s.dst.name`, node attributes and more. `network.cidrs` (and `stats.cidrs`)
   add `src.cidr`/`dst.cidr` names. `iface`/`iface.direction` additionally need
   `network.deduper: none`. This deployment enables addresses, `server.port`,
@@ -211,6 +212,10 @@ statistics.
   `network.allowed_attributes`, which does not exist in v0.12.2.)
 - [docs] `direction` is `request`/`response` based on the observed TCP
   connection initiator, and `unknown` when OBI did not see the handshake.
+  [source, observed 2026-10-16] For `unknown` flows `server.port` is `0`, since
+  `network.guess_ports` defaults to `disable` (`ordinal` would guess the lower
+  of the two ports). Here that was one series and ~4% of flow bytes over 9 days;
+  no ephemeral ports leaked into `server.port`.
 - [observed] With those attributes on, the biggest `node → external` flow was
   OBI's own OTLP export to Dynatrace (TCP 443, ~3.5 MB/min, ~5 GB/day). OBI is on
   the host network, so its traffic is attributed to the node. The load

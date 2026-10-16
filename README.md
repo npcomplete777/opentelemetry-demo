@@ -430,11 +430,15 @@ Measured on this deployment (single node, 2026-10-01); treat as indicative.
   example by a connection pool at boot) can lack text until reconnect.
 - **Runtime metrics are limited by design:** v0.12.2 defines runtime metrics
   only for Go, the JVM and Node.js (none for .NET or Python). JVM and Node.js were
-  received. Go: the demo's Go services were built with `-ldflags "-s -w"`,
-  which strips the ELF symbols OBI's Go runtime probes need, so they are now
-  built unstripped. [observed 2026-10-02] The probe symbols
-  (`runtime.gcMarkDone`, …) are now present, but `go.*` metrics still did not
-  arrive. That is an open item, and OBI debug logging is the next step.
+  received. Go: `checkout` and `product-catalog` were built with
+  `-ldflags "-s -w"`, which strips the ELF symbols OBI's Go runtime probes
+  need, so they are now built unstripped. `flagd` runs the upstream
+  `ghcr.io/open-feature/flagd:v0.12.9` image, which is not rebuilt here but
+  ships unstripped. (`order` and `pricing` are still stripped, but they are not
+  deployed.) [observed 2026-10-16] All three deployed Go binaries carry the
+  probe symbols (`runtime.gcMarkDone`, …), yet `go.*` metrics still did not
+  arrive, so stripping is ruled out. That is an open item, and OBI debug
+  logging is the next step.
 - **OBI skips services it detects as already OpenTelemetry-instrumented by
   default** (`exclude_otel_instrumented_services`).
 - **Resource cost depends on process churn, not just traffic.** Headless-browser

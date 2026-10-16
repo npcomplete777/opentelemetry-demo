@@ -150,6 +150,11 @@ config:
       # so on response packets dst.port is the client's ephemeral port (52k
       # distinct values in 5 min, 2026-10-02). server.port is resolved from the
       # connection initiator and stays the service port in both directions.
+      # When OBI did not see the handshake (direction=unknown, e.g. connections
+      # opened before OBI started), it is 0, because network.guess_ports
+      # defaults to "disable" (pkg/internal/netolly/ebpf/record_port_guess.go).
+      # Measured over 9 days: one series, ~4% of flow bytes, no ephemeral
+      # ports. "ordinal" would guess min(src.port, dst.port) instead.
       select:
         traces:
           include:

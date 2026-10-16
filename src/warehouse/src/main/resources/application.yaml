@@ -12,9 +12,12 @@ spring:
     password: ${DB_PASSWORD:otel}
     hikari:
       maximum-pool-size: 5
+  # The schema is created by Postgres itself (warehouse.sql in the postgresql-init
+  # ConfigMap), not here: running it at startup made the app exit whenever
+  # Postgres was not yet accepting connections.
   sql:
     init:
-      mode: always           # runs schema.sql on startup
+      mode: never
   kafka:
     bootstrap-servers: ${KAFKA_ADDR:kafka:9092}
     consumer:
