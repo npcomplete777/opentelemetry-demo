@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: otel-demo
 resources:
   - ../../base
-  # Dash0 monitoring/views live in https://github.com/npcomplete777/observability-as-code
   - cross-cluster-services.yaml
   - grafana-secret.yaml
   # NodePort services - expose the UIs on the node (OrbStack: localhost)

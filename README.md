@@ -216,7 +216,7 @@ structures directly and attaches uprobes to library functions such as
 - **Any OTLP backend works.** Dynatrace is only the destination chosen here.
   Changing it is a Secret update, plus protocol and temporality in
   `values.yaml`: step-by-step instructions, common vendor values (Grafana Cloud,
-  Honeycomb, New Relic, Elastic, Dash0, any OpenTelemetry Collector), a
+  Honeycomb, New Relic, Elastic, any OpenTelemetry Collector), a
   per-signal Jaeger + Prometheus example and multi-backend fan-out are in
   [`k8s/obi/README.md` → Sending OBI data to any OTLP backend](k8s/obi/README.md#sending-obi-data-to-any-otlp-backend).
 
@@ -234,7 +234,7 @@ nginx OTel module.
 | Java / Kotlin | `ad`, `fraud-detection`, `kafka` | the `-javaagent` (`JAVA_TOOL_OPTIONS` / `KAFKA_OPTS`), OTel API/SDK deps, spans and metrics |
 | .NET | `accounting`, `cart` | CLR-profiler auto-instrumentation, all `OpenTelemetry.*` packages, ActivitySource/Meter |
 | Python | `recommendation`, `product-reviews`, `load-generator` | `opentelemetry-instrument`, SDK, instrumentors, OTLP log handler |
-| Node.js | `payment`, `frontend` | `--require` preloads, `@opentelemetry/*`, browser tracer, Dash0 web SDK |
+| Node.js | `payment`, `frontend` | `--require` preloads, `@opentelemetry/*`, browser tracer, third-party browser RUM SDK |
 | Ruby / PHP / Rust / C++ / Elixir | `email`, `quote`, `shipping`, `currency`, `flagd-ui` | gems, the PHP extension, crates, the opentelemetry-cpp build, mix deps |
 | Proxies | `frontend-proxy` (Envoy), `image-provider` (nginx) | Envoy OTel tracer and OTLP routes; nginx otel module |
 

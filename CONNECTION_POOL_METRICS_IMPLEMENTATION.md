@@ -103,7 +103,7 @@ Successfully implemented OpenTelemetry connection pool metrics for two services 
   - `product-reviews-c58dfcf59-c6f2w`
 - ✅ Connection pool verified healthy: "Database connection pool verified healthy" in logs
 - ✅ Metrics flowing to OTel collector (confirmed in collector debug logs)
-- ✅ Metrics being sent to Dash0 backend
+- ✅ Metrics being sent to the OTLP backend
 
 ## Verification
 
@@ -126,7 +126,7 @@ Collector logs show increased metric count after deployment:
 - After: ~100 metrics, ~181 data points (increase of ~23 metrics matching new instrumentation)
 
 ### 4. Span Telemetry
-Both services actively reporting spans to Dash0:
+Both services actively reporting spans to the OTLP backend:
 - Product-reviews: gRPC spans for GetProductReviews, DB SELECT queries
 - Checkout: HTTP POST, gRPC calls to CartService/PaymentService, Kafka publishes
 
@@ -141,7 +141,7 @@ Both services actively reporting spans to Dash0:
 
 ## Next Steps (Optional)
 
-1. **Create Dash0 Dashboard** for connection pool metrics visualization:
+1. **Create a dashboard** for connection pool metrics visualization:
    - DB pool utilization over time
    - Connection wait times
    - gRPC connection states by target service
@@ -170,7 +170,7 @@ Both services actively reporting spans to Dash0:
 - [x] Product-reviews service uses connection pooling with observable metrics
 - [x] Custom images built and deployed to k3d cluster
 - [x] Services running and handling requests successfully
-- [x] Metrics flowing through OTel collector to Dash0
+- [x] Metrics flowing through OTel collector to the OTLP backend
 - [x] Code committed and merged to main branch
 - [x] Deployment verified with pod logs and collector telemetry
 
@@ -185,7 +185,7 @@ Metrics follow OpenTelemetry semantic conventions:
 ### Metrics Export Pipeline
 ```
 Application → OTLP gRPC → OTel Collector Agent (DaemonSet)
-  → Dash0 Operator → Dash0 Backend
+  → OTLP backend
 ```
 
 ### Connection Pool Configuration

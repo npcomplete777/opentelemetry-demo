@@ -196,7 +196,6 @@ change, so confirm against the vendor docs before use.
 | Honeycomb | `https://api.honeycomb.io` | `x-honeycomb-team=<api-key>`; metrics also need `x-honeycomb-dataset=<name>` via `OTEL_EXPORTER_OTLP_METRICS_HEADERS` | `http/protobuf` or `grpc` | `delta` or `cumulative` |
 | New Relic | `https://otlp.nr-data.net` (EU: `https://otlp.eu01.nr-data.net`) | `api-key=<license-key>` | `http/protobuf` | `delta` (recommended) |
 | Elastic Observability | your deployment's OTLP / APM endpoint | `Authorization=ApiKey <key>` | `http/protobuf` | `cumulative` |
-| Dash0 | `https://ingress.<region>.aws.dash0.com` | `Authorization=Bearer <token>` | `http/protobuf` or `grpc` | `cumulative` |
 | Any OpenTelemetry Collector | `http://<collector-svc>.<ns>:4318` (or `:4317` with `grpc`) | usually none | either | whatever its exporters need |
 
 Backends without native OTLP intake, or ones needing different credentials per

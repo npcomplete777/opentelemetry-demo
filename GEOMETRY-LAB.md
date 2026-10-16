@@ -255,7 +255,7 @@ kubectl logs deployment/pricing -n otel-demo --tail=10
 
 ### Observe
 
-Traces flow to whatever backend your OTel Collector is configured to export to (Dash0, Jaeger, Datadog, etc.). Look for:
+Traces flow to whatever backend your OTel Collector is configured to export to (Jaeger, Datadog, etc.). Look for:
 - Parent span names matching the service operations
 - `app.*.mode` attributes indicating anti-pattern activation
 - The characteristic geometric patterns described above

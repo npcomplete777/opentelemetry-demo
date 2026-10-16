@@ -71,10 +71,10 @@ keeping it up to date for you.
 | [Causely]                 | [Liatrio]      | [Teletrace]                      |
 | [ClickStack]              | [Logz.io]      | [Tinybird]                       |
 | [Coralogix]               | [New Relic]    | [Tracetest]                      |
-| [Dash0]                   | [Oodle]        | [Uptrace]                        |
-| [Datadog]                 | [OpenObserve]  | [VictoriaMetrics]                |
-| [Dynatrace]               | [OpenSearch]   |                                  |
-| [Elastic]                 | [Oracle]       |                                  |
+| [Datadog]                 | [Oodle]        | [Uptrace]                        |
+| [Dynatrace]               | [OpenObserve]  | [VictoriaMetrics]                |
+| [Elastic]                 | [OpenSearch]   |                                  |
+|                           | [Oracle]       |                                  |
 
 ## Contributing
 
@@ -128,7 +128,6 @@ For more information about the emeritus role, see the [community repository](htt
 [Causely]: https://github.com/causely-oss/otel-demo
 [ClickStack]: https://github.com/ClickHouse/opentelemetry-demo
 [Coralogix]: https://coralogix.com/blog/configure-otel-demo-send-telemetry-data-coralogix
-[Dash0]: https://github.com/dash0hq/opentelemetry-demo
 [Datadog]: https://docs.datadoghq.com/opentelemetry/guide/otel_demo_to_datadog
 [Dynatrace]: https://www.dynatrace.com/news/blog/opentelemetry-demo-application-with-dynatrace/
 [Elastic]: https://github.com/elastic/opentelemetry-demo

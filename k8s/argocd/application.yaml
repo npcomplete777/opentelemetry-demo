@@ -18,13 +18,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - RespectIgnoreDifferences=true
-  ignoreDifferences:
-    - group: operator.dash0.com
-      kind: Dash0Monitoring
-      jsonPointers:
-        - /spec/eventCollection
-        - /spec/instrumentWorkloads/labelSelector
-        - /spec/instrumentWorkloads/traceContext
-        - /spec/synchronizePersesDashboards
-        - /spec/synchronizePrometheusRules
