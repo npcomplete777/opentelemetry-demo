@@ -25,6 +25,8 @@ spring:
       auto-offset-reset: latest
     producer:
       acks: all
+      properties:
+        max.block.ms: 5000   # fail a send fast if Kafka is down (default 60s)
 warehouse:
   fx:
     full-url: ${FX_FULL_URL:https://fx-full:8443}

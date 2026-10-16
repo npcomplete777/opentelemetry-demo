@@ -9,9 +9,8 @@
 
 env:
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
-  # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright;
-  # request delta temporality (same fix the app-side collector already
-  # applies via its cumulativetodelta processor).
+  # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright,
+  # so request delta temporality.
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
   OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
   # Distributed-trace context propagation. OBI v0.12.2 defaults to "disabled"
@@ -61,7 +60,8 @@ resources:
   # repeatedly until the churn settled. Bumped to 6Gi for headroom during
   # discovery storms, not just steady-state.
   #
-  # Note (2026-10-01): steady state is ~370MiB, the OrbStack VM has 11264MiB
+  # Note: steady state was ~300-370MiB on 2026-10-01 and 445MiB on 2026-10-16
+  # (25 min after a restart, showcase services added). The OrbStack VM has 11264MiB
   # and node memory limits are ~150% overcommitted, so a spike to 6Gi would
   # pressure the node before this limit is reached. Fine for a single-node demo.
   requests:
@@ -179,13 +179,13 @@ config:
             - k8s.cluster.name
         obi_network_flow_packets:
           include: *flow_attrs
-    # OBI-only mode: some components still try to send OTLP to the collector
-    # (now refused - its OTLP receiver is removed): Envoy's built-in tracer,
-    # cart's metrics exporter (re-enabled to avoid a .NET SDK crash), and the
-    # Go/Rust SDKs that ignore OTEL_SDK_DISABLED. Without filters, OBI records
-    # those attempts as spans, service-graph edges, flows and TCP
-    # failed-connection stats - the apps' own telemetry traffic showing up as
-    # "OBI data". The three filter families are independent in v0.12.2
+    # Guard filters. Before OpenTelemetry was removed from every service, some
+    # components kept sending OTLP to the collector (Envoy's tracer, cart's
+    # metrics exporter, Go/Rust SDKs that ignore OTEL_SDK_DISABLED), and OBI
+    # recorded those attempts as spans, service-graph edges, flows and TCP
+    # failed-connection stats. Nothing sends OTLP to otel-collector* now and
+    # the collector itself is gone, so these match nothing; they are kept so
+    # that re-enabling an SDK cannot pollute OBI's data. The three filter families are independent in v0.12.2
     # (pkg/filter/attribute.go): application, network and stats.
     # Per-attribute keys are merged with the chart defaults, so the network
     # keys below restate the chart's default patterns plus the collector.

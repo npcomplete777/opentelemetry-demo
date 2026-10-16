@@ -55,8 +55,11 @@ it**, and **where the evidence comes from**. The evidence tags are:
   [measured]. Log enrichment is skipped on virtual threads [matrix].
 - [ ] **GraalVM native images** (Spring Boot 3 AOT) have no JVM: no Java agent, no
   JVM metrics, protocol-level visibility only. [untested]
-- [ ] **gRPC between Java services.** Context propagation for gRPC and HTTP/2 is
-  Go-only, so Java gRPC chains will not stitch. [matrix]
+- [ ] **gRPC between Java services.** The v0.12.2 support matrix lists gRPC
+  context propagation as Go-only [matrix], but with propagation `all` the Java
+  `ad` gRPC server was stitched to its caller in 72/72 traces [measured]. OBI
+  injects `traceparent` as an HPACK header [source devdoc]. Test your own gRPC
+  chains; non-gRPC HTTP/2 propagation is Go-only either way.
 - [ ] **Route cardinality.** OBI cannot see `@GetMapping` templates. Configure
   `routes.patterns` (e.g. `/api/stock/:sku`), or use `unmatched: low-cardinality`.
   [source, measured]
@@ -78,7 +81,7 @@ it**, and **where the evidence comes from**. The evidence tags are:
   - gevent and eventlet are out of scope. [source devdoc]
 - [ ] **Base image symbols.** `python:*-slim` and `-alpine` strip `libpython`.
   Under concurrency, async context linking fell from 92% (full image) to 68% (slim),
-  with 14% of child calls attached to the wrong request. [measured] Check with:
+  and 14% of requests had child calls attached to the wrong request. [measured] Check with:
   `docker run --rm --entrypoint cat <img> /usr/local/lib/libpython3.12.so.1.0 > lp.so && nm -a lp.so | grep -w context_run`.
 - [ ] **TLS libraries.** Python's `ssl` module (system OpenSSL) was decoded
   [measured]. Wheels that statically bundle their own TLS (for example grpcio's

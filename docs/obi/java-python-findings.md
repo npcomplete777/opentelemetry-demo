@@ -102,7 +102,8 @@ Concurrent requests straight to fx; each correct trace has exactly 2 child calls
 
 With low concurrency, both images link almost perfectly: requests don't
 interleave, so plain thread-based correlation works. Under load, the stripped
-image loses or misattributes about a third of the child calls. OBI's asyncio
+image loses or misattributes the child calls of about a third of requests
+(18.2% + 13.7%). OBI's asyncio
 tracking hooks CPython's `task_step`, `context_run` and `_asyncio_Task___init__`,
 which only exist in an unstripped `libpython` (see the root README, *Inside the
 runtime*). A misattributed call is worse than a lost one: it shows up under the

@@ -129,7 +129,12 @@ the next service's incoming request.
   (5.0+).
 - [docs] Limits: L7 proxies and load balancers disrupt the TCP-level propagation;
   encrypted traffic can only carry context between two OBI-instrumented services;
-  non-gRPC HTTP/2 propagation is Go-only.
+  non-gRPC HTTP/2 propagation is Go-only. Note that v0.12.2's `SUPPORT_MATRIX.md`
+  lists protocol-level gRPC propagation as "No", while its devdoc
+  (`devdocs/grpc-context-propagation.md`) describes the HPACK injection.
+  [observed 2026-10-16, propagation `all`] Non-Go gRPC servers were stitched to
+  their callers: `ad` (Java) 72/72 traces multi-service, `product-reviews` and
+  `recommendation` (Python) 62/62 and 28/28, `cart` (C++) 296/299.
 - [observed] Services per trace, excluding health-probe traces (2026-10-01):
   with propagation **disabled** (v0.12.2 default; 30 min) 82% single-service,
   11% two–three, 7% four–six, none larger. With `all` (9 min): 78% single,
@@ -144,7 +149,7 @@ the next service's incoming request.
 | OBI classification | Services | What is distinctive |
 |---|---|---|
 | Go | `product-catalog`, `checkout`, `flagd` | Highest fidelity. Library-level context propagation [docs]. Client and server spans with parent/child links [observed]. |
-| Java | `ad`, `fraud-detection`, `kafka` | JDK 8+ [docs]. OBI dynamically attaches its own Java agent (TLS plaintext + thread-pool context, reported via `ioctl`) and reads GC USDT probes in `libjvm.so` for `jvm.memory.*` [source, observed]. `ad` and `fraud-detection` also set the upstream OTel `-javaagent` in their Dockerfiles; confirmed loaded in `ad`, exporters off [observed]. |
+| Java | `ad`, `fraud-detection`, `kafka` | JDK 8+ [docs]. OBI dynamically attaches its own Java agent (TLS plaintext + thread-pool context, reported via `ioctl`) and reads GC USDT probes in `libjvm.so` for `jvm.memory.*` [source, observed]. The upstream OTel `-javaagent` that `ad` and `fraud-detection` used to load is removed; `ad`'s JVM runs without it [observed 2026-10-16]. |
 | .NET | `accounting` | Normal (managed) .NET is handled at the protocol level: Kafka consumer spans and PostgreSQL client spans [observed]. No .NET-specific probes or runtime metrics in v0.12.2 [docs]. |
 | Node.js | `frontend`, `payment` | OBI injects a small agent script into the running Node process for async-hook context tracking and event-loop metrics [docs]; `nodejs.eventloop.*` metrics [observed]. |
 | Python | `recommendation`, `product-reviews`, `llm`, `load-generator` | Protocol-level. asyncio context tracking uses uprobes on CPython symbols (`task_step`, `context_run`, …) [source]; [observed] these images' `libpython` is stripped, so only the exported `PyContext_CopyCurrent` is hookable; the services use gRPC thread pools, not asyncio. |
@@ -318,5 +323,5 @@ Always use `telemetry.distro.name == "opentelemetry-ebpf-instrumentation"`
 (equality). `isNotNull(telemetry.distro.name)` also matches other agents, and
 `!= "…"` silently drops spans where the attribute is null.
 
-The full set — 25 queries with commentary — is the importable notebook
+The full set — 29 queries with commentary — is the importable notebook
 [`dynatrace-notebook.json`](dynatrace-notebook.json).

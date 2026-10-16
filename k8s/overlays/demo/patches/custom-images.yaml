@@ -9,7 +9,8 @@
 # and IfNotPresent uses them without a registry round-trip.
 #
 # flagd-ui (Elixir) is not in the CI build map yet, so it uses a locally built
-# image (imagePullPolicy: Never) like the obi-showcase services.
+# image (imagePullPolicy: Never) like the obi-showcase services. From the repo
+# root: docker build -f src/flagd-ui/Dockerfile -t obi-showcase/flagd-ui:noinst .
 ---
 apiVersion: apps/v1
 kind: Deployment

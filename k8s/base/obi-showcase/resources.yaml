@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: warehouse
-          image: obi-showcase/warehouse:0.1.1
+          image: obi-showcase/warehouse:0.1.2
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
@@ -188,11 +188,12 @@ spec:
               #   COMET-5      client=blocking hop=inline  fx-slim
               # plus a burst of 16 concurrent requests straight to each fx
               # service, so asyncio tasks interleave on the event loop.
+              # -m caps each request, so one hung call cannot stall the loop at `wait`.
               W=http://warehouse:8080
-              until curl -sf -o /dev/null $W/api/rates/USD; do sleep 5; done
-              r() { curl -s -o /dev/null -X POST "$W/api/stock/$1/reserve?ccy=EUR&fxVariant=$2&client=$3&hop=$4"; }
+              until curl -sf -m 10 -o /dev/null $W/api/rates/USD; do sleep 5; done
+              r() { curl -s -m 30 -o /dev/null -X POST "$W/api/stock/$1/reserve?ccy=EUR&fxVariant=$2&client=$3&hop=$4"; }
               while true; do
-                curl -s -o /dev/null $W/api/stock/TELESCOPE-1
+                curl -s -m 10 -o /dev/null $W/api/stock/TELESCOPE-1
                 r TELESCOPE-1 full jdk pool
                 r BINOCULAR-2 full blocking pool
                 r STARMAP-3 full blocking inline
@@ -200,7 +201,7 @@ spec:
                 r COMET-5 slim blocking inline
                 for v in full slim; do
                   for i in $(seq 16); do
-                    curl -sk -o /dev/null "https://fx-$v:8443/convert?amount=$i&ccy=JPY" &
+                    curl -sk -m 30 -o /dev/null "https://fx-$v:8443/convert?amount=$i&ccy=JPY" &
                   done
                 done
                 wait

@@ -12,6 +12,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -104,6 +106,7 @@ public class WarehouseApplication {
 
   @RestController
   static class StockController {
+    private static final Logger log = LoggerFactory.getLogger(StockController.class);
     private final JdbcTemplate jdbc;
     private final KafkaTemplate<String, String> kafka;
     private final RestClient fx, fxBlocking;
@@ -154,7 +157,10 @@ public class WarehouseApplication {
       Map<?, ?> converted = "inline".equals(hop)
           ? call.get()
           : CompletableFuture.supplyAsync(call, pool).join();
-      kafka.send(topic, sku, "reserved:" + sku);
+      if (converted == null) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "empty fx response");
+      kafka.send(topic, sku, "reserved:" + sku).whenComplete((r, e) -> {
+        if (e != null) log.warn("audit publish failed for {}", sku, e);
+      });
       return Map.of("sku", sku, "usd", usd, "fx", converted, "fxVariant", fxVariant,
           "client", client, "hop", hop);
     }

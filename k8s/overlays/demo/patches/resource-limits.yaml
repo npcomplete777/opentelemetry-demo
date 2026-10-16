@@ -43,8 +43,8 @@ spec:
 ---
 # grafana resources managed by grafana-resources.yaml (includes sidecars)
 ---
-# jaeger Deployment removed from base; only a leftover ConfigMap remains, so
-# there's nothing left here to patch.
+# jaeger (k8s/base/all-in-one) is scaled to 0 by scale-down-unused-backends.yaml,
+# so it has no limits here.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -119,8 +119,9 @@ spec:
               memory: 128Mi
               cpu: 25m
             limits:
-              # 128Mi was too tight for this Next.js UI — it was OOMKilled
-              # (exit 137) on a restart loop, 651 restarts accumulated.
+              # 128Mi was too tight: flagd-ui (then the upstream image) was
+              # OOMKilled (exit 137) on a restart loop, 651 restarts. Now the
+              # Elixir build from src/flagd-ui.
               memory: 384Mi
 
 # --- Medium services (50-200Mi) ---

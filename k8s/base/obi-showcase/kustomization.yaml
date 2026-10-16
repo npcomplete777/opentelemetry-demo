@@ -1,8 +1,13 @@
 # Services added to showcase OBI on a Spring Boot 3 / Python estate. None of
-# them contains any OpenTelemetry agent, SDK or library. Images are built
-# locally (see src/warehouse, src/fx and docs/obi/showcase-services.md);
-# OrbStack's Kubernetes uses the local Docker image store, hence
-# imagePullPolicy: Never.
+# them contains any OpenTelemetry agent, SDK or library. Findings:
+# docs/obi/java-python-findings.md.
+#
+# Images are built locally; OrbStack's Kubernetes uses the local Docker image
+# store, hence imagePullPolicy: Never. From the repo root:
+#   docker build -t obi-showcase/warehouse:0.1.2 src/warehouse
+#   docker build -t obi-showcase/fx:full-0.1.0 src/fx
+#   docker build --build-arg BASE=python:3.12-slim -t obi-showcase/fx:slim-0.1.0 src/fx
+# Bump the tag in resources.yaml with every rebuild so the Deployment rolls.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

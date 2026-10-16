@@ -5,7 +5,7 @@
   {
    "id": "intro",
    "type": "markdown",
-   "markdown": "# How OBI (eBPF) instruments each language in the Astronomy Shop\n\n**What this is:** a live walkthrough of what OpenTelemetry eBPF Instrumentation (OBI) sees in a polyglot app *without any SDK, sidecar or code change* (for Node.js, OBI injects a small agent script into the running process). Every number below is queried live from this tenant; nothing is pasted in.\n\n**Setup:** OBI runs as one privileged DaemonSet (`obi` namespace) on the node and instruments the `otel-demo` namespace. It exports OTLP **directly** to this tenant. Since 2026-10-01 the app-side collector no longer forwards *any* SDK telemetry here, so everything in `otel-demo` below is OBI-produced. The tile directly under this text proves that claim instead of asking you to trust it.\n\n**How OBI-sourced data is identified:** spans carry `telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\"`; metrics carry instrumentation scope `go.opentelemetry.io/obi` (app metrics) or `network_ebpf_events` / `stats_ebpf_events` (infra metrics). Note `telemetry.distro.name` is *not* OBI-exclusive in general (other auto-instrumentation agents set their own), which is why the check below uses equality, not `isNotNull`."
+   "markdown": "# How OBI (eBPF) instruments each language in the Astronomy Shop\n\n**What this is:** a live walkthrough of what OpenTelemetry eBPF Instrumentation (OBI) sees in a polyglot app *without any SDK, sidecar or code change* (for Node.js, OBI injects a small agent script into the running process). Every number below is queried live from this tenant; nothing is pasted in.\n\n**Setup:** OBI runs as one privileged DaemonSet (`obi` namespace) on the node and instruments the `otel-demo` namespace. It exports OTLP **directly** to this tenant. No service in `otel-demo` contains an OpenTelemetry SDK or agent, and the app-side collector is removed, so everything in `otel-demo` below is OBI-produced. The tile directly under this text proves that claim instead of asking you to trust it.\n\n**How OBI-sourced data is identified:** spans carry `telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\"`; metrics carry instrumentation scope `go.opentelemetry.io/obi` (app metrics) or `network_ebpf_events` / `stats_ebpf_events` (infra metrics). Note `telemetry.distro.name` is *not* OBI-exclusive in general (other auto-instrumentation agents set their own), which is why the check below uses equality, not `isNotNull`."
   },
   {
    "id": "q-proof",
@@ -39,7 +39,7 @@
   {
    "id": "proof-note",
    "type": "markdown",
-   "markdown": "*If a row for `anything else` ever appears, someone re-enabled SDK export; OBI-only mode is a deliberate configuration (collector pipelines in `k8s/overlays/demo/patches/collector-dynatrace-export.yaml`), not a property of OBI.*"
+   "markdown": "*If a row for `anything else` ever appears, someone re-enabled SDK export. OBI-only mode is a deliberate configuration (OTel-free images in `k8s/overlays/demo/patches/custom-images.yaml`, no collector in `k8s/base/kustomization.yaml`), not a property of OBI. Limit of this check: `k8s.namespace.name` comes from OBI's Kubernetes decoration, so an SDK exporting straight to the tenant without Kubernetes resource attributes would not be counted here.*"
   },
   {
    "id": "how",
@@ -471,7 +471,7 @@
   {
    "id": "proto",
    "type": "markdown",
-   "markdown": "## 10. Protocol decoding: what OBI extracts with zero instrumentation\nThe same span schema carries database, cache, queue and RPC semantics. Below, raw OBI spans for each. **PostgreSQL:** operation and table are captured (`SELECT` on `accounting.order`); the SQL statement text is *not* in these spans. **Redis:** the command (`HGET`, …). **Kafka:** topic, partition, offset, client id — including the producer-side span in `checkout`."
+   "markdown": "## 10. Protocol decoding: what OBI extracts with zero instrumentation\nThe same span schema carries database, cache, queue and RPC semantics. Below, raw OBI spans for each. **PostgreSQL:** operation and table are captured (`SELECT` on `accounting.order`); the full SQL text (`db.query.text`) is opt-in because it can contain literals; this deployment enables it (see the warehouse SQL tile in section 14). **Redis:** the command (`HGET`, …). **Kafka:** topic, partition, offset, client id — including the producer-side span in `checkout`."
   },
   {
    "id": "q-db",
@@ -866,7 +866,7 @@
       "from": "now()-1h",
       "to": "now()"
      },
-     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and in(k8s.deployment.name, {\"warehouse\",\"fx-full\",\"fx-slim\"})\n| fieldsAdd rpath = if(span.name == \"POST /api/stock/*/reserve\" and span.kind == \"server\", url.path)\n| summarize sku = takeMax(rpath),\n    wh_convert_client = countIf(k8s.deployment.name == \"warehouse\" and span.name == \"GET /convert\"),\n    fx_server = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"server\" and span.name == \"GET /convert\"),\n    fx_rate_clients = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"client\"),\n    wh_rate_servers = countIf(k8s.deployment.name == \"warehouse\" and span.kind == \"server\" and startsWith(span.name, \"GET /api/rates\")),\n    producer = countIf(span.kind == \"producer\"),\n    by:{trace.id}\n| filter isNotNull(sku)\n| summarize traces = count(),\n    linked_to_fx = countIf(fx_server > 0),\n    full_chain = countIf(fx_server > 0 and fx_rate_clients >= 2 and wh_rate_servers >= 2),\n    kafka_publish_in_trace = countIf(producer > 0),\n    by:{sku}\n| sort sku"
+     "value": "fetch spans, from: now() - 30m\n| filter telemetry.distro.name == \"opentelemetry-ebpf-instrumentation\" and in(k8s.deployment.name, {\"warehouse\",\"fx-full\",\"fx-slim\"})\n| fieldsAdd rpath = if(span.name == \"POST /api/stock/:sku/reserve\" and span.kind == \"server\", url.path)\n| summarize sku = takeMax(rpath),\n    wh_convert_client = countIf(k8s.deployment.name == \"warehouse\" and span.name == \"GET /convert\"),\n    fx_server = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"server\" and span.name == \"GET /convert\"),\n    fx_rate_clients = countIf(startsWith(k8s.deployment.name, \"fx-\") and span.kind == \"client\"),\n    wh_rate_servers = countIf(k8s.deployment.name == \"warehouse\" and span.kind == \"server\" and startsWith(span.name, \"GET /api/rates\")),\n    producer = countIf(span.kind == \"producer\"),\n    by:{trace.id}\n| filter isNotNull(sku)\n| summarize traces = count(),\n    linked_to_fx = countIf(fx_server > 0),\n    full_chain = countIf(fx_server > 0 and fx_rate_clients >= 2 and wh_rate_servers >= 2),\n    kafka_publish_in_trace = countIf(producer > 0),\n    by:{sku}\n| sort sku"
     },
     "visualizationSettings": {
      "autoSelectVisualization": false,

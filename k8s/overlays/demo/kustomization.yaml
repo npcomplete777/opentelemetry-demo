@@ -3,11 +3,10 @@ kind: Kustomization
 namespace: otel-demo
 resources:
   - ../../base
-  # dash0-monitoring.yaml and dash0-views.yaml moved to observability-as-code repo
-  # https://github.com/npcomplete777/observability-as-code
+  # Dash0 monitoring/views live in https://github.com/npcomplete777/observability-as-code
   - cross-cluster-services.yaml
   - grafana-secret.yaml
-  # NodePort services - expose observability UIs via k3d node IP
+  # NodePort services - expose the UIs on the node (OrbStack: localhost)
   - patches/grafana-nodeport.yaml
   - patches/load-generator-nodeport.yaml
   - patches/flagd-ui-nodeport.yaml
@@ -15,18 +14,14 @@ patches:
   - path: patches/enable-ad-high-cpu-flag.yaml
   - path: patches/frontend-proxy-nodeport.yaml
   - path: patches/resource-limits.yaml
-  # accounting-memory-increase.yaml consolidated into resource-limits.yaml
   - path: patches/grafana-resources.yaml
   - path: patches/grafana-config.yaml
   # OBI-only images (all OpenTelemetry instrumentation removed)
   - path: patches/custom-images.yaml
   - path: patches/scale-down-geometry-lab-broken-images.yaml
+  # Jaeger, Prometheus, Grafana and OpenSearch are still in base but idle in
+  # OBI-only mode (nothing exports to them), so this scales all four to 0.
   - path: patches/scale-down-unused-backends.yaml
-# Scale down redundant backends - using Dash0 instead
-# - path: patches/scale-down-prometheus.yaml  # RE-ENABLED: need Prometheus for local querying
-# - path: patches/scale-down-jaeger.yaml  # REMOVED: jaeger removed from base
-# - path: patches/scale-down-grafana.yaml  # REMOVED: grafana removed from base
-# - path: patches/scale-down-opensearch.yaml  # REMOVED: opensearch removed from base
 
 # Image overrides - DO NOT USE: all services share the same base image name
 # so kustomize images[] replaces ALL of them with one image. Use patches instead.

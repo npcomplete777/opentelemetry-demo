@@ -179,19 +179,15 @@ extension module:
    `fraud-detection` and `kafka`: the agent outlives an OBI restart because it
    lives inside the JVM.
 
-> **Honest note: `ad` and `fraud-detection` also carry the upstream
-> OpenTelemetry Java agent.** Their images set
-> `JAVA_TOOL_OPTIONS=-javaagent:/usr/src/app/opentelemetry-javaagent.jar`
-> ([`src/ad/Dockerfile:31-32`](src/ad/Dockerfile),
-> [`src/fraud-detection/Dockerfile:21-22`](src/fraud-detection/Dockerfile)).
-> [observed] It is loaded in `ad`'s JVM, with its exporters set to `none`, so it
-> instruments but sends nothing. For these two services "no agent" is only true
-> of *exported* telemetry. Two agents share the JVM. OBI still instruments them
-> because its "already OTel-instrumented" skip
-> (`exclude_otel_instrumented_services`) keys on the OTLP export requests it
-> actually observes from each process
+> **Note: OBI's agent is the only one in these JVMs.** Until commit 205f0be0,
+> `ad` and `fraud-detection` also loaded the upstream OpenTelemetry Java agent
+> (`JAVA_TOOL_OPTIONS=-javaagent:…`, exporters `none`). That is removed: their
+> Dockerfiles now start the JVM directly (see the removal table below).
+> [observed 2026-10-16] `ad`'s running JVM command line has no `-javaagent`.
+> OBI's "already OTel-instrumented" skip (`exclude_otel_instrumented_services`)
+> keys on the OTLP export requests it actually observes from each process
 > ([`checkIfExportsOTel`, `pkg/ebpf/common/pids.go:143-144`](https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/blob/v0.12.2/pkg/ebpf/common/pids.go#L143-L144)),
-> and there are none.
+> so even an in-process agent with exporters off would not have stopped OBI.
 
 **Contrast:** Go needs neither trick. OBI reads Go's symbol table and runtime
 structures directly and attaches uprobes to library functions such as
@@ -307,7 +303,7 @@ failed connections / I/O, a service graph, DNS lookup timing and node-level host
 info.
 
 An importable Dynatrace notebook that renders all of this live —
-**25 DQL tiles + explanatory text** — is in
+**29 DQL tiles + explanatory text** — is in
 [`docs/obi/dynatrace-notebook.json`](docs/obi/dynatrace-notebook.json).
 
 ---

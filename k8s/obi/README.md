@@ -240,7 +240,10 @@ jsonpath='{.items[0].status.containerStatuses[0].lastState}'`. Memory is driven 
 *process churn* (every new or exiting process is discovered and attached), not just
 traffic. In this demo the load generator's headless Chromium created hundreds of
 short-lived processes and OBI hit its 6 GiB limit about every 5 minutes; the
-`exe_path: '*chrome*'` exclude fixed it (steady ~300 MiB, 0 restarts). Do not just
+`exe_path: '*chrome*'` exclude fixed it (steady ~300 MiB, 0 restarts; 445 MiB on
+2026-10-16 with the showcase services added). The `obi-traffic` curl loop forks
+short-lived processes too, but OBI caches the executable after the first attach
+(`process ended for already instrumented executable`), so it adds little. Do not just
 raise the limit — find the churn first. Limits that are *below* the real working
 set cause an immediate OOM loop; 2 GiB and 4 GiB both proved too tight during
 mass pod restarts.
@@ -266,6 +269,15 @@ since the SDKs are removed; relevant in mixed estates.) If app SDKs still
 export, OBI records those attempts as spans, flows and TCP failed-connection
 stats. See the *OBI is the only telemetry source* section of the
 [root README](../../README.md) for the controls.
+
+**A service has no spans after an OBI restart.** [observed 2026-10-16] After
+OrbStack restarted, OBI attached to every running runtime except `email`'s Ruby
+(Puma) process: no `instrumenting process ... cmd=/usr/local/bin/ruby` line, and
+no `email` spans for 40 minutes while it kept serving requests. Deleting the pod
+fixed it (attached within seconds). After an OBI restart, check
+`kubectl logs -n obi ds/obi-opentelemetry-ebpf-instrumentation | grep "instrumenting process"`
+against the expected runtimes; in the notebook, an empty per-language tile is
+the symptom.
 
 **Log enricher shows `logenricher=true` but logs have no trace_id.**
 [observed 2026-10-02] Enabled with the host bpffs mounted (the "bpffs failed"
