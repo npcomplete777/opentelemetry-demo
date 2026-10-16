@@ -223,7 +223,9 @@ statistics.
   no ephemeral ports leaked into `server.port`.
 - [observed] With those attributes on, the biggest `node → external` flow was
   OBI's own OTLP export to Dynatrace (TCP 443, ~3.5 MB/min, ~5 GB/day). OBI is on
-  the host network, so its traffic is attributed to the node. The load
+  the host network, so its traffic is attributed to the node. Since 2026-10-16
+  OBI sends to the in-cluster `otel-gateway` instead, and the external export
+  flows come from that pod, one per backend. The load
   generator's Chromium also sends QUIC (UDP 443) to Google, counted once as a
   pod flow and again as a node flow after SNAT.
 - [observed] Scope is the **whole node**: flows involving `argocd` and

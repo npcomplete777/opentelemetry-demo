@@ -1,0 +1,16 @@
+# Fan-out collector in front of OBI. OBI has a single OTLP destination per
+# signal, so it sends to this collector, which forwards everything to both
+# Dynatrace and Coralogix. Deployed by the `obi` Argo CD Application (third
+# source) into the `obi` namespace, which OBI does not instrument.
+#
+# Endpoints and credentials come from Secret `otel-gateway-secret`, created
+# out-of-band (see k8s/obi/README.md); nothing tenant-specific is in git.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: obi
+resources:
+  - collector.yaml
+configMapGenerator:
+  - name: otel-gateway-config
+    files:
+      - config.yaml

@@ -1,50 +1,64 @@
 # Operating OBI (OpenTelemetry eBPF Instrumentation)
 
 OBI runs as a DaemonSet in the `obi` namespace and instruments workloads in the
-`otel-demo` namespace via eBPF, exporting OTLP **directly** to Dynatrace.
-It is deployed by the `obi` Argo CD Application
+`otel-demo` namespace via eBPF. It exports OTLP to `otel-gateway`, a small
+OpenTelemetry Collector in the same namespace ([`gateway/`](gateway)), which
+forwards everything to **Dynatrace and Coralogix**. OBI supports only one
+destination per signal, so fan-out needs the collector.
+Both are deployed by the `obi` Argo CD Application
 ([`k8s/argocd/obi-application.yaml`](../argocd/obi-application.yaml)): the official
 `opentelemetry-ebpf-instrumentation` Helm chart (**0.13.0**, OBI **v0.12.2**) with
-[`values.yaml`](values.yaml) from this repo. Argo CD has `automated` sync and
+[`values.yaml`](values.yaml) from this repo, plus the `gateway/` kustomization. Argo CD has `automated` sync and
 `selfHeal`, so a push to `main` is applied automatically.
 
 For *what OBI is and how it instruments*, see
 [`docs/obi/how-obi-instruments.md`](../../docs/obi/how-obi-instruments.md).
 
-## One-time setup: Dynatrace credentials
+## One-time setup: backend credentials
 
 (For any other OTLP backend, see
 [Sending OBI data to any OTLP backend](#sending-obi-data-to-any-otlp-backend).)
 
-Neither the token nor the tenant URL is committed. Create the Secret **before**
-the first sync (the pod won't start without both keys):
+No tokens or tenant URLs are committed. The gateway reads all four values from
+one Secret. Create it **before** the first sync; the gateway pod won't start
+without it:
 
 ```sh
 kubectl create namespace obi --dry-run=client -o yaml | kubectl apply -f -
-kubectl create secret generic obi-dynatrace-secret -n obi \
-  --from-literal=otlp-endpoint="https://<tenant>.live.dynatrace.com/api/v2/otlp" \
-  --from-literal=otlp-headers="Authorization=Api-Token <DT_API_TOKEN>" \
+kubectl create secret generic otel-gateway-secret -n obi \
+  --from-literal=DT_ENDPOINT="https://<tenant>.live.dynatrace.com/api/v2/otlp" \
+  --from-literal=DT_AUTH="Api-Token <DT_API_TOKEN>" \
+  --from-literal=CX_ENDPOINT="https://ingress.<coralogix-domain>:443" \
+  --from-literal=CX_AUTH="Bearer <Send-Your-Data API key>" \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Token scopes: `openTelemetryTrace.ingest`, `metrics.ingest`.
+- **Dynatrace token scopes:** `openTelemetryTrace.ingest`, `metrics.ingest`.
+- **Coralogix:** use a Send-Your-Data key (`cxtp_…`). The domain is the region's,
+  e.g. `cx498.coralogix.com` for US2 or `eu2.coralogix.com` for EU2. The
+  generic `otlphttp` exporter is enough, since Coralogix ingests standard OTLP;
+  the contrib `coralogix` exporter isn't needed. The gateway sets
+  `cx.application.name=otel-demo` and `cx.subsystem.name=<service.name>` on the
+  Coralogix pipelines only.
 
-After rotating the token, restart OBI:
+After rotating a token, restart the gateway (OBI needs no restart):
 
 ```sh
-kubectl rollout restart daemonset -n obi -l app.kubernetes.io/name=opentelemetry-ebpf-instrumentation
+kubectl rollout restart deployment -n obi otel-gateway
 ```
+
+To drop a backend, remove its two pipelines from
+[`gateway/config.yaml`](gateway/config.yaml).
 
 ## Configuration reference (`values.yaml`)
 
 | Setting | Value here | Why |
 |---|---|---|
-| `envValueFrom.OTEL_EXPORTER_OTLP_ENDPOINT`, `env.OTEL_EXPORTER_OTLP_PROTOCOL` | Secret key `otlp-endpoint`, `http/protobuf` | Direct export, no collector hop |
-| `env.OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` | Dynatrace rejects cumulative histograms |
+| `env.OTEL_EXPORTER_OTLP_ENDPOINT`, `env.OTEL_EXPORTER_OTLP_PROTOCOL` | `http://otel-gateway.obi.svc.cluster.local:4318`, `http/protobuf` | In-cluster gateway, no auth; resolves because OBI uses `dnsPolicy: ClusterFirstWithHostNet` |
+| `env.OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` | Dynatrace rejects cumulative histograms; the gateway passes delta through to both backends |
 | `env.OTEL_EBPF_KUBE_CLUSTER_NAME` | `orbstack-obi-eval` | Becomes `k8s.cluster.name`; use it to scope queries |
 | `env.OTEL_EBPF_BPF_CONTEXT_PROPAGATION` | `all` | Cross-service trace linking; v0.12.2 default is `disabled` (the chart's `contextPropagation.enabled` only grants privileges). Use `headers` if TCP-option injection causes trouble |
 | `env.OTEL_EBPF_METRICS_FEATURES` | `application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats` | Metric groups to emit (default is `application` only). `ebpf` is omitted: it is Prometheus-only |
-| `envValueFrom.OTEL_EXPORTER_OTLP_HEADERS` | Secret `obi-dynatrace-secret` | Credentials |
 | `config.data.otel_traces_export` / `otel_metrics_export` | `null` | Use the standard `OTEL_EXPORTER_OTLP_*` env vars instead of OBI's own exporter blocks |
 | `config.data.discovery.instrument` | `k8s_namespace: otel-demo` | What to instrument |
 | `config.data.prometheus_export` | `null` | Turn off the chart's default `/metrics` on :9090 (exposed on the node via hostNetwork) |
@@ -112,7 +126,11 @@ TCX (or set Cilium `bpf.tc.priority: 2` and OBI's `OTEL_EBPF_BPF_TC_BACKEND`:
 
 ## Sending OBI data to any OTLP backend
 
-OBI is a standard OTLP exporter, so Dynatrace is just one destination. Switching
+OBI is a standard OTLP exporter, so the backends are configuration. In this repo
+the simplest change is to the gateway: add an exporter and a pipeline pair to
+[`gateway/config.yaml`](gateway/config.yaml) and its credentials to
+`otel-gateway-secret`. The rest of this section is about pointing OBI itself at
+a single backend without the gateway. Switching
 platforms is a configuration change: no rebuild, and no change to the apps.
 OBI v0.12.2 exports **traces and metrics** (no logs) and reads the standard
 OpenTelemetry exporter variables
@@ -128,10 +146,19 @@ OpenTelemetry exporter variables
 | `OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE` | `delta` or `cumulative` | Pick what the backend wants (table below) |
 | `OTEL_EBPF_INSECURE_SKIP_VERIFY` | Skip TLS certificate checks | Only for self-signed endpoints. `http://` URLs are sent in plaintext automatically |
 
-In this repo the endpoint and headers come from the `obi-dynatrace-secret`
-Secret (keys `otlp-endpoint` and `otlp-headers`). Everything else is in
-[`values.yaml`](values.yaml). The Secret's name is historical: it can hold any
-backend's values.
+Without the gateway, put the endpoint and headers in a Secret (below,
+`obi-dynatrace-secret` with keys `otlp-endpoint` and `otlp-headers`) and
+reference it from `values.yaml`:
+
+```yaml
+envValueFrom:
+  OTEL_EXPORTER_OTLP_ENDPOINT:
+    secretKeyRef: {name: obi-dynatrace-secret, key: otlp-endpoint}
+  OTEL_EXPORTER_OTLP_HEADERS:
+    secretKeyRef: {name: obi-dynatrace-secret, key: otlp-headers}
+```
+
+and remove `env.OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 ### Steps
 
@@ -186,12 +213,13 @@ backend's values.
 ### Common endpoint values
 
 Typical values from each vendor's OTLP documentation. They are **not exercised
-in this deployment** (only Dynatrace is), and regions, ports and header names
+in this deployment** (only Dynatrace and Coralogix are), and regions, ports and header names
 change, so confirm against the vendor docs before use.
 
 | Platform | `otlp-endpoint` (base URL) | `otlp-headers` | Protocol | Temporality |
 |---|---|---|---|---|
 | Dynatrace *(used here)* | `https://<env-id>.live.dynatrace.com/api/v2/otlp` | `Authorization=Api-Token <token>` (scopes `openTelemetryTrace.ingest`, `metrics.ingest`) | `http/protobuf` | `delta` (required) |
+| Coralogix *(used here)* | `https://ingress.<domain>:443` (e.g. `cx498.coralogix.com`) | `Authorization=Bearer <Send-Your-Data key>` | `http/protobuf` or `grpc` | `delta` or `cumulative` |
 | Grafana Cloud | `https://otlp-gateway-<zone>.grafana.net/otlp` | `Authorization=Basic <base64(instanceID:token)>` | `http/protobuf` | `cumulative` |
 | Honeycomb | `https://api.honeycomb.io` | `x-honeycomb-team=<api-key>`; metrics also need `x-honeycomb-dataset=<name>` via `OTEL_EXPORTER_OTLP_METRICS_HEADERS` | `http/protobuf` or `grpc` | `delta` or `cumulative` |
 | New Relic | `https://otlp.nr-data.net` (EU: `https://otlp.eu01.nr-data.net`) | `api-key=<license-key>` | `http/protobuf` | `delta` (recommended) |
@@ -222,15 +250,16 @@ this export traffic won't be traced back into itself.
 
 ### Several backends at once
 
-OBI has **one destination per signal** and no fan-out. To send the same data to
-Dynatrace *and* another platform, run an OpenTelemetry Collector, point OBI at
-it (`otlp-endpoint=http://<collector-svc>.<ns>:4318`, no headers), and configure
-one exporter per backend in the collector. A dedicated gateway works well (the
-demo's own app collector has been removed). The collector is also
-the place for temporality conversion (`cumulativetodelta`), filtering,
-sampling and attribute renaming. If that collector runs in `otel-demo`, its
-traffic is already excluded by the `otel-collector*` filters; elsewhere, add a
-matching rule.
+OBI has **one destination per signal** and no fan-out, which is why this repo
+runs [`gateway/`](gateway): OBI sends to it with no headers, and it has one
+`otlphttp` exporter and one traces/metrics pipeline pair per backend. Each
+exporter has its own retry queue, so one backend failing doesn't hold up the
+other. The gateway deliberately has no `batch` processor: OBI already batches,
+and merged requests could exceed Dynatrace's 4 MiB limit. The collector is also
+the place for temporality conversion (`cumulativetodelta`), filtering, sampling
+and attribute renaming. It runs in `obi`, which OBI doesn't instrument
+(`discovery.instrument` is `otel-demo` only); a collector placed in `otel-demo`
+would need excluding, as the `otel-collector*` filters do.
 
 ## Troubleshooting
 
@@ -247,9 +276,12 @@ raise the limit — find the churn first. Limits that are *below* the real worki
 set cause an immediate OOM loop; 2 GiB and 4 GiB both proved too tight during
 mass pod restarts.
 
-**No data in Dynatrace.** Check the Secret exists and the token has
-`openTelemetryTrace.ingest` and `metrics.ingest`; then look for HTTP errors:
-`kubectl logs -n obi ds/obi-opentelemetry-ebpf-instrumentation | grep -i -E "error|401|403"`.
+**No data in a backend.** Backend errors are logged by the gateway, not OBI:
+`kubectl logs -n obi deploy/otel-gateway | grep -i -E "error|401|403|413"`.
+The exporter name (`otlphttp/dynatrace` or `otlphttp/coralogix`) shows which
+one. Check `otel-gateway-secret` and the token scopes (Dynatrace:
+`openTelemetryTrace.ingest`, `metrics.ingest`). If *both* backends are empty,
+check OBI's logs for `failed to upload` (gateway unreachable). Dynatrace's
 "OTLP partial success … dimension dropped" messages are warnings about empty
 attribute values, not failures.
 
@@ -290,9 +322,9 @@ registration, stdout buffering) in the OBI repo.
 `OTEL_EBPF_BPF_CONTEXT_PROPAGATION` to `headers` (drops TCP-option injection) or
 `disabled`, and check the OBI logs for TC attach errors.
 
-## Why OBI exports directly
+## Why there is a gateway
 
-Fewer moving parts for a demo: no collector hop to size or secure. The trade-off
-is that OBI supports one OTLP destination per signal with no built-in fan-out (its
-Prometheus exporter is turned off here); see
-[Several backends at once](#several-backends-at-once).
+OBI exported directly to Dynatrace until 2026-10-16, which meant fewer moving
+parts. Adding Coralogix needed fan-out, which OBI doesn't have (one OTLP
+destination per signal; its Prometheus exporter is turned off here), so the
+gateway was added. See [Several backends at once](#several-backends-at-once).

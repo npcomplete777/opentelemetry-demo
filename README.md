@@ -57,7 +57,9 @@ flowchart LR
     k -->|ring buffers| obi["OBI agent<br/>(DaemonSet)"]
   end
   obi -->|"decode protocols · build spans, RED metrics,<br/>service graph, flow & TCP stats ·<br/>add Kubernetes metadata"| otlp(("OTLP"))
-  otlp --> dt["Dynatrace"]
+  otlp --> gw["otel-gateway<br/>(Collector)"]
+  gw --> dt["Dynatrace"]
+  gw --> cx["Coralogix"]
 ```
 
 1. **Discover.** OBI finds processes on the node and selects the ones matching
@@ -202,20 +204,27 @@ structures directly and attaches uprobes to library functions such as
  Astronomy Shop (otel-demo namespace, ~25 workloads, many languages)
         │   no OpenTelemetry agent or SDK in any service
         ▼
-   OBI DaemonSet (obi namespace) ── eBPF on the node ──► OTLP/HTTP ──► Dynatrace
-        ▲
+   OBI DaemonSet (obi namespace) ── eBPF on the node ──► OTLP/HTTP
+        ▲                                                     │
+        │                                     otel-gateway (obi namespace)
+        │                                          ├──► Dynatrace
+        │                                          └──► Coralogix
    Argo CD  ◄── k8s/obi/values.yaml  (OBI Helm chart 0.13.0, app v0.12.2)
+            ◄── k8s/obi/gateway      (OpenTelemetry Collector contrib 0.142.0)
 ```
 
 - Cluster: single-node Kubernetes (OrbStack on macOS, Linux 7.0 kernel); also
   suitable for any Linux node ≥ 5.8 with BTF.
 - GitOps: Argo CD applies `k8s/overlays/demo` (the shop) and `k8s/argocd/obi-application.yaml`
-  (OBI, from the official Helm chart + `k8s/obi/values.yaml`).
-- OBI exports **directly** to Dynatrace; credentials live in a Kubernetes Secret
-  created out-of-band (never committed) — see [`k8s/obi/README.md`](k8s/obi/README.md).
-- **Any OTLP backend works.** Dynatrace is only the destination chosen here.
-  Changing it is a Secret update, plus protocol and temporality in
-  `values.yaml`: step-by-step instructions, common vendor values (Grafana Cloud,
+  (OBI, from the official Helm chart + `k8s/obi/values.yaml`, and the
+  `k8s/obi/gateway` collector).
+- OBI exports to `otel-gateway`, which forwards the same traces and metrics to
+  Dynatrace and Coralogix (OBI itself has one destination per signal).
+  Credentials live in a Kubernetes Secret created out-of-band (never
+  committed) — see [`k8s/obi/README.md`](k8s/obi/README.md).
+- **Any OTLP backend works.** Dynatrace and Coralogix are the destinations
+  chosen here. Adding one is an exporter in `k8s/obi/gateway/config.yaml`; OBI
+  can also export straight to a single backend: step-by-step instructions, common vendor values (Grafana Cloud,
   Honeycomb, New Relic, Elastic, any OpenTelemetry Collector), a
   per-signal Jaeger + Prometheus example and multi-backend fan-out are in
   [`k8s/obi/README.md` → Sending OBI data to any OTLP backend](k8s/obi/README.md#sending-obi-data-to-any-otlp-backend).
@@ -240,7 +249,8 @@ nginx OTel module.
 
 The deployment side matches:
 - No `OTEL_*` environment variables on any running service.
-- The app-side collector is removed.
+- The app-side collector is removed. (`otel-gateway` in `obi` only forwards
+  OBI's own output; no service sends to it.)
 - Jaeger, Prometheus, Grafana and OpenSearch are scaled to 0, since nothing
   sends to them.
 - Manifests: `k8s/overlays/demo/patches/custom-images.yaml` points every service

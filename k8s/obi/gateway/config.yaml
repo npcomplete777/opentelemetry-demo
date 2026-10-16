@@ -1,0 +1,58 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  # Coralogix groups data by application and subsystem. Added only on the
+  # Coralogix pipelines so Dynatrace receives OBI's attributes unchanged.
+  resource/coralogix:
+    attributes:
+      - key: cx.application.name
+        value: otel-demo
+        action: upsert
+      - key: cx.subsystem.name
+        from_attribute: service.name
+        action: upsert
+
+# No batch processor: OBI already batches, and merging its requests could push
+# a flow export past Dynatrace's 4 MiB OTLP request limit (HTTP 413).
+exporters:
+  otlphttp/dynatrace:
+    endpoint: ${env:DT_ENDPOINT}
+    headers:
+      Authorization: ${env:DT_AUTH}
+  # Coralogix ingests standard OTLP, so the generic exporter is enough.
+  otlphttp/coralogix:
+    endpoint: ${env:CX_ENDPOINT}
+    headers:
+      Authorization: ${env:CX_AUTH}
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces/dynatrace:
+      receivers: [otlp]
+      processors: [memory_limiter]
+      exporters: [otlphttp/dynatrace]
+    metrics/dynatrace:
+      receivers: [otlp]
+      processors: [memory_limiter]
+      exporters: [otlphttp/dynatrace]
+    traces/coralogix:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/coralogix]
+      exporters: [otlphttp/coralogix]
+    metrics/coralogix:
+      receivers: [otlp]
+      processors: [memory_limiter, resource/coralogix]
+      exporters: [otlphttp/coralogix]

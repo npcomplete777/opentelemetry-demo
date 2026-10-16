@@ -15,6 +15,10 @@ spec:
     - repoURL: https://github.com/npcomplete777/opentelemetry-demo.git
       targetRevision: main
       ref: values
+    # Fan-out collector OBI exports to (Dynatrace + Coralogix).
+    - repoURL: https://github.com/npcomplete777/opentelemetry-demo.git
+      targetRevision: main
+      path: k8s/obi/gateway
   destination:
     server: https://kubernetes.default.svc
     namespace: obi

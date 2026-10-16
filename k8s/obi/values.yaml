@@ -1,16 +1,22 @@
 # OBI (OpenTelemetry eBPF Instrumentation) values for the OBI-vs-SDK
 # evaluation. Deployed as its own DaemonSet in the `obi` namespace,
 # instrumenting workloads in the `otel-demo` namespace via eBPF (no code or
-# container changes to the app itself), exporting OTLP directly to Dynatrace.
+# container changes to the app itself). OBI exports OTLP to the otel-gateway
+# collector (k8s/obi/gateway), which forwards it to Dynatrace and Coralogix;
+# OBI itself supports only one destination per signal.
 #
-# The OTLP endpoint (tenant URL) and credentials come from a Secret created
+# Backend endpoints and credentials live in the gateway's Secret, created
 # out-of-band (see k8s/obi/README.md) — never commit them here.
 # https://opentelemetry.io/docs/zero-code/obi/setup/kubernetes-helm/
 
 env:
+  # In-cluster gateway, no auth (OBI uses hostNetwork with
+  # dnsPolicy ClusterFirstWithHostNet, so the Service name resolves).
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-gateway.obi.svc.cluster.local:4318"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
   # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright,
-  # so request delta temporality.
+  # so request delta temporality (the gateway passes it through unchanged;
+  # Coralogix accepts delta too).
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
   OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
   # Distributed-trace context propagation. OBI v0.12.2 defaults to "disabled"
@@ -33,16 +39,6 @@ env:
   # "ebpf" (OBI's own probe health) is Prometheus-exporter-only in v0.12.2,
   # and prometheus_export is disabled below, so it's not listed.
   OTEL_EBPF_METRICS_FEATURES: "application,application_host,application_runtime,application_service_graph,network,network_flow_packets,stats"
-
-envValueFrom:
-  OTEL_EXPORTER_OTLP_ENDPOINT:
-    secretKeyRef:
-      name: obi-dynatrace-secret
-      key: otlp-endpoint
-  OTEL_EXPORTER_OTLP_HEADERS:
-    secretKeyRef:
-      name: obi-dynatrace-secret
-      key: otlp-headers
 
 resources:
   # No default limits are set upstream. Observed in practice: OBI ballooned to
@@ -91,8 +87,8 @@ config:
     otel_traces_export: null
     otel_metrics_export: null
     # The chart enables a Prometheus /metrics endpoint on :9090 by default,
-    # which with hostNetwork is exposed on the node. Dynatrace (OTLP) is the
-    # only intended destination, so turn it off.
+    # which with hostNetwork is exposed on the node. OTLP to the gateway is
+    # the only intended destination, so turn it off.
     prometheus_export: null
     discovery:
       instrument:
