@@ -33,6 +33,8 @@ spec:
             httpGet:
               path: /
               port: 13133
+          # Observed 2026-10-16: ~111 MiB RSS, ~7m CPU. The limit leaves room for
+          # the exporters' retry queues (1000 requests each) if a backend is down.
           resources:
             requests:
               cpu: 50m

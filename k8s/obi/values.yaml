@@ -15,8 +15,8 @@ env:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-gateway.obi.svc.cluster.local:4318"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
   # Dynatrace's OTLP metrics ingest rejects cumulative histograms outright,
-  # so request delta temporality (the gateway passes it through unchanged;
-  # Coralogix accepts delta too).
+  # so request delta temporality. The gateway passes it through unchanged;
+  # Coralogix accepted delta without rejections (2026-10-16).
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "delta"
   OTEL_EBPF_KUBE_CLUSTER_NAME: "orbstack-obi-eval"
   # Distributed-trace context propagation. OBI v0.12.2 defaults to "disabled"

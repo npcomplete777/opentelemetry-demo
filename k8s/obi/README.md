@@ -219,7 +219,7 @@ change, so confirm against the vendor docs before use.
 | Platform | `otlp-endpoint` (base URL) | `otlp-headers` | Protocol | Temporality |
 |---|---|---|---|---|
 | Dynatrace *(used here)* | `https://<env-id>.live.dynatrace.com/api/v2/otlp` | `Authorization=Api-Token <token>` (scopes `openTelemetryTrace.ingest`, `metrics.ingest`) | `http/protobuf` | `delta` (required) |
-| Coralogix *(used here)* | `https://ingress.<domain>:443` (e.g. `cx498.coralogix.com`) | `Authorization=Bearer <Send-Your-Data key>` | `http/protobuf` or `grpc` | `delta` or `cumulative` |
+| Coralogix *(used here)* | `https://ingress.<domain>:443` (e.g. `cx498.coralogix.com`) | `Authorization=Bearer <Send-Your-Data key>` | `http/protobuf` or `grpc` | `delta` accepted here without rejections |
 | Grafana Cloud | `https://otlp-gateway-<zone>.grafana.net/otlp` | `Authorization=Basic <base64(instanceID:token)>` | `http/protobuf` | `cumulative` |
 | Honeycomb | `https://api.honeycomb.io` | `x-honeycomb-team=<api-key>`; metrics also need `x-honeycomb-dataset=<name>` via `OTEL_EXPORTER_OTLP_METRICS_HEADERS` | `http/protobuf` or `grpc` | `delta` or `cumulative` |
 | New Relic | `https://otlp.nr-data.net` (EU: `https://otlp.eu01.nr-data.net`) | `api-key=<license-key>` | `http/protobuf` | `delta` (recommended) |
