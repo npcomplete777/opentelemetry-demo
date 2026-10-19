@@ -254,7 +254,8 @@ OBI has **one destination per signal** and no fan-out, which is why this repo
 runs [`gateway/`](gateway): OBI sends to it with no headers, and it has one
 `otlphttp` exporter and one traces/metrics pipeline pair per backend. Each
 exporter has its own retry queue, so one backend failing doesn't hold up the
-other. The gateway deliberately has no `batch` processor: OBI already batches,
+other. Both backends get the same cleanup (`filter/obi-artifacts`, see
+Troubleshooting: days-long nameless `flagd` spans). The gateway deliberately has no `batch` processor: OBI already batches,
 and merged requests could exceed Dynatrace's 4 MiB limit. The collector is also
 the place for temporality conversion (`cumulativetodelta`), filtering, sampling
 and attribute renaming. It runs in `obi`, which OBI doesn't instrument
@@ -300,6 +301,25 @@ since the SDKs are removed; relevant in mixed estates.) If app SDKs still
 export, OBI records those attempts as spans, flows and TCP failed-connection
 stats. See the *OBI is the only telemetry source* section of the
 [root README](../../README.md) for the controls.
+
+**Days-long nameless `flagd` spans; Coralogix "Invalid span start time".**
+[observed 2026-10-16..19] Every flagd client (cart, recommendation, email, …)
+holds an HTTP/2 `EventStream` to flagd:8013 open indefinitely. OBI v0.12.2
+reports each event on it as a *server span with no name, method or route*
+whose start is the stream's start, so the spans are hours to days long (25k in
+3 days, max 32 h), and the matching `http.server.*` points form a method-less
+flagd series with ~20 h maxima. Restarting OBI did not clear it. Coralogix
+rejects spans that started more than 24 h ago (or more than 1 h in the future):
+normally as a partial success that drops only those spans, but on 2026-10-19 a
+request was rejected whole (HTTP 400, 594 spans lost) when the Mac woke from a
+20 h sleep. The gateway's `filter/obi-artifacts` now drops, for both backends,
+nameless server spans, spans that started more than 23 h ago or more than 30 min
+ahead, and `http.server.*` points without `http.request.method`. Only flagd
+matched the last rule over 3 days. Not covered: OBI's service-graph metrics
+(`traces_service_graph_*`) carry no method, so client→flagd edges still include
+these durations. To confirm the filter is working:
+`kubectl logs -n obi deploy/otel-gateway | grep -c "Invalid span start time"`
+should stop increasing.
 
 **A service has no spans after an OBI restart.** [observed 2026-10-16] After
 OrbStack restarted, OBI attached to every running runtime except `email`'s Ruby

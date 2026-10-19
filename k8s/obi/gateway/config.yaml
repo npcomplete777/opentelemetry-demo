@@ -9,6 +9,25 @@ processors:
     check_interval: 1s
     limit_percentage: 80
     spike_limit_percentage: 25
+  # OBI artifacts and out-of-range timestamps, dropped for both backends.
+  # Observed 2026-10-16..19: OBI reports each event on a long-lived HTTP/2
+  # stream (flagd's EventStream, held open by every flagd client) as a server
+  # span with no name, no method and the stream's start time, so the spans
+  # grow to hours or days long (25k in 3 days, max 32 h) and the matching
+  # http.server.* points form a method-less flagd series with ~20 h maxima.
+  # Coralogix only accepts spans from the last 24 h (and up to 1 h ahead); a
+  # request containing older spans was rejected whole (HTTP 400, 594 spans
+  # lost) when the Mac woke from a 20 h sleep with in-flight spans buffered.
+  filter/obi-artifacts:
+    error_mode: ignore
+    traces:
+      span:
+        - span.kind == SPAN_KIND_SERVER and span.name == ""
+        - span.start_time_unix_nano < UnixNano(Now()) - 82800000000000 # 23 h
+        - span.start_time_unix_nano > UnixNano(Now()) + 1800000000000 # 30 min
+    metrics:
+      datapoint:
+        - IsMatch(metric.name, "^http\\.server\\.") and (datapoint.attributes["http.request.method"] == nil or datapoint.attributes["http.request.method"] == "")
   # Coralogix groups data by application and subsystem. Added only on the
   # Coralogix pipelines so Dynatrace receives OBI's attributes unchanged.
   resource/coralogix:
@@ -42,17 +61,17 @@ service:
   pipelines:
     traces/dynatrace:
       receivers: [otlp]
-      processors: [memory_limiter]
+      processors: [memory_limiter, filter/obi-artifacts]
       exporters: [otlphttp/dynatrace]
     metrics/dynatrace:
       receivers: [otlp]
-      processors: [memory_limiter]
+      processors: [memory_limiter, filter/obi-artifacts]
       exporters: [otlphttp/dynatrace]
     traces/coralogix:
       receivers: [otlp]
-      processors: [memory_limiter, resource/coralogix]
+      processors: [memory_limiter, filter/obi-artifacts, resource/coralogix]
       exporters: [otlphttp/coralogix]
     metrics/coralogix:
       receivers: [otlp]
-      processors: [memory_limiter, resource/coralogix]
+      processors: [memory_limiter, filter/obi-artifacts, resource/coralogix]
       exporters: [otlphttp/coralogix]
